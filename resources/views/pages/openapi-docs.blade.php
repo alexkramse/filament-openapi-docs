@@ -1,4 +1,8 @@
 <x-filament-panels::page>
+    @php
+        $firstEndpoint = collect($endpoints)->flatMap(fn (array $groupEndpoints): array => $groupEndpoints)->first();
+    @endphp
+
     <style>
         .foad-docs-shell {
             display: flex;
@@ -48,7 +52,10 @@
     </style>
 
     <div
-        x-data="{ navigationCollapsed: false }"
+        x-data="{
+            navigationCollapsed: false,
+            selectedEndpoint: @js($firstEndpoint?->id),
+        }"
         class="foad-docs-shell"
     >
         <aside
@@ -79,6 +86,7 @@
                         @foreach ($endpoints as $group => $groupEndpoints)
                             <a
                                 href="#{{ $groupEndpoints[0]->id }}"
+                                x-on:click="selectedEndpoint = @js($groupEndpoints[0]->id)"
                                 class="flex h-9 w-9 items-center justify-center rounded-md text-xs font-semibold text-gray-600 ring-1 ring-gray-200 transition hover:bg-gray-50 hover:text-gray-950 dark:text-gray-300 dark:ring-white/10 dark:hover:bg-white/5 dark:hover:text-white"
                                 title="{{ $group }}"
                             >
@@ -134,18 +142,22 @@
             </x-filament::section>
 
             @foreach ($endpoints as $group => $groupEndpoints)
-                <section class="flex flex-col gap-3">
-                    <div class="flex items-center gap-2">
-                        <h3 class="text-base font-semibold text-gray-950 dark:text-white">{{ $group }}</h3>
-                        <x-filament::badge color="gray" size="xs">{{ count($groupEndpoints) }}</x-filament::badge>
-                    </div>
+                @foreach ($groupEndpoints as $endpoint)
+                    <section
+                        x-show="selectedEndpoint === @js($endpoint->id)"
+                        x-cloak
+                        class="flex flex-col gap-4"
+                    >
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-semibold text-gray-950 dark:text-white">{{ $group }}</h3>
+                            <x-filament::badge color="gray" size="xs">{{ $endpoint->method }}</x-filament::badge>
+                        </div>
 
-                    <div class="flex flex-col gap-4">
-                        @foreach ($groupEndpoints as $endpoint)
+                        <div>
                             @include('filament-openapi-docs::components.endpoint', ['endpoint' => $endpoint])
-                        @endforeach
-                    </div>
-                </section>
+                        </div>
+                    </section>
+                @endforeach
             @endforeach
         </main>
     </div>

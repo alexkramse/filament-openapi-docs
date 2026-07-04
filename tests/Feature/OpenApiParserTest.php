@@ -115,8 +115,13 @@ it('renders native endpoint markup without the scramble view include', function 
     ])->render();
 
     expect(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->not->toContain('scrambleView')
+        ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->toContain('selectedEndpoint')
+        ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->toContain('x-show="selectedEndpoint ===')
         ->and($html)->toContain('/users')
         ->and($html)->toContain('List users')
+        ->and($html)->toContain('Request data')
+        ->and($html)->toContain('Query parameters')
+        ->and($html)->toContain('Responses')
         ->and($html)->toContain('fi-section')
         ->and($html)->toContain('fi-input')
         ->and($html)->not->toContain('scramble::docs');
@@ -184,5 +189,6 @@ it('renders endpoint navigation for the in page sidebar', function () {
         ->and($navigation[0]->getLabel())->toBe('Users')
         ->and($navigation[0]->getItems()[0]->getUrl())->toBe('#get-users')
         ->and($navigation[0]->getItems()[0]->getBadge())->toBe('GET')
-        ->and($navigation[0]->getItems()[0]->getBadgeColor())->toBe('success');
+        ->and($navigation[0]->getItems()[0]->getBadgeColor())->toBe('success')
+        ->and($navigation[0]->getItems()[0]->getExtraAttributes()['x-on:click'])->toBe("selectedEndpoint = 'get-users'");
 });

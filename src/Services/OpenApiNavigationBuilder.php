@@ -31,7 +31,10 @@ class OpenApiNavigationBuilder
         return collect($endpoints)
             ->map(fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($endpoint->path)
                 ->url("#{$endpoint->id}")
-                ->badge($endpoint->method, $this->methodColor($endpoint->method)))
+                ->badge($endpoint->method, $this->methodColor($endpoint->method))
+                ->extraAttributes([
+                    'x-on:click' => "selectedEndpoint = '{$endpoint->id}'",
+                ]))
             ->values()
             ->all();
     }
