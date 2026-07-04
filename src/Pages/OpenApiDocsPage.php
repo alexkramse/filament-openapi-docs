@@ -6,6 +6,7 @@ use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
+use Kramarenko\FilamentOpenApiDocs\Services\OpenApiNavigationBuilder;
 use Kramarenko\FilamentOpenApiDocs\Services\OpenApiParser;
 use Kramarenko\FilamentOpenApiDocs\Support\SpecProvider;
 use UnitEnum;
@@ -50,13 +51,19 @@ class OpenApiDocsPage extends Page
      *     info: array<string, mixed>,
      *     servers: array<int, string>,
      *     endpoints: array<string, array<int, \Kramarenko\FilamentOpenApiDocs\DTO\Endpoint>>,
+     *     endpointNavigation: array<int, \Filament\Navigation\NavigationGroup>,
      *     endpointCount: int,
      * }
      */
     protected function getViewData(): array
     {
-        return app(OpenApiParser::class)->parse(
+        $data = app(OpenApiParser::class)->parse(
             app(SpecProvider::class)->spec(),
         );
+
+        return [
+            ...$data,
+            'endpointNavigation' => app(OpenApiNavigationBuilder::class)->build($data['endpoints']),
+        ];
     }
 }

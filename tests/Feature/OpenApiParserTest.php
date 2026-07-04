@@ -1,6 +1,7 @@
 <?php
 
 use Kramarenko\FilamentOpenApiDocs\DTO\Endpoint;
+use Kramarenko\FilamentOpenApiDocs\Services\OpenApiNavigationBuilder;
 use Kramarenko\FilamentOpenApiDocs\Services\OpenApiParser;
 use Kramarenko\FilamentOpenApiDocs\Tests\TestCase;
 
@@ -147,4 +148,41 @@ it('renders schemas as structured fields instead of raw json', function () {
         ->and($html)->toContain('fi-input')
         ->and($html)->not->toContain('"properties"')
         ->and($html)->not->toContain('&quot;properties&quot;');
+});
+
+it('renders endpoint navigation for the in page sidebar', function () {
+    $endpoint = new Endpoint(
+        id: 'get-users',
+        method: 'GET',
+        path: '/users',
+        summary: 'List users',
+        description: null,
+        tags: ['Users'],
+        parameters: [],
+        requestBodies: [],
+        responses: [],
+        security: [],
+        deprecated: false,
+    );
+
+    $navigation = app(OpenApiNavigationBuilder::class)->build(['Users' => [$endpoint]]);
+
+    $page = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
+    $navigationView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint-navigation.blade.php');
+
+    expect($page)->toContain('navigationCollapsed')
+        ->and($page)->toContain('Toggle endpoint navigation')
+        ->and($page)->toContain('foad-docs-shell')
+        ->and($page)->toContain('foad-endpoint-sidebar')
+        ->and($page)->toContain('foad-docs-content')
+        ->and($page)->toContain('width: 20rem')
+        ->and($page)->toContain('width: 4rem')
+        ->and($page)->toContain('<aside')
+        ->and($page)->not->toContain('slide-over')
+        ->and($page)->not->toContain('x-filament::modal')
+        ->and($navigationView)->toContain('page.sub-navigation.sidebar')
+        ->and($navigation[0]->getLabel())->toBe('Users')
+        ->and($navigation[0]->getItems()[0]->getUrl())->toBe('#get-users')
+        ->and($navigation[0]->getItems()[0]->getBadge())->toBe('GET')
+        ->and($navigation[0]->getItems()[0]->getBadgeColor())->toBe('success');
 });
