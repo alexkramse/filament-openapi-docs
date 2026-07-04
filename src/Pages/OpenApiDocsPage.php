@@ -3,10 +3,10 @@
 namespace Kramarenko\FilamentOpenApiDocs\Pages;
 
 use BackedEnum;
-use Dedoc\Scramble\GeneratorConfig;
 use Filament\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
+use Kramarenko\FilamentOpenApiDocs\Services\OpenApiParser;
 use Kramarenko\FilamentOpenApiDocs\Support\SpecProvider;
 use UnitEnum;
 
@@ -47,19 +47,16 @@ class OpenApiDocsPage extends Page
 
     /**
      * @return array{
-     *     scrambleView: string,
-     *     spec: array<string, mixed>,
-     *     config: GeneratorConfig,
+     *     info: array<string, mixed>,
+     *     servers: array<int, string>,
+     *     endpoints: array<string, array<int, \Kramarenko\FilamentOpenApiDocs\DTO\Endpoint>>,
+     *     endpointCount: int,
      * }
      */
     protected function getViewData(): array
     {
-        $specProvider = app(SpecProvider::class);
-
-        return [
-            'scrambleView' => $specProvider->view(),
-            'spec' => $specProvider->spec(),
-            'config' => $specProvider->config(),
-        ];
+        return app(OpenApiParser::class)->parse(
+            app(SpecProvider::class)->spec(),
+        );
     }
 }
