@@ -70,16 +70,10 @@
 
                             @foreach ($endpoint->requestBodies as $body)
                                 <div class="foad-stack foad-stack-sm">
-                                    <label class="fi-fo-field">
-                                        <span class="fi-fo-field-label-content">Content type</span>
-
-                                        <x-filament::input.wrapper prefix-icon="heroicon-o-code-bracket">
-                                            <x-filament::input
-                                                :value="$body['contentType']"
-                                                readonly
-                                            />
-                                        </x-filament::input.wrapper>
-                                    </label>
+                                    <div class="foad-inline-list foad-inline-list-sm">
+                                        <span class="foad-property-meta-label">Body</span>
+                                        <x-filament::badge color="gray" size="xs">{{ $body['contentType'] }}</x-filament::badge>
+                                    </div>
 
                                     @include('filament-openapi-docs::components.schema', ['schema' => $body['schema']])
                                 </div>
@@ -112,53 +106,36 @@
             </x-filament::section>
 
             <div class="fi-section-ctn foad-stack">
-                <x-filament::section
-                    heading="Responses"
-                    :description="count($endpoint->responses).' documented responses'"
-                    collapsible
-                    secondary
-                >
-                    <x-filament::tabs>
-                        @foreach ($endpoint->responses as $status => $response)
-                            @php
-                                $statusColor = match (true) {
-                                    str_starts_with((string) $status, '2') => 'success',
-                                    str_starts_with((string) $status, '3'), str_starts_with((string) $status, '4') => 'warning',
-                                    str_starts_with((string) $status, '5') => 'danger',
-                                    default => 'gray',
-                                };
-                            @endphp
-                            <x-filament::tabs.item
-                                alpine-active="activeTab === '{{ $status }}'"
-                                x-on:click="activeTab = '{{ $status }}'"
-                            >
-                                <x-filament::badge :color="$statusColor">
+                <x-filament::section heading="Responses" :description="count($endpoint->responses).' documented responses'" secondary>
+                    @foreach ($endpoint->responses as $status => $response)
+                        @php
+                            $statusColor = match (true) {
+                                str_starts_with((string) $status, '2') => 'success',
+                                str_starts_with((string) $status, '3'), str_starts_with((string) $status, '4') => 'warning',
+                                str_starts_with((string) $status, '5') => 'danger',
+                                default => 'gray',
+                            };
+                        @endphp
+
+                        <div class="foad-response-block">
+                            <div class="foad-property-main">
+                                <h3 class="fi-section-header-heading">
+                                    {{ $response['description'] ?: 'Response' }}
+                                </h3>
+
+                                <x-filament::badge :color="$statusColor" size="xs">
                                     {{ $status }}
                                 </x-filament::badge>
-                            </x-filament::tabs.item>
-                        @endforeach
-                    </x-filament::tabs>
-
-                    @foreach ($endpoint->responses as $status => $response)
-                        <div x-show="activeTab === '{{ $status }}'">
-                            <h3 class="fi-section-header-heading">
-                                {{ $response['description'] ?: 'Response'  }}
-                            </h3>
+                            </div>
 
                             @if ($response['content'] !== [])
-                                <div class="foad-stack foad-stack-md">
+                                <div class="foad-stack foad-stack-sm">
                                     @foreach ($response['content'] as $contentType => $schema)
                                         <div class="foad-stack foad-stack-sm">
-                                            <label class="fi-fo-field">
-                                                <span class="fi-fo-field-label-content">Body content type</span>
-
-                                                <x-filament::input.wrapper prefix-icon="heroicon-o-code-bracket">
-                                                    <x-filament::input
-                                                        :value="$contentType"
-                                                        readonly
-                                                    />
-                                                </x-filament::input.wrapper>
-                                            </label>
+                                            <div class="foad-inline-list foad-inline-list-sm">
+                                                <span class="foad-property-meta-label">Body</span>
+                                                <x-filament::badge color="gray" size="xs">{{ $contentType }}</x-filament::badge>
+                                            </div>
 
                                             @include('filament-openapi-docs::components.schema', ['schema' => $schema])
                                         </div>

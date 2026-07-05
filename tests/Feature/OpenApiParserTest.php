@@ -114,6 +114,8 @@ it('renders native endpoint markup without the scramble view include', function 
     expect(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->not->toContain('scrambleView')
         ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->toContain('$selectedEndpoint')
         ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->not->toContain('x-show="selectedEndpoint ===')
+        ->and($html)->not->toContain('fi-tabs')
+        ->and($html)->not->toContain('x-show="activeTab')
         ->and($html)->toContain('/users')
         ->and($html)->toContain('List users')
         ->and($html)->toContain('Request data')
@@ -133,6 +135,7 @@ it('renders schemas as structured fields instead of raw json', function () {
                 'name' => [
                     'type' => 'string',
                     'description' => 'Display name',
+                    'example' => 'Jane Doe',
                 ],
                 'status' => [
                     'type' => 'string',
@@ -144,10 +147,18 @@ it('renders schemas as structured fields instead of raw json', function () {
 
     expect($html)->toContain('name')
         ->and($html)->toContain('Required')
+        ->and($html)->toContain('Optional')
+        ->and($html)->toContain('string')
         ->and($html)->toContain('Display name')
         ->and($html)->toContain('active')
+        ->and($html)->toContain('Allowed')
+        ->and($html)->toContain('Example')
+        ->and($html)->toContain('Jane Doe')
+        ->and($html)->toContain('foad-schema-tree')
+        ->and($html)->toContain('foad-property-row')
         ->and($html)->toContain('fi-section')
-        ->and($html)->toContain('fi-input')
+        ->and($html)->not->toContain('fi-input')
+        ->and($html)->not->toContain('fi-collapsible')
         ->and($html)->not->toContain('"properties"')
         ->and($html)->not->toContain('&quot;properties&quot;');
 });

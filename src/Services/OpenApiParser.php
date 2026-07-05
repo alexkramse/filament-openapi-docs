@@ -56,6 +56,7 @@ class OpenApiParser
             'servers' => $this->servers($spec['servers'] ?? []),
             'endpoints' => $endpoints,
             'endpointCount' => collect($endpoints)->flatten(1)->count(),
+            'components' => $spec['components'] ?? [],
         ];
     }
 
@@ -91,7 +92,6 @@ class OpenApiParser
     }
 
     /**
-     * @param  mixed  $parameters
      * @return array<int, array{name: string, in: string, type: string, required: bool, description: ?string}>
      */
     private function parameters(mixed $parameters): array
@@ -115,7 +115,6 @@ class OpenApiParser
     }
 
     /**
-     * @param  mixed  $requestBody
      * @return array<int, array{contentType: string, schema: array<string, mixed>}>
      */
     private function requestBodies(mixed $requestBody): array
@@ -135,7 +134,6 @@ class OpenApiParser
     }
 
     /**
-     * @param  mixed  $responses
      * @return array<string, array{description: ?string, content: array<string, array<string, mixed>>}>
      */
     private function responses(mixed $responses): array
@@ -156,7 +154,6 @@ class OpenApiParser
     }
 
     /**
-     * @param  mixed  $content
      * @return array<string, array<string, mixed>>
      */
     private function responseContent(mixed $content): array
@@ -174,7 +171,6 @@ class OpenApiParser
     }
 
     /**
-     * @param  mixed  $servers
      * @return array<int, string>
      */
     private function servers(mixed $servers): array

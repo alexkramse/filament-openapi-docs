@@ -129,6 +129,7 @@ class OpenApiDocsPage extends Page
      *     servers: array<int, string>,
      *     endpoints: array<string, array<int, Endpoint>>,
      *     endpointCount: int,
+     *     components: array<string, mixed>
      * }
      */
     private function openApiData(): array

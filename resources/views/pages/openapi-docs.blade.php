@@ -1,5 +1,4 @@
-<x-filament-panels::page
-    x-data="{ activeTab: 'YourFirstTabLabel' }">
+<x-filament-panels::page>
     <style>
         .foad-openapi-docs-page .fi-page-sub-navigation-sidebar-ctn {
             position: sticky;
@@ -46,8 +45,72 @@
             gap: .75rem;
         }
 
-        .foad-nested-schema-row {
-            margin-inline-start: 1rem;
+        .foad-response-block {
+            display: grid;
+            gap: .75rem;
+        }
+
+        .foad-response-block + .foad-response-block {
+            border-top: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+            margin-top: 1rem;
+            padding-top: 1rem;
+        }
+
+        .foad-schema-tree {
+            display: grid;
+            gap: .375rem;
+        }
+
+        .foad-property-row {
+            border-inline-start: 2px solid color-mix(in oklab, currentColor 16%, transparent);
+            display: grid;
+            gap: .375rem;
+            margin-inline-start: calc(var(--foad-depth, 0) * .75rem);
+            padding: .5rem 0 .5rem .75rem;
+        }
+
+        .foad-property-main {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            justify-content: space-between;
+        }
+
+        .foad-property-name {
+            color: var(--gray-950);
+            font-size: .875rem;
+            font-weight: 600;
+        }
+
+        .dark .foad-property-name {
+            color: white;
+        }
+
+        .foad-property-description {
+            color: var(--gray-500);
+            font-size: .8125rem;
+        }
+
+        .dark .foad-property-description {
+            color: var(--gray-400);
+        }
+
+        .foad-property-meta {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .375rem;
+        }
+
+        .foad-property-meta-label {
+            color: var(--gray-500);
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+        .dark .foad-property-meta-label {
+            color: var(--gray-400);
         }
 
         @media (min-width: 48rem) {
@@ -91,8 +154,6 @@
                             <x-filament::section.description prefix-icon="heroicon-o-server">
                                 {{ $server }}
                             </x-filament::section.description>
-
-                            {{--                                <x-filament::input :value="$server" readonly />--}}
                         </label>
                     @endforeach
                 </div>
