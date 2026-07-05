@@ -1,5 +1,5 @@
-<label class="flex flex-col gap-1">
-    <span class="flex items-center gap-2 text-sm font-medium text-gray-950 dark:text-white">
+<label class="fi-fo-field">
+    <span class="fi-fo-field-label-content foad-inline-list">
         <span>{{ $parameter['name'] }}</span>
 
         <x-filament::badge color="gray" size="xs">
@@ -17,7 +17,6 @@
         <x-filament::input
             :value="$parameter['name'].': '.$parameter['type']"
             readonly
-            class="font-mono text-xs"
         />
     </x-filament::input.wrapper>
 </label>

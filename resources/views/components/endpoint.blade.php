@@ -12,14 +12,13 @@
     $headerParameters = collect($endpoint->parameters)->where('in', 'header')->values();
 @endphp
 
-<div id="{{ $endpoint->id }}" class="scroll-mt-6">
+<div id="{{ $endpoint->id }}" style="scroll-margin-top: 1.5rem;">
     <x-filament::section
         :heading="$endpoint->title()"
-        :description="$endpoint->description"
-        icon="heroicon-o-command-line"
+
     >
-        <x-slot name="afterHeader">
-            <div class="flex flex-wrap items-center gap-2">
+        <x-slot name="description">
+            <div class="foad-inline-list">
                 <x-filament::badge :color="$methodColor">
                     {{ $endpoint->method }}
                 </x-filament::badge>
@@ -29,32 +28,23 @@
                         Deprecated
                     </x-filament::badge>
                 @endif
+
+                <x-filament::badge color="gray">
+                    {{$endpoint->path}}
+                </x-filament::badge>
             </div>
+            <p class="fi-section-header-description">{{$endpoint->description}}</p>
         </x-slot>
 
-        <div class="flex flex-col gap-5">
-            <label class="flex flex-col gap-1">
-                <span class="text-sm font-medium text-gray-950 dark:text-white">Endpoint</span>
-
-                <x-filament::input.wrapper
-                    :prefix="$endpoint->method"
-                    prefix-icon="heroicon-o-link"
-                >
-                    <x-filament::input
-                        :value="$endpoint->path"
-                        readonly
-                        class="font-mono text-sm"
-                    />
-                </x-filament::input.wrapper>
-            </label>
+        <div class="foad-stack">
 
             <x-filament::section heading="Request data" collapsible secondary>
-                <div class="flex flex-col gap-4">
+                <div class="foad-stack foad-stack-md">
                     @if ($pathParameters->isNotEmpty())
-                        <div class="flex flex-col gap-2">
-                            <h4 class="text-sm font-semibold text-gray-950 dark:text-white">Path parameters</h4>
+                        <div class="foad-stack foad-stack-sm">
+                            <h4 class="fi-section-header-heading">Path parameters</h4>
 
-                            <div class="grid gap-3 md:grid-cols-2">
+                            <div class="foad-grid">
                                 @foreach ($pathParameters as $parameter)
                                     @include('filament-openapi-docs::components.parameter-field', ['parameter' => $parameter])
                                 @endforeach
@@ -63,10 +53,10 @@
                     @endif
 
                     @if ($headerParameters->isNotEmpty())
-                        <div class="flex flex-col gap-2">
-                            <h4 class="text-sm font-semibold text-gray-950 dark:text-white">Headers</h4>
+                        <div class="foad-stack foad-stack-sm">
+                            <h4 class="fi-section-header-heading">Headers</h4>
 
-                            <div class="grid gap-3 md:grid-cols-2">
+                            <div class="foad-grid">
                                 @foreach ($headerParameters as $parameter)
                                     @include('filament-openapi-docs::components.parameter-field', ['parameter' => $parameter])
                                 @endforeach
@@ -75,19 +65,18 @@
                     @endif
 
                     @if ($endpoint->hasRequestBody())
-                        <div class="flex flex-col gap-3">
-                            <h4 class="text-sm font-semibold text-gray-950 dark:text-white">Body</h4>
+                        <div class="foad-stack foad-stack-md">
+                            <h4 class="fi-section-header-heading">Body</h4>
 
                             @foreach ($endpoint->requestBodies as $body)
-                                <div class="flex flex-col gap-2">
-                                    <label class="flex flex-col gap-1">
-                                        <span class="text-sm font-medium text-gray-950 dark:text-white">Content type</span>
+                                <div class="foad-stack foad-stack-sm">
+                                    <label class="fi-fo-field">
+                                        <span class="fi-fo-field-label-content">Content type</span>
 
                                         <x-filament::input.wrapper prefix-icon="heroicon-o-code-bracket">
                                             <x-filament::input
                                                 :value="$body['contentType']"
                                                 readonly
-                                                class="font-mono text-xs"
                                             />
                                         </x-filament::input.wrapper>
                                     </label>
@@ -99,7 +88,7 @@
                     @endif
 
                     @if ($pathParameters->isEmpty() && $headerParameters->isEmpty() && ! $endpoint->hasRequestBody())
-                        <p class="text-sm text-gray-500 dark:text-gray-400">No request data documented.</p>
+                        <p class="fi-section-header-description">No request data documented.</p>
                     @endif
                 </div>
             </x-filament::section>
@@ -112,24 +101,24 @@
                 secondary
             >
                 @if ($queryParameters->isNotEmpty())
-                    <div class="grid gap-3 md:grid-cols-2">
+                    <div class="foad-grid">
                         @foreach ($queryParameters as $parameter)
                             @include('filament-openapi-docs::components.parameter-field', ['parameter' => $parameter])
                         @endforeach
                     </div>
                 @else
-                    <p class="text-sm text-gray-500 dark:text-gray-400">No query parameters documented.</p>
+                    <p class="fi-section-header-description">No query parameters documented.</p>
                 @endif
             </x-filament::section>
 
-            <x-filament::section
-                heading="Responses"
-                :description="count($endpoint->responses).' documented responses'"
-                collapsible
-                secondary
-            >
-                @if ($endpoint->responses !== [])
-                    <div class="flex flex-col gap-4">
+            <div class="fi-section-ctn foad-stack">
+                <x-filament::section
+                    heading="Responses"
+                    :description="count($endpoint->responses).' documented responses'"
+                    collapsible
+                    secondary
+                >
+                    <x-filament::tabs>
                         @foreach ($endpoint->responses as $status => $response)
                             @php
                                 $statusColor = match (true) {
@@ -139,49 +128,49 @@
                                     default => 'gray',
                                 };
                             @endphp
-
-                            <x-filament::section
-                                :heading="$response['description'] ?: 'Response'"
-                                collapsible
-                                compact
-                                secondary
+                            <x-filament::tabs.item
+                                alpine-active="activeTab === '{{ $status }}'"
+                                x-on:click="activeTab = '{{ $status }}'"
                             >
-                                <x-slot name="afterHeader">
-                                    <x-filament::badge :color="$statusColor">
-                                        {{ $status }}
-                                    </x-filament::badge>
-                                </x-slot>
-
-                                @if ($response['content'] !== [])
-                                    <div class="flex flex-col gap-4">
-                                        @foreach ($response['content'] as $contentType => $schema)
-                                            <div class="flex flex-col gap-2">
-                                                <label class="flex flex-col gap-1">
-                                                    <span class="text-sm font-medium text-gray-950 dark:text-white">Body content type</span>
-
-                                                    <x-filament::input.wrapper prefix-icon="heroicon-o-code-bracket">
-                                                        <x-filament::input
-                                                            :value="$contentType"
-                                                            readonly
-                                                            class="font-mono text-xs"
-                                                        />
-                                                    </x-filament::input.wrapper>
-                                                </label>
-
-                                                @include('filament-openapi-docs::components.schema', ['schema' => $schema])
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">No response body documented.</p>
-                                @endif
-                            </x-filament::section>
+                                <x-filament::badge :color="$statusColor">
+                                    {{ $status }}
+                                </x-filament::badge>
+                            </x-filament::tabs.item>
                         @endforeach
-                    </div>
-                @else
-                    <p class="text-sm text-gray-500 dark:text-gray-400">No responses documented.</p>
-                @endif
-            </x-filament::section>
+                    </x-filament::tabs>
+
+                    @foreach ($endpoint->responses as $status => $response)
+                        <div x-show="activeTab === '{{ $status }}'">
+                            <h3 class="fi-section-header-heading">
+                                {{ $response['description'] ?: 'Response'  }}
+                            </h3>
+
+                            @if ($response['content'] !== [])
+                                <div class="foad-stack foad-stack-md">
+                                    @foreach ($response['content'] as $contentType => $schema)
+                                        <div class="foad-stack foad-stack-sm">
+                                            <label class="fi-fo-field">
+                                                <span class="fi-fo-field-label-content">Body content type</span>
+
+                                                <x-filament::input.wrapper prefix-icon="heroicon-o-code-bracket">
+                                                    <x-filament::input
+                                                        :value="$contentType"
+                                                        readonly
+                                                    />
+                                                </x-filament::input.wrapper>
+                                            </label>
+
+                                            @include('filament-openapi-docs::components.schema', ['schema' => $schema])
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="fi-section-header-description">No response body documented.</p>
+                            @endif
+                        </div>
+                    @endforeach
+                </x-filament::section>
+            </div>
         </div>
     </x-filament::section>
 </div>

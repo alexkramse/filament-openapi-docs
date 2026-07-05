@@ -3,9 +3,6 @@
 use Kramarenko\FilamentOpenApiDocs\DTO\Endpoint;
 use Kramarenko\FilamentOpenApiDocs\Services\OpenApiNavigationBuilder;
 use Kramarenko\FilamentOpenApiDocs\Services\OpenApiParser;
-use Kramarenko\FilamentOpenApiDocs\Tests\TestCase;
-
-uses(TestCase::class);
 
 it('parses openapi paths into grouped endpoints', function () {
     $parsed = app(OpenApiParser::class)->parse([
@@ -115,15 +112,15 @@ it('renders native endpoint markup without the scramble view include', function 
     ])->render();
 
     expect(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->not->toContain('scrambleView')
-        ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->toContain('selectedEndpoint')
-        ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->toContain('x-show="selectedEndpoint ===')
+        ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->toContain('$selectedEndpoint')
+        ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->not->toContain('x-show="selectedEndpoint ===')
         ->and($html)->toContain('/users')
         ->and($html)->toContain('List users')
         ->and($html)->toContain('Request data')
         ->and($html)->toContain('Query parameters')
         ->and($html)->toContain('Responses')
         ->and($html)->toContain('fi-section')
-        ->and($html)->toContain('fi-input')
+        ->and($html)->toContain('fi-badge')
         ->and($html)->not->toContain('scramble::docs');
 });
 
@@ -155,7 +152,7 @@ it('renders schemas as structured fields instead of raw json', function () {
         ->and($html)->not->toContain('&quot;properties&quot;');
 });
 
-it('renders endpoint navigation for the in page sidebar', function () {
+it('builds endpoint navigation for native filament sub navigation', function () {
     $endpoint = new Endpoint(
         id: 'get-users',
         method: 'GET',
@@ -173,22 +170,22 @@ it('renders endpoint navigation for the in page sidebar', function () {
     $navigation = app(OpenApiNavigationBuilder::class)->build(['Users' => [$endpoint]]);
 
     $page = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
-    $navigationView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint-navigation.blade.php');
 
-    expect($page)->toContain('navigationCollapsed')
-        ->and($page)->toContain('Toggle endpoint navigation')
-        ->and($page)->toContain('foad-docs-shell')
-        ->and($page)->toContain('foad-endpoint-sidebar')
-        ->and($page)->toContain('foad-docs-content')
-        ->and($page)->toContain('width: 20rem')
-        ->and($page)->toContain('width: 4rem')
-        ->and($page)->toContain('<aside')
+    expect($page)->not->toContain('navigationCollapsed')
+        ->and($page)->not->toContain('Toggle endpoint navigation')
+        ->and($page)->not->toContain('foad-docs-shell')
+        ->and($page)->not->toContain('foad-endpoint-sidebar')
+        ->and($page)->not->toContain('foad-docs-content')
+        ->and($page)->not->toContain('width: 20rem')
+        ->and($page)->not->toContain('width: 4rem')
+        ->and($page)->not->toContain('<aside')
+        ->and($page)->toContain('position: sticky')
+        ->and($page)->toContain('foad-openapi-docs-page')
         ->and($page)->not->toContain('slide-over')
         ->and($page)->not->toContain('x-filament::modal')
-        ->and($navigationView)->toContain('page.sub-navigation.sidebar')
         ->and($navigation[0]->getLabel())->toBe('Users')
-        ->and($navigation[0]->getItems()[0]->getUrl())->toBe('#get-users')
+        ->and($navigation[0]->getItems()[0]->getUrl())->toBe('#')
         ->and($navigation[0]->getItems()[0]->getBadge())->toBe('GET')
         ->and($navigation[0]->getItems()[0]->getBadgeColor())->toBe('success')
-        ->and($navigation[0]->getItems()[0]->getExtraAttributes()['x-on:click'])->toBe("selectedEndpoint = 'get-users'");
+        ->and($navigation[0]->getItems()[0]->getExtraAttributes()['wire:click.prevent'])->toBe("selectEndpoint('get-users')");
 });

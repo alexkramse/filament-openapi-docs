@@ -11,24 +11,23 @@
     </x-slot>
 
     @if (isset($schema['$ref']))
-        <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium text-gray-950 dark:text-white">Reference</span>
+        <label class="fi-fo-field">
+            <span class="fi-fo-field-label-content">Reference</span>
 
             <x-filament::input.wrapper prefix-icon="heroicon-o-cube">
                 <x-filament::input
                     :value="$presenter->label($schema)"
                     readonly
-                    class="font-mono text-xs"
                 />
             </x-filament::input.wrapper>
         </label>
     @elseif ($rows !== [])
-        <div class="flex flex-col gap-2">
+        <div class="foad-stack foad-stack-sm">
             @foreach ($rows as $row)
                 @include('filament-openapi-docs::components.schema-row', ['row' => $row, 'depth' => 0])
             @endforeach
         </div>
     @else
-        <p class="text-sm text-gray-500 dark:text-gray-400">No structured fields documented.</p>
+        <p class="fi-section-header-description">No structured fields documented.</p>
     @endif
 </x-filament::section>
