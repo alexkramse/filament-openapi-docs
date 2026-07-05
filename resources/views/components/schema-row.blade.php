@@ -1,6 +1,27 @@
-<div class="foad-property-row" style="--foad-depth: {{ $depth }};">
+@php
+    $hasChildren = $row['children'] !== [];
+@endphp
+
+<{{ $hasChildren ? 'details' : 'div' }}
+    class="foad-property-row {{ $hasChildren ? 'foad-property-row-collapsible' : '' }}"
+    style="--foad-depth: {{ $depth }};"
+>
+    @if ($hasChildren)
+        <summary class="foad-property-summary">
+    @endif
     <div class="foad-property-main">
-        <span class="foad-property-name">{{ $row['name'] }}</span>
+        <span class="foad-property-title">
+            <span class="foad-property-connector" aria-hidden="true"></span>
+
+            @if ($hasChildren)
+                <span class="foad-property-toggle" aria-hidden="true">
+                    @svg('heroicon-m-chevron-down', 'foad-property-toggle-icon foad-property-toggle-icon-collapsed')
+                    @svg('heroicon-m-chevron-up', 'foad-property-toggle-icon foad-property-toggle-icon-open')
+                </span>
+            @endif
+
+            <span class="foad-property-name">{{ $row['name'] }}</span>
+        </span>
 
         <div class="foad-inline-list foad-inline-list-sm">
             @foreach ($row['types'] as $type)
@@ -38,12 +59,15 @@
             </div>
         </div>
     @endif
+    @if ($hasChildren)
+        </summary>
+    @endif
 
-    @if ($row['children'] !== [])
+    @if ($hasChildren)
         <div class="foad-schema-tree">
             @foreach ($row['children'] as $child)
                 @include('filament-openapi-docs::components.schema-row', ['row' => $child, 'depth' => $depth + 1])
             @endforeach
         </div>
     @endif
-</div>
+</{{ $hasChildren ? 'details' : 'div' }}>

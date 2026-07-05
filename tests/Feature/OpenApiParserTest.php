@@ -141,6 +141,14 @@ it('renders schemas as structured fields instead of raw json', function () {
                     'type' => 'string',
                     'enum' => ['active', 'disabled'],
                 ],
+                'profile' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'age' => [
+                            'type' => 'integer',
+                        ],
+                    ],
+                ],
             ],
         ],
     ])->render();
@@ -156,7 +164,13 @@ it('renders schemas as structured fields instead of raw json', function () {
         ->and($html)->toContain('Jane Doe')
         ->and($html)->toContain('foad-schema-tree')
         ->and($html)->toContain('foad-property-row')
-        ->and($html)->toContain('fi-section')
+        ->and($html)->toContain('foad-property-connector')
+        ->and($html)->toContain('foad-property-toggle-icon-collapsed')
+        ->and($html)->toContain('foad-property-toggle-icon-open')
+        ->and($html)->toContain('<details')
+        ->and($html)->toContain('profile')
+        ->and($html)->toContain('age')
+        ->and($html)->not->toContain(' open')
         ->and($html)->not->toContain('fi-input')
         ->and($html)->not->toContain('fi-collapsible')
         ->and($html)->not->toContain('"properties"')
