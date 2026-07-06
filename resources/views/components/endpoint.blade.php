@@ -13,11 +13,13 @@
 @endphp
 
 <div id="{{ $endpoint->id }}" style="scroll-margin-top: 1.5rem;">
+
     <x-filament::section
         :heading="$endpoint->title()"
-
     >
         <x-slot name="description">
+            <p class="fi-section-header-description">{{$endpoint->description}}</p>
+
             <div class="foad-inline-list">
                 <x-filament::badge :color="$methodColor">
                     {{ $endpoint->method }}
@@ -29,16 +31,24 @@
                     </x-filament::badge>
                 @endif
 
-                <x-filament::badge color="gray">
-                    {{$endpoint->path}}
-                </x-filament::badge>
+                @if ($servers !== [])
+                    <div class="foad-grid">
+                        @foreach ($servers as $server)
+                            <label class="fi-fo-field">
+                                <x-filament::badge color="gray">
+                                    {{ $server }}{{$endpoint->path}}
+                                </x-filament::badge>
+                            </label>
+                        @endforeach
+                    </div>
+                @endif
+
+
             </div>
-            <p class="fi-section-header-description">{{$endpoint->description}}</p>
         </x-slot>
 
         <div class="foad-stack">
-
-            <x-filament::section heading="Request data" collapsible secondary>
+            <x-filament::section heading="Request" collapsible secondary>
                 <div class="foad-stack foad-stack-md">
                     @if ($pathParameters->isNotEmpty())
                         <div class="foad-stack foad-stack-sm">
@@ -106,7 +116,10 @@
             </x-filament::section>
 
             <div class="fi-section-ctn foad-stack">
-                <x-filament::section heading="Responses" :description="count($endpoint->responses).' documented responses'" secondary>
+                <x-filament::section heading="Responses" :description="count($endpoint->responses).' documented responses'"
+                                     collapsible
+                                     :collapsed="$endpoint->responses === []"
+                                     secondary>
                     @foreach ($endpoint->responses as $status => $response)
                         @php
                             $statusColor = match (true) {
@@ -119,13 +132,13 @@
 
                         <div class="foad-response-block">
                             <div class="foad-property-main">
+                                <x-filament::badge :color="$statusColor">
+                                    {{ $status }}
+                                </x-filament::badge>
                                 <h3 class="fi-section-header-heading">
                                     {{ $response['description'] ?: 'Response' }}
                                 </h3>
 
-                                <x-filament::badge :color="$statusColor" size="xs">
-                                    {{ $status }}
-                                </x-filament::badge>
                             </div>
 
                             @if ($response['content'] !== [])

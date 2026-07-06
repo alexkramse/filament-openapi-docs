@@ -4,7 +4,7 @@
 
 <{{ $hasChildren ? 'details' : 'div' }}
     class="foad-property-row {{ $hasChildren ? 'foad-property-row-collapsible' : '' }}"
-    style="--foad-depth: {{ $depth }};"
+    style="--foad-depth: {{ 0 }};"
 >
     @if ($hasChildren)
         <summary class="foad-property-summary">
@@ -15,8 +15,8 @@
 
             @if ($hasChildren)
                 <span class="foad-property-toggle" aria-hidden="true">
-                    @svg('heroicon-m-chevron-down', 'foad-property-toggle-icon foad-property-toggle-icon-collapsed')
-                    @svg('heroicon-m-chevron-up', 'foad-property-toggle-icon foad-property-toggle-icon-open')
+                    @svg('heroicon-m-chevron-down', 'fi-icon fi-size-md foad-property-toggle-icon foad-property-toggle-icon-collapsed')
+                    @svg('heroicon-m-chevron-up', 'fi-icon fi-size-md foad-property-toggle-icon foad-property-toggle-icon-open')
                 </span>
             @endif
 

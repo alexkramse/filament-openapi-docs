@@ -5,6 +5,10 @@
             top: 1.5rem;
             max-height: calc(100vh - 3rem);
             overflow-y: auto;
+
+            .fi-page-sub-navigation-sidebar{
+                row-gap: 0;
+            }
         }
 
         .foad-stack {
@@ -48,6 +52,11 @@
         .foad-response-block {
             display: grid;
             gap: .75rem;
+
+            .foad-property-main{
+                justify-content: start;
+            }
+
         }
 
         .foad-response-block + .foad-response-block {
@@ -62,12 +71,12 @@
         }
 
         .foad-property-row {
-            --foad-tree-indent: .75rem;
+            --foad-tree-indent: 2rem;
             border-inline-start: 2px solid color-mix(in oklab, currentColor 16%, transparent);
             display: grid;
             gap: .375rem;
             margin-inline-start: calc(var(--foad-depth, 0) * var(--foad-tree-indent));
-            padding: .5rem 0 .5rem var(--foad-tree-indent);
+            padding: .5rem 0 .5rem calc(var(--foad-tree-indent));
         }
 
         .foad-property-summary {
@@ -85,7 +94,7 @@
             align-items: center;
             display: flex;
             flex-wrap: wrap;
-            gap: .5rem;
+            gap: 1rem;
             justify-content: space-between;
         }
 
@@ -100,22 +109,33 @@
             display: inline-block;
             height: 1px;
             margin-inline-start: calc((var(--foad-tree-indent) * -1) - 2px);
-            width: calc(var(--foad-tree-indent) + .5rem);
+            width: calc(var(--foad-tree-indent) - .2rem);
+        }
+
+        .foad-property-summary {
+            .foad-property-connector {
+                width: calc(var(--foad-tree-indent) - 1.2rem);
+                margin-inline-start: calc((var(--foad-tree-indent) * -1));
+            }
+
+            .foad-property-name {
+                margin-left: 0;
+            }
         }
 
         .foad-property-toggle {
             align-items: center;
             display: inline-flex;
-            height: 1rem;
+            /*height: 1rem;*/
             justify-content: center;
-            margin-inline: -.0625rem .25rem;
+            /*margin-inline: -.0625rem .25rem;*/
             opacity: .55;
-            width: 1rem;
+            /*width: 1rem;*/
         }
 
         .foad-property-toggle-icon {
-            height: 1rem;
-            width: 1rem;
+            /*height: 1rem;*/
+            /*width: 1rem;*/
         }
 
         .foad-property-toggle-icon-open {
@@ -188,6 +208,14 @@
             :description="$info['description'] ?? null"
         >
             <x-slot name="heading">
+                @if ($servers !== [])
+                    @foreach ($servers as $server)
+                        <x-filament::badge color="gray">
+                            {{ $server }}
+                        </x-filament::badge>
+                    @endforeach
+                @endif
+
                 @if (filled($info['version'] ?? null))
                     <x-filament::badge color="gray">
                         v{{ $info['version'] }}
@@ -201,17 +229,6 @@
                 </x-filament::badge>
             </x-slot>
 
-            @if ($servers !== [])
-                <div class="foad-grid">
-                    @foreach ($servers as $server)
-                        <label class="fi-fo-field">
-                            <x-filament::section.description prefix-icon="heroicon-o-server">
-                                {{ $server }}
-                            </x-filament::section.description>
-                        </label>
-                    @endforeach
-                </div>
-            @endif
         </x-filament::section>
 
         @if ($selectedEndpoint)

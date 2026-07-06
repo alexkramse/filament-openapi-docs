@@ -4,10 +4,7 @@ use Dedoc\Scramble\CacheableGenerator;
 use Dedoc\Scramble\GeneratorConfig;
 use Dedoc\Scramble\Scramble;
 use Kramarenko\FilamentOpenApiDocs\Support\ScrambleSpecProvider;
-use Kramarenko\FilamentOpenApiDocs\Tests\TestCase;
 use Mockery as m;
-
-uses(TestCase::class);
 
 it('returns scramble renderer view and generated spec', function () {
     $generatorConfig = Scramble::getGeneratorConfig('default');

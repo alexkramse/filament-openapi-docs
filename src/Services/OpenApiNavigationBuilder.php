@@ -10,14 +10,15 @@ class OpenApiNavigationBuilder
 {
     /**
      * @param  array<string, array<int, Endpoint>>  $endpoints
-     * @return array<int, NavigationGroup>
+     * @return array<int, NavigationItem>
      */
-    public function build(array $endpoints): array
+    public function build(array $endpoints, ?string $selectedEndpointId = null): array
     {
         return collect($endpoints)
             ->map(fn (array $groupEndpoints, string $group): NavigationGroup => NavigationGroup::make($group)
+                ->label(fn ($label) => $group.' '.count($this->items($groupEndpoints, $selectedEndpointId)))
                 ->collapsible()
-                ->items($this->items($groupEndpoints)))
+                ->items($this->items($groupEndpoints, $selectedEndpointId)))
             ->values()
             ->all();
     }
@@ -26,14 +27,15 @@ class OpenApiNavigationBuilder
      * @param  array<int, Endpoint>  $endpoints
      * @return array<int, NavigationItem>
      */
-    private function items(array $endpoints): array
+    private function items(array $endpoints, ?string $selectedEndpointId): array
     {
         return collect($endpoints)
             ->map(fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($endpoint->path)
-                ->url("#{$endpoint->id}")
+                ->url('#')
+                ->isActiveWhen(fn (): bool => $endpoint->id === $selectedEndpointId)
                 ->badge($endpoint->method, $this->methodColor($endpoint->method))
                 ->extraAttributes([
-                    'x-on:click' => "selectedEndpoint = '{$endpoint->id}'",
+                    'wire:click.prevent' => "selectEndpoint('{$endpoint->id}')",
                 ]))
             ->values()
             ->all();
