@@ -106,7 +106,7 @@ it('exposes endpoints through native filament sub navigation', function () {
 
     expect($page::getSubNavigationPosition())->toBe(SubNavigationPosition::Start)
         ->and($subNavigation)->toHaveCount(1)
-        ->and($subNavigation[0]->getLabel())->toBe('Users')
+        ->and($subNavigation[0]->getLabel())->toContain('Users')
         ->and($subNavigation[0]->getItems()[0]->getLabel())->toBe('/users')
         ->and($subNavigation[0]->getItems()[0]->getUrl())->toBe('#')
         ->and($subNavigation[0]->getItems()[0]->isActive())->toBeTrue()

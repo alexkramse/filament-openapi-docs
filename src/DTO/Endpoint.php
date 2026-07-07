@@ -6,9 +6,9 @@ class Endpoint
 {
     /**
      * @param  array<int, string>  $tags
-     * @param  array<int, array{name: string, in: string, type: string, required: bool, description: ?string}>  $parameters
-     * @param  array<int, array{contentType: string, schema: array<string, mixed>}>  $requestBodies
-     * @param  array<string, array{description: ?string, content: array<string, array<string, mixed>>}>  $responses
+     * @param  array<int, array{name: string, in: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, default?: mixed}>  $parameters
+     * @param  array<int, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>  $requestBodies
+     * @param  array<string, array{description: ?string, content: array<string, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>}>  $responses
      * @param  array<int, array<string, mixed>>  $security
      */
     public function __construct(

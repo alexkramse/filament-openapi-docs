@@ -18,4 +18,9 @@ return [
     'layout' => [
         'full_width' => true,
     ],
+
+    'request_samples' => [
+        'enabled' => true,
+        'default_server' => null,
+    ],
 ];

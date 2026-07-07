@@ -1,0 +1,13 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "node bin/build.js"
+    },
+    "devDependencies": {
+        "@readme/httpsnippet": "^11.3.2",
+        "esbuild": "^0.25.0",
+        "prismjs": "^1.30.0",
+        "url": "^0.11.4"
+    }
+}

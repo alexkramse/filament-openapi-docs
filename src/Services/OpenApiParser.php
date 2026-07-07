@@ -62,7 +62,7 @@ class OpenApiParser
 
     /**
      * @param  array<string, mixed>  $operation
-     * @param  array<int, array{name: string, in: string, type: string, required: bool, description: ?string}>  $pathParameters
+     * @param  array<int, array{name: string, in: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, default?: mixed}>  $pathParameters
      */
     private function endpoint(string $method, string $path, array $operation, array $pathParameters): Endpoint
     {
@@ -92,7 +92,7 @@ class OpenApiParser
     }
 
     /**
-     * @return array<int, array{name: string, in: string, type: string, required: bool, description: ?string}>
+     * @return array<int, array{name: string, in: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, default?: mixed}>
      */
     private function parameters(mixed $parameters): array
     {
@@ -102,20 +102,28 @@ class OpenApiParser
 
         return collect($parameters)
             ->filter(fn (mixed $parameter): bool => is_array($parameter))
-            ->map(fn (array $parameter): array => [
-                'name' => (string) ($parameter['name'] ?? ''),
-                'in' => (string) ($parameter['in'] ?? ''),
-                'type' => $this->schemaLabel($parameter['schema'] ?? []),
-                'required' => (bool) ($parameter['required'] ?? false),
-                'description' => isset($parameter['description']) ? (string) $parameter['description'] : null,
-            ])
+            ->map(function (array $parameter): array {
+                $schema = is_array($parameter['schema'] ?? null) ? $parameter['schema'] : [];
+
+                return [
+                    'name' => (string) ($parameter['name'] ?? ''),
+                    'in' => (string) ($parameter['in'] ?? ''),
+                    'type' => $this->schemaLabel($schema),
+                    'required' => (bool) ($parameter['required'] ?? false),
+                    'description' => isset($parameter['description']) ? (string) $parameter['description'] : null,
+                    'schema' => $schema,
+                    ...(array_key_exists('example', $parameter) ? ['example' => $parameter['example']] : []),
+                    'examples' => is_array($parameter['examples'] ?? null) ? $parameter['examples'] : [],
+                    ...(array_key_exists('default', $schema) ? ['default' => $schema['default']] : []),
+                ];
+            })
             ->filter(fn (array $parameter): bool => $parameter['name'] !== '')
             ->values()
             ->all();
     }
 
     /**
-     * @return array<int, array{contentType: string, schema: array<string, mixed>}>
+     * @return array<int, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>
      */
     private function requestBodies(mixed $requestBody): array
     {
@@ -128,13 +136,15 @@ class OpenApiParser
             ->map(fn (array $content, string $contentType): array => [
                 'contentType' => $contentType,
                 'schema' => is_array($content['schema'] ?? null) ? $content['schema'] : [],
+                ...(array_key_exists('example', $content) ? ['example' => $content['example']] : []),
+                'examples' => is_array($content['examples'] ?? null) ? $content['examples'] : [],
             ])
             ->values()
             ->all();
     }
 
     /**
-     * @return array<string, array{description: ?string, content: array<string, array<string, mixed>>}>
+     * @return array<string, array{description: ?string, content: array<string, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>}>
      */
     private function responses(mixed $responses): array
     {
@@ -154,7 +164,7 @@ class OpenApiParser
     }
 
     /**
-     * @return array<string, array<string, mixed>>
+     * @return array<string, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>
      */
     private function responseContent(mixed $content): array
     {
@@ -165,7 +175,12 @@ class OpenApiParser
         return collect($content)
             ->filter(fn (mixed $mediaType): bool => is_array($mediaType))
             ->mapWithKeys(fn (array $mediaType, string $contentType): array => [
-                $contentType => is_array($mediaType['schema'] ?? null) ? $mediaType['schema'] : [],
+                $contentType => [
+                    'contentType' => $contentType,
+                    'schema' => is_array($mediaType['schema'] ?? null) ? $mediaType['schema'] : [],
+                    ...(array_key_exists('example', $mediaType) ? ['example' => $mediaType['example']] : []),
+                    'examples' => is_array($mediaType['examples'] ?? null) ? $mediaType['examples'] : [],
+                ],
             ])
             ->all();
     }

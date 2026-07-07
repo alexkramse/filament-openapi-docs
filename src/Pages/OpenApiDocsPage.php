@@ -29,6 +29,7 @@ class OpenApiDocsPage extends Page
      *     servers: array<int, string>,
      *     endpoints: array<string, array<int, Endpoint>>,
      *     endpointCount: int,
+     *     components: array<string, mixed>,
      * }|null
      */
     private ?array $openApiData = null;
@@ -107,6 +108,7 @@ class OpenApiDocsPage extends Page
      *     servers: array<int, string>,
      *     endpoints: array<string, array<int, Endpoint>>,
      *     endpointCount: int,
+     *     components: array<string, mixed>,
      * }
      */
     protected function getViewData(): array

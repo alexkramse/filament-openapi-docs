@@ -10,6 +10,9 @@
     $queryParameters = collect($endpoint->parameters)->where('in', 'query')->values();
     $pathParameters = collect($endpoint->parameters)->where('in', 'path')->values();
     $headerParameters = collect($endpoint->parameters)->where('in', 'header')->values();
+    $examplePresenter = app(\Kramarenko\FilamentOpenApiDocs\Services\ExamplePresenter::class);
+    $schemaComponents = $components ?? [];
+    $documentedServers = $servers ?? [];
 @endphp
 
 <div id="{{ $endpoint->id }}" style="scroll-margin-top: 1.5rem;">
@@ -25,15 +28,19 @@
                     {{ $endpoint->method }}
                 </x-filament::badge>
 
+                <x-filament::badge color="gray">
+                    {{ $endpoint->path }}
+                </x-filament::badge>
+
                 @if ($endpoint->deprecated)
                     <x-filament::badge color="danger">
                         Deprecated
                     </x-filament::badge>
                 @endif
 
-                @if ($servers !== [])
+                @if ($documentedServers !== [])
                     <div class="foad-grid">
-                        @foreach ($servers as $server)
+                        @foreach ($documentedServers as $server)
                             <label class="fi-fo-field">
                                 <x-filament::badge color="gray">
                                     {{ $server }}{{$endpoint->path}}
@@ -50,6 +57,12 @@
         <div class="foad-stack">
             <x-filament::section heading="Request" collapsible secondary>
                 <div class="foad-stack foad-stack-md">
+                    @include('filament-openapi-docs::components.request-snippet', [
+                        'endpoint' => $endpoint,
+                        'servers' => $documentedServers,
+                        'components' => $schemaComponents,
+                    ])
+
                     @if ($pathParameters->isNotEmpty())
                         <div class="foad-stack foad-stack-sm">
                             <h4 class="fi-section-header-heading">Path parameters</h4>
@@ -85,7 +98,13 @@
                                         <x-filament::badge color="gray" size="xs">{{ $body['contentType'] }}</x-filament::badge>
                                     </div>
 
-                                    @include('filament-openapi-docs::components.schema', ['schema' => $body['schema']])
+                                    @include('filament-openapi-docs::components.sample', [
+                                        'label' => 'Request Sample',
+                                        'contentType' => $body['contentType'],
+                                        'samples' => $examplePresenter->samples($body, $schemaComponents),
+                                    ])
+
+                                    @include('filament-openapi-docs::components.schema', ['schema' => $body['schema'], 'components' => $schemaComponents])
                                 </div>
                             @endforeach
                         </div>
@@ -143,14 +162,20 @@
 
                             @if ($response['content'] !== [])
                                 <div class="foad-stack foad-stack-sm">
-                                    @foreach ($response['content'] as $contentType => $schema)
+                                    @foreach ($response['content'] as $contentType => $mediaType)
                                         <div class="foad-stack foad-stack-sm">
                                             <div class="foad-inline-list foad-inline-list-sm">
                                                 <span class="foad-property-meta-label">Body</span>
                                                 <x-filament::badge color="gray" size="xs">{{ $contentType }}</x-filament::badge>
                                             </div>
 
-                                            @include('filament-openapi-docs::components.schema', ['schema' => $schema])
+                                            @include('filament-openapi-docs::components.sample', [
+                                                'label' => 'Response Example',
+                                                'contentType' => $contentType,
+                                                'samples' => $examplePresenter->samples($mediaType, $schemaComponents),
+                                            ])
+
+                                            @include('filament-openapi-docs::components.schema', ['schema' => $mediaType['schema'], 'components' => $schemaComponents])
                                         </div>
                                     @endforeach
                                 </div>
