@@ -242,6 +242,113 @@
             color: var(--danger-400);
         }
 
+        .foad-try-it {
+            border-bottom: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+        }
+
+        .foad-try-it-body {
+            display: grid;
+            gap: 1rem;
+            padding: .75rem;
+        }
+
+        .foad-try-it-url {
+            color: var(--gray-700);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: .75rem;
+            overflow-wrap: anywhere;
+        }
+
+        .dark .foad-try-it-url {
+            color: var(--gray-300);
+        }
+
+        .foad-try-field {
+            display: grid;
+            gap: .25rem;
+        }
+
+        .foad-try-input,
+        .foad-try-textarea {
+            background: white;
+            border: 1px solid color-mix(in oklab, currentColor 14%, transparent);
+            border-radius: .375rem;
+            color: var(--gray-950);
+            font-size: .8125rem;
+            width: 100%;
+        }
+
+        .foad-try-input {
+            min-height: 2rem;
+            padding: .375rem .5rem;
+        }
+
+        .foad-try-textarea {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            min-height: 10rem;
+            padding: .5rem;
+            resize: vertical;
+        }
+
+        .dark .foad-try-input,
+        .dark .foad-try-textarea {
+            background: color-mix(in oklab, var(--gray-950) 82%, transparent);
+            color: white;
+        }
+
+        .foad-send-request {
+            background: var(--primary-600);
+            border: 0;
+            border-radius: .375rem;
+            color: white;
+            cursor: pointer;
+            font-size: .8125rem;
+            font-weight: 600;
+            padding: .375rem .625rem;
+        }
+
+        .foad-send-request:disabled {
+            cursor: wait;
+            opacity: .7;
+        }
+
+        .foad-try-message {
+            padding: 0;
+        }
+
+        .foad-response-preview {
+            border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+            border-radius: .5rem;
+            display: grid;
+            gap: .5rem;
+            padding: .75rem;
+        }
+
+        .foad-response-status {
+            border-radius: 999px;
+            color: var(--danger-600);
+            font-size: .75rem;
+            font-weight: 700;
+        }
+
+        .foad-response-status[data-success="true"] {
+            color: var(--success-600);
+        }
+
+        .dark .foad-response-status {
+            color: var(--danger-400);
+        }
+
+        .dark .foad-response-status[data-success="true"] {
+            color: var(--success-400);
+        }
+
+        .foad-response-code {
+            border: 1px solid color-mix(in oklab, currentColor 10%, transparent);
+            border-radius: .375rem;
+            max-height: 22rem;
+        }
+
         .foad-sample-code {
             color: var(--gray-950);
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;

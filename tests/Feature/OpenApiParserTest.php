@@ -315,6 +315,9 @@ it('renders request samples and response examples for documented media types', f
     ])->render();
 
     expect($html)->toContain('Request Sample')
+        ->and($html)->toContain('Try it')
+        ->and($html)->toContain('Send API request')
+        ->and($html)->toContain('Format JSON')
         ->and($html)->toContain('Request sample')
         ->and($html)->toContain('x-data="requestSnippet')
         ->and($html)->toContain('x-load-src')
@@ -328,9 +331,61 @@ it('renders request samples and response examples for documented media types', f
         ->and($html)->toContain('&quot;id&quot;: 1')
         ->and($html)->toContain('foad-sample-select')
         ->and($html)->toContain('x-model="activeSample"')
+        ->and($html)->toContain('x-model="bodyText"')
+        ->and($html)->toContain('x-on:click="sendRequest()"')
         ->and($html)->toContain('foad-sample-code')
         ->and(file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php'))
         ->toContain('components.request-snippet');
+});
+
+it('renders editable try it controls for auth and query request data', function () {
+    $endpoint = new Endpoint(
+        id: 'get-users',
+        method: 'GET',
+        path: '/users',
+        summary: 'List users',
+        description: null,
+        tags: ['Users'],
+        parameters: [
+            [
+                'name' => 'include',
+                'in' => 'query',
+                'type' => 'string',
+                'required' => false,
+                'description' => null,
+                'schema' => ['type' => 'string', 'default' => 'profile'],
+                'examples' => [],
+            ],
+        ],
+        requestBodies: [],
+        responses: [],
+        security: [
+            ['bearerAuth' => []],
+        ],
+        deprecated: false,
+    );
+
+    $html = view('filament-openapi-docs::components.request-snippet', [
+        'endpoint' => $endpoint,
+        'servers' => ['https://api.example.test'],
+        'components' => [
+            'securitySchemes' => [
+                'bearerAuth' => [
+                    'type' => 'http',
+                    'scheme' => 'bearer',
+                ],
+            ],
+        ],
+    ])->render();
+
+    expect($html)->toContain('Try it')
+        ->and($html)->toContain('Send API request')
+        ->and($html)->toContain('Auth')
+        ->and($html)->toContain('Query parameters')
+        ->and($html)->toContain('queryParameters')
+        ->and($html)->toContain('authParameters')
+        ->and($html)->toContain('x-bind:placeholder="parameter.placeholder"')
+        ->and($html)->toContain('x-model="parameter.value"');
 });
 
 it('builds har request data for httpsnippet samples', function () {

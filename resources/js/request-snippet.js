@@ -69,11 +69,23 @@ export default function requestSnippet(config) {
         activeClient: null,
         copied: false,
         error: null,
+        bodyText: '',
+        bodyJsonError: null,
+        queryParameters: [],
+        authParameters: [],
+        response: null,
+        sendError: null,
+        sending: false,
         requests: config.requests ?? [],
         targets: targetOptions,
 
         init() {
             this.activeClient = this.selectedTarget?.defaultClient ?? this.selectedTarget?.clients[0]?.key ?? null;
+            this.resetRequestState();
+
+            this.$watch('activeRequest', () => {
+                this.resetRequestState();
+            });
         },
 
         get selectedRequest() {
@@ -88,6 +100,30 @@ export default function requestSnippet(config) {
             return this.selectedTarget?.clients ?? [];
         },
 
+        get currentHar() {
+            return this.buildHarRequest(true);
+        },
+
+        get hasQueryParameters() {
+            return this.queryParameters.length > 0;
+        },
+
+        get hasAuthParameters() {
+            return this.authParameters.length > 0;
+        },
+
+        get hasBody() {
+            return Boolean(this.selectedRequest?.har?.postData);
+        },
+
+        get hasJsonBody() {
+            return this.selectedRequest?.har?.postData?.mimeType === 'application/json';
+        },
+
+        get hasRequestControls() {
+            return this.hasQueryParameters || this.hasAuthParameters || this.hasBody;
+        },
+
         get code() {
             this.error = null;
 
@@ -96,7 +132,7 @@ export default function requestSnippet(config) {
             }
 
             try {
-                const snippet = new HTTPSnippet(this.selectedRequest.har, {
+                const snippet = new HTTPSnippet(this.currentHar, {
                     harIsAlreadyEncoded: true,
                 });
                 const generated = snippet.convert(this.activeTarget, this.activeClient, {
@@ -130,6 +166,156 @@ export default function requestSnippet(config) {
             this.activeClient = this.selectedTarget?.defaultClient ?? this.selectedClients[0]?.key ?? null;
         },
 
+        resetRequestState() {
+            const har = this.selectedRequest?.har;
+
+            this.response = null;
+            this.sendError = null;
+            this.bodyJsonError = null;
+
+            if (! har) {
+                this.queryParameters = [];
+                this.authParameters = [];
+                this.bodyText = '';
+
+                return;
+            }
+
+            const auth = collectAuthParameters(har);
+            const authQueryNames = auth
+                .filter((parameter) => parameter.location === 'query')
+                .map((parameter) => parameter.name);
+
+            this.authParameters = auth;
+            this.queryParameters = (har.queryString ?? [])
+                .filter((parameter) => ! authQueryNames.includes(parameter.name))
+                .map((parameter) => ({
+                    name: parameter.name,
+                    value: parameter.value ?? '',
+                }));
+            this.bodyText = har.postData?.text ?? '';
+        },
+
+        buildHarRequest(includePlaceholders = true) {
+            const har = structuredCloneSafe(this.selectedRequest?.har ?? {});
+            const queryString = this.queryParameters
+                .filter((parameter) => parameter.name && String(parameter.value).length > 0)
+                .map((parameter) => ({
+                    name: parameter.name,
+                    value: String(parameter.value),
+                }));
+
+            for (const parameter of this.authParameters.filter((item) => item.location === 'query')) {
+                const value = parameter.value || (includePlaceholders ? parameter.placeholder : '');
+
+                if (value) {
+                    queryString.push({
+                        name: parameter.name,
+                        value,
+                    });
+                }
+            }
+
+            har.queryString = queryString;
+            har.url = buildUrlWithQueryString(har.url, queryString);
+
+            const authHeaderNames = this.authParameters
+                .filter((parameter) => parameter.location === 'header')
+                .map((parameter) => parameter.name.toLowerCase());
+
+            const headers = (har.headers ?? [])
+                .filter((header) => ! authHeaderNames.includes(header.name.toLowerCase()))
+                .map((header) => ({
+                    name: header.name,
+                    value: header.value ?? '',
+                }));
+
+            for (const parameter of this.authParameters.filter((item) => item.location === 'header')) {
+                const authValue = parameter.value || (includePlaceholders ? parameter.placeholder : '');
+
+                if (authValue) {
+                    headers.push({
+                        name: parameter.name,
+                        value: `${parameter.prefix ?? ''}${authValue}`,
+                    });
+                }
+            }
+
+            har.headers = headers;
+
+            if (har.postData) {
+                har.postData = {
+                    ...har.postData,
+                    text: this.bodyText,
+                };
+            }
+
+            return har;
+        },
+
+        async sendRequest() {
+            this.response = null;
+            this.sendError = null;
+            this.bodyJsonError = null;
+
+            if (this.hasJsonBody && this.bodyText.trim() !== '') {
+                try {
+                    JSON.parse(this.bodyText);
+                } catch (error) {
+                    this.bodyJsonError = 'Body must be valid JSON before sending.';
+
+                    return;
+                }
+            }
+
+            const har = this.buildHarRequest(false);
+            const headers = Object.fromEntries(
+                (har.headers ?? [])
+                    .filter((header) => header.value && ! isPlaceholderValue(header.value))
+                    .map((header) => [header.name, header.value]),
+            );
+            const method = (har.method ?? 'GET').toUpperCase();
+
+            this.sending = true;
+
+            try {
+                const response = await fetch(har.url, {
+                    method,
+                    headers,
+                    credentials: 'same-origin',
+                    body: ['GET', 'HEAD'].includes(method) ? undefined : har.postData?.text,
+                });
+                const contentType = response.headers.get('Content-Type') ?? '';
+                const body = await response.text();
+
+                this.response = {
+                    ok: response.ok,
+                    status: response.status,
+                    statusText: response.statusText,
+                    contentType,
+                    body: formatResponseBody(body, contentType),
+                };
+            } catch (error) {
+                this.sendError = error instanceof Error ? error.message : 'Unable to send this request.';
+            } finally {
+                this.sending = false;
+            }
+        },
+
+        formatJsonBody() {
+            this.bodyJsonError = null;
+
+            if (! this.bodyText.trim()) {
+                return;
+            }
+
+            try {
+                this.bodyText = JSON.stringify(JSON.parse(this.bodyText), null, 2);
+            } catch (error) {
+                this.bodyJsonError = 'Body must be valid JSON before formatting.';
+            }
+        },
+
         async copy() {
             const code = this.code;
 
@@ -145,6 +331,116 @@ export default function requestSnippet(config) {
         },
     };
 };
+
+function collectAuthParameters(har) {
+    const auth = [];
+
+    for (const header of har.headers ?? []) {
+        const value = header.value ?? '';
+
+        if (header.name.toLowerCase() === 'authorization') {
+            if (value.toLowerCase().startsWith('bearer ')) {
+                auth.push({
+                    location: 'header',
+                    name: header.name,
+                    label: 'Bearer token',
+                    prefix: 'Bearer ',
+                    placeholder: '<token>',
+                    value: placeholderToEmpty(value.slice(7)),
+                });
+
+                continue;
+            }
+
+            if (value.toLowerCase().startsWith('basic ')) {
+                auth.push({
+                    location: 'header',
+                    name: header.name,
+                    label: 'Basic credentials',
+                    prefix: 'Basic ',
+                    placeholder: '<credentials>',
+                    value: placeholderToEmpty(value.slice(6)),
+                });
+
+                continue;
+            }
+
+            auth.push({
+                location: 'header',
+                name: header.name,
+                label: 'Authorization',
+                prefix: '',
+                placeholder: '<credentials>',
+                value: placeholderToEmpty(value),
+            });
+
+            continue;
+        }
+
+        if (value === '<api-key>') {
+            auth.push({
+                location: 'header',
+                name: header.name,
+                label: header.name,
+                prefix: '',
+                placeholder: '<api-key>',
+                value: '',
+            });
+        }
+    }
+
+    for (const parameter of har.queryString ?? []) {
+        if (parameter.value === '<api-key>') {
+            auth.push({
+                location: 'query',
+                name: parameter.name,
+                label: parameter.name,
+                prefix: '',
+                placeholder: '<api-key>',
+                value: '',
+            });
+        }
+    }
+
+    return auth;
+}
+
+function buildUrlWithQueryString(url, queryString) {
+    const parsedUrl = new URL(url, window.location.origin);
+    const searchParameters = new URLSearchParams();
+
+    for (const parameter of queryString) {
+        searchParameters.append(parameter.name, parameter.value);
+    }
+
+    parsedUrl.search = searchParameters.toString();
+
+    return parsedUrl.href;
+}
+
+function placeholderToEmpty(value) {
+    return isPlaceholderValue(value) ? '' : value;
+}
+
+function isPlaceholderValue(value) {
+    return /^<[^>]+>$/.test(String(value).trim());
+}
+
+function formatResponseBody(body, contentType) {
+    if (! contentType.includes('json') || ! body) {
+        return body;
+    }
+
+    try {
+        return JSON.stringify(JSON.parse(body), null, 2);
+    } catch (error) {
+        return body;
+    }
+}
+
+function structuredCloneSafe(value) {
+    return JSON.parse(JSON.stringify(value));
+}
 
 function escapeHtml(value) {
     return value
