@@ -19,6 +19,16 @@ function requestSnippetBladeSources(): string
         ->implode("\n");
 }
 
+function endpointBladeSources(): string
+{
+    return collect([
+        'components/endpoint.blade.php',
+        'components/endpoint/responses.blade.php',
+    ])
+        ->map(fn (string $path): string => file_get_contents(__DIR__.'/../../resources/views/'.$path))
+        ->implode("\n");
+}
+
 it('parses openapi paths into grouped endpoints', function () {
     $parsed = app(OpenApiParser::class)->parse([
         'info' => [
@@ -160,6 +170,8 @@ it('renders native endpoint markup without the scramble view include', function 
         ->and($html)->toContain('Responses')
         ->and($html)->toContain('fi-section')
         ->and($html)->toContain('fi-badge')
+        ->and(endpointBladeSources())->toContain('components.endpoint.responses')
+        ->and(endpointBladeSources())->toContain('components.sample')
         ->and($html)->not->toContain('scramble::docs');
 });
 
