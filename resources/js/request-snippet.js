@@ -89,6 +89,12 @@ export default function requestSnippet(config) {
             this.$watch('activeRequest', () => {
                 this.resetRequestState();
             });
+
+            this.$watch('developerMode', (enabled) => {
+                if (! enabled) {
+                    this.resetDeveloperModeState();
+                }
+            });
         },
 
         get selectedRequest() {
@@ -201,6 +207,11 @@ export default function requestSnippet(config) {
 
         removeQueryParameter(index) {
             this.queryParameters.splice(index, 1);
+        },
+
+        resetDeveloperModeState() {
+            this.headerParameters = this.headerParameters.filter((parameter) => ! parameter.removable);
+            this.queryParameters = this.queryParameters.filter((parameter) => ! parameter.developerOnly);
         },
 
         resetRequestState() {
