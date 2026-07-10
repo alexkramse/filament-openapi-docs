@@ -5,6 +5,20 @@ use Kramarenko\FilamentOpenApiDocs\Services\OpenApiNavigationBuilder;
 use Kramarenko\FilamentOpenApiDocs\Services\OpenApiParser;
 use Kramarenko\FilamentOpenApiDocs\Services\RequestSnippetPresenter;
 
+function requestSnippetBladeSources(): string
+{
+    return collect([
+        'components/request-snippet.blade.php',
+        'components/request-snippet/auth.blade.php',
+        'components/request-snippet/headers.blade.php',
+        'components/request-snippet/path-parameters.blade.php',
+        'components/request-snippet/query-parameters.blade.php',
+        'components/request-snippet/body.blade.php',
+    ])
+        ->map(fn (string $path): string => file_get_contents(__DIR__.'/../../resources/views/'.$path))
+        ->implode("\n");
+}
+
 it('parses openapi paths into grouped endpoints', function () {
     $parsed = app(OpenApiParser::class)->parse([
         'info' => [
@@ -361,6 +375,7 @@ it('renders request samples and response examples for documented media types', f
     ])->render();
 
     $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
+    $requestSnippetSources = requestSnippetBladeSources();
 
     expect($html)->toContain('Request Sample')
         ->and($html)->toContain('Try it')
@@ -382,12 +397,17 @@ it('renders request samples and response examples for documented media types', f
         ->and($html)->toContain('x-model="bodyText"')
         ->and($html)->toContain('x-on:click="sendRequest()"')
         ->and($html)->toContain('foad-sample-code')
-        ->and($requestSnippetView)->toContain('<x-filament::button')
-        ->and($requestSnippetView)->toContain('<x-filament::input.wrapper')
-        ->and($requestSnippetView)->toContain('<x-filament::input.select')
-        ->and($requestSnippetView)->not->toContain('<button')
-        ->and($requestSnippetView)->not->toContain('<input')
-        ->and($requestSnippetView)->not->toContain('<select')
+        ->and($requestSnippetView)->toContain('components.request-snippet.auth')
+        ->and($requestSnippetView)->toContain('components.request-snippet.headers')
+        ->and($requestSnippetView)->toContain('components.request-snippet.path-parameters')
+        ->and($requestSnippetView)->toContain('components.request-snippet.query-parameters')
+        ->and($requestSnippetView)->toContain('components.request-snippet.body')
+        ->and($requestSnippetSources)->toContain('<x-filament::button')
+        ->and($requestSnippetSources)->toContain('<x-filament::input.wrapper')
+        ->and($requestSnippetSources)->toContain('<x-filament::input.select')
+        ->and($requestSnippetSources)->not->toContain('<button')
+        ->and($requestSnippetSources)->not->toContain('<input')
+        ->and($requestSnippetSources)->not->toContain('<select')
         ->and(file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php'))
         ->toContain('components.request-snippet');
 });
@@ -451,7 +471,7 @@ it('renders editable try it controls for auth and query request data', function 
         ],
     ])->render();
 
-    $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
+    $requestSnippetSources = requestSnippetBladeSources();
 
     expect($html)->toContain('Try it')
         ->and($html)->toContain('Send API request')
@@ -476,15 +496,15 @@ it('renders editable try it controls for auth and query request data', function 
         ->and($html)->toContain('x-on:click="removeQueryParameter(index)"')
         ->and($html)->toContain('x-bind:placeholder="parameter.placeholder"')
         ->and($html)->toContain('x-model="parameter.value"')
-        ->and($requestSnippetView)->toContain('<x-filament::input.checkbox')
-        ->and($requestSnippetView)->toContain('<x-filament::input type="text"')
+        ->and($requestSnippetSources)->toContain('<x-filament::input.checkbox')
+        ->and($requestSnippetSources)->toContain('<x-filament::input type="text"')
         ->and(strpos($html, 'Headers'))->toBeLessThan(strpos($html, 'Path parameters'))
         ->and(strpos($html, 'Path parameters'))->toBeLessThan(strpos($html, 'Query parameters'));
 });
 
 it('loads generated default headers into disabled request header controls', function () {
     $script = file_get_contents(__DIR__.'/../../resources/js/request-snippet.js');
-    $view = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
+    $view = requestSnippetBladeSources();
 
     expect($script)->toContain('disabled: isDefaultHeader(header.name)')
         ->and($script)->toContain("['accept', 'content-type']")
