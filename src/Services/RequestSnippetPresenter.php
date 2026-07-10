@@ -8,6 +8,15 @@ use Kramarenko\FilamentOpenApiDocs\DTO\Endpoint;
 
 class RequestSnippetPresenter
 {
+    /**
+     * @var array<int, string>
+     */
+    private const array IGNORED_HEADER_PARAMETERS = [
+        'accept',
+        'authorization',
+        'content-type',
+    ];
+
     public function __construct(
         private readonly ExamplePresenter $examplePresenter,
     ) {}
@@ -55,6 +64,10 @@ class RequestSnippetPresenter
         $headers = $this->parameters($endpoint, $components, 'header');
         $cookies = [];
 
+        if ($responseContentType = $this->responseContentType($endpoint)) {
+            $headers = $this->replaceHeader($headers, 'Accept', $responseContentType);
+        }
+
         $this->applySecurity($endpoint, $components, $headers, $queryString, $cookies);
 
         if (is_array($body)) {
@@ -88,12 +101,36 @@ class RequestSnippetPresenter
     {
         return collect($endpoint->parameters)
             ->where('in', $location)
+            ->reject(fn (array $parameter): bool => $this->isIgnoredHeaderParameter($parameter, $location))
             ->map(fn (array $parameter): array => [
                 'name' => $parameter['name'],
                 'value' => $this->stringValue($this->parameterValue($parameter, $components)),
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameter
+     */
+    private function isIgnoredHeaderParameter(array $parameter, string $location): bool
+    {
+        return $location === 'header'
+            && is_string($parameter['name'] ?? null)
+            && in_array(Str::lower($parameter['name']), self::IGNORED_HEADER_PARAMETERS, true);
+    }
+
+    private function responseContentType(Endpoint $endpoint): ?string
+    {
+        $contentTypes = collect($endpoint->responses)
+            ->filter(fn (array $response, string $status): bool => Str::startsWith($status, '2') && $response['content'] !== [])
+            ->pluck('content')
+            ->whenEmpty(fn ($responses) => collect($endpoint->responses)->pluck('content'))
+            ->flatMap(fn (array $content): array => array_keys($content))
+            ->values();
+
+        return $contentTypes->first(fn (string $contentType): bool => Str::contains($contentType, ['json', '+json']))
+            ?? $contentTypes->first();
     }
 
     /**

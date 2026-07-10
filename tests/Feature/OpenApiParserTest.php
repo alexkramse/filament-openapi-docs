@@ -455,6 +455,55 @@ it('inherits global openapi security from scramble authenticated routes', functi
         ]);
 });
 
+it('builds accept header from response content for get request samples', function () {
+    $endpoint = new Endpoint(
+        id: 'get-users',
+        method: 'GET',
+        path: '/users',
+        summary: 'List users',
+        description: null,
+        tags: ['Users'],
+        parameters: [
+            [
+                'name' => 'Accept',
+                'in' => 'header',
+                'type' => 'string',
+                'required' => false,
+                'description' => null,
+                'schema' => ['type' => 'string'],
+                'example' => 'text/plain',
+                'examples' => [],
+            ],
+        ],
+        requestBodies: [],
+        responses: [
+            '200' => [
+                'description' => 'OK',
+                'content' => [
+                    'application/json' => [
+                        'contentType' => 'application/json',
+                        'schema' => [
+                            'type' => 'object',
+                        ],
+                        'examples' => [],
+                    ],
+                ],
+            ],
+        ],
+        security: [],
+        deprecated: false,
+    );
+
+    $har = app(RequestSnippetPresenter::class)
+        ->present($endpoint, ['https://api.example.test'], [])['requests'][0]['har'];
+
+    expect($har['method'])->toBe('GET')
+        ->and($har['headers'])->toContain(['name' => 'Accept', 'value' => 'application/json'])
+        ->and($har['headers'])->not->toContain(['name' => 'Accept', 'value' => 'text/plain'])
+        ->and($har['headers'])->not->toContain(['name' => 'Content-Type', 'value' => 'application/json'])
+        ->and($har)->not->toHaveKey('postData');
+});
+
 it('builds har request data for httpsnippet samples', function () {
     $endpoint = new Endpoint(
         id: 'post-usersuser',
@@ -490,6 +539,36 @@ it('builds har request data for httpsnippet samples', function () {
                 'description' => null,
                 'schema' => ['type' => 'string'],
                 'example' => 'trace-1',
+                'examples' => [],
+            ],
+            [
+                'name' => 'Accept',
+                'in' => 'header',
+                'type' => 'string',
+                'required' => false,
+                'description' => null,
+                'schema' => ['type' => 'string'],
+                'example' => 'application/json',
+                'examples' => [],
+            ],
+            [
+                'name' => 'Authorization',
+                'in' => 'header',
+                'type' => 'string',
+                'required' => false,
+                'description' => null,
+                'schema' => ['type' => 'string'],
+                'example' => 'Token documented-header',
+                'examples' => [],
+            ],
+            [
+                'name' => 'Content-Type',
+                'in' => 'header',
+                'type' => 'string',
+                'required' => false,
+                'description' => null,
+                'schema' => ['type' => 'string'],
+                'example' => 'text/plain',
                 'examples' => [],
             ],
         ],
@@ -537,6 +616,9 @@ it('builds har request data for httpsnippet samples', function () {
         ->and($har['headers'])->toContain(['name' => 'Authorization', 'value' => 'Bearer <token>'])
         ->and($har['headers'])->toContain(['name' => 'X-Api-Key', 'value' => '<api-key>'])
         ->and($har['headers'])->toContain(['name' => 'Content-Type', 'value' => 'application/json'])
+        ->and($har['headers'])->not->toContain(['name' => 'Accept', 'value' => 'application/json'])
+        ->and($har['headers'])->not->toContain(['name' => 'Authorization', 'value' => 'Token documented-header'])
+        ->and($har['headers'])->not->toContain(['name' => 'Content-Type', 'value' => 'text/plain'])
         ->and($har['postData']['mimeType'])->toBe('application/json')
         ->and($har['postData']['text'])->toContain('"name": "Jane Doe"');
 });
