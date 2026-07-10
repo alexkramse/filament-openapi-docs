@@ -462,6 +462,17 @@ it('renders editable try it controls for auth and query request data', function 
         ->and(strpos($html, 'Path parameters'))->toBeLessThan(strpos($html, 'Query parameters'));
 });
 
+it('loads generated default headers into disabled request header controls', function () {
+    $script = file_get_contents(__DIR__.'/../../resources/js/request-snippet.js');
+    $view = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
+
+    expect($script)->toContain("disabled: isDefaultHeader(header.name)")
+        ->and($script)->toContain("['accept', 'content-type']")
+        ->and($script)->not->toContain("header.name.toLowerCase() !== 'accept'")
+        ->and($script)->not->toContain("header.name.toLowerCase() !== 'content-type'")
+        ->and($view)->toContain('x-bind:disabled="parameter.disabled"');
+});
+
 it('inherits global openapi security from scramble authenticated routes', function () {
     $parsed = app(OpenApiParser::class)->parse([
         'info' => [

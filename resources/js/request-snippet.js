@@ -180,6 +180,7 @@ export default function requestSnippet(config) {
             this.headerParameters.push({
                 name: '',
                 value: '',
+                disabled: false,
                 removable: true,
             });
         },
@@ -457,12 +458,16 @@ function collectHeaderParameters(har, authParameters) {
 
     return (har.headers ?? [])
         .filter((header) => ! authHeaderNames.includes(header.name.toLowerCase()))
-        .filter((header) => header.name.toLowerCase() !== 'content-type')
         .map((header) => ({
             name: header.name,
             value: header.value ?? '',
+            disabled: isDefaultHeader(header.name),
             removable: false,
         }));
+}
+
+function isDefaultHeader(name) {
+    return ['accept', 'content-type'].includes(name.toLowerCase());
 }
 
 function buildUrlWithQueryString(url, queryString) {

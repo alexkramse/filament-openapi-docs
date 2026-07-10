@@ -59,12 +59,12 @@
                                         <div class="foad-header-row">
                                             <label class="foad-try-field">
                                                 <span class="foad-property-meta-label">Name</span>
-                                                <input class="foad-try-input" type="text" x-model="parameter.name" />
+                                                <input class="foad-try-input" type="text" x-model="parameter.name" x-bind:disabled="parameter.disabled" />
                                             </label>
 
                                             <label class="foad-try-field">
                                                 <span class="foad-property-meta-label">Value</span>
-                                                <input class="foad-try-input" type="text" x-model="parameter.value" />
+                                                <input class="foad-try-input" type="text" x-model="parameter.value" x-bind:disabled="parameter.disabled" />
                                             </label>
 
                                             <button
