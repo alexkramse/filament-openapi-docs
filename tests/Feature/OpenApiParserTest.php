@@ -200,6 +200,52 @@ it('renders schemas as structured fields instead of raw json', function () {
         ->and($html)->not->toContain('&quot;properties&quot;');
 });
 
+it('renders path parameters inside try it after headers and before query parameters', function () {
+    $endpoint = new Endpoint(
+        id: 'get-usersuser',
+        method: 'GET',
+        path: '/users/{user}',
+        summary: 'Show user',
+        description: null,
+        tags: ['Users'],
+        parameters: [
+            [
+                'name' => 'user',
+                'in' => 'path',
+                'type' => 'integer',
+                'required' => true,
+                'description' => null,
+                'schema' => ['type' => 'integer', 'example' => 5],
+                'examples' => [],
+            ],
+            [
+                'name' => 'include',
+                'in' => 'query',
+                'type' => 'string',
+                'required' => false,
+                'description' => null,
+                'schema' => ['type' => 'string', 'default' => 'profile'],
+                'examples' => [],
+            ],
+        ],
+        requestBodies: [],
+        responses: [],
+        security: [],
+        deprecated: false,
+    );
+
+    $html = view('filament-openapi-docs::components.endpoint', [
+        'endpoint' => $endpoint,
+    ])->render();
+
+    expect($html)->toContain('Try it')
+        ->and($html)->toContain('Path parameters')
+        ->and($html)->toContain('Query parameters')
+        ->and(strpos($html, 'Try it'))->toBeLessThan(strpos($html, 'Path parameters'))
+        ->and(strpos($html, 'Headers'))->toBeLessThan(strpos($html, 'Path parameters'))
+        ->and(strpos($html, 'Path parameters'))->toBeLessThan(strpos($html, 'Query parameters'));
+});
+
 it('builds endpoint navigation for native filament sub navigation', function () {
     $endpoint = new Endpoint(
         id: 'get-users',
@@ -342,11 +388,20 @@ it('renders editable try it controls for auth and query request data', function 
     $endpoint = new Endpoint(
         id: 'get-users',
         method: 'GET',
-        path: '/users',
+        path: '/users/{user}',
         summary: 'List users',
         description: null,
         tags: ['Users'],
         parameters: [
+            [
+                'name' => 'user',
+                'in' => 'path',
+                'type' => 'integer',
+                'required' => true,
+                'description' => null,
+                'schema' => ['type' => 'integer', 'example' => 5],
+                'examples' => [],
+            ],
             [
                 'name' => 'include',
                 'in' => 'query',
@@ -393,14 +448,18 @@ it('renders editable try it controls for auth and query request data', function 
         ->and($html)->toContain('Auth')
         ->and($html)->toContain('Headers')
         ->and($html)->toContain('Add header')
+        ->and($html)->toContain('Path parameters')
         ->and($html)->toContain('Query parameters')
+        ->and($html)->toContain('pathParameters')
         ->and($html)->toContain('headerParameters')
         ->and($html)->toContain('queryParameters')
         ->and($html)->toContain('authParameters')
         ->and($html)->toContain('x-on:click="addHeader()"')
         ->and($html)->toContain('x-on:click="removeHeader(index)"')
         ->and($html)->toContain('x-bind:placeholder="parameter.placeholder"')
-        ->and($html)->toContain('x-model="parameter.value"');
+        ->and($html)->toContain('x-model="parameter.value"')
+        ->and(strpos($html, 'Headers'))->toBeLessThan(strpos($html, 'Path parameters'))
+        ->and(strpos($html, 'Path parameters'))->toBeLessThan(strpos($html, 'Query parameters'));
 });
 
 it('inherits global openapi security from scramble authenticated routes', function () {

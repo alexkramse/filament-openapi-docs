@@ -63,18 +63,6 @@
                         'components' => $schemaComponents,
                     ])
 
-                    @if ($pathParameters->isNotEmpty())
-                        <div class="foad-stack foad-stack-sm">
-                            <h4 class="fi-section-header-heading">Path parameters</h4>
-
-                            <div class="foad-grid">
-                                @foreach ($pathParameters as $parameter)
-                                    @include('filament-openapi-docs::components.parameter-field', ['parameter' => $parameter])
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-
                     @if ($headerParameters->isNotEmpty())
                         <div class="foad-stack foad-stack-sm">
                             <h4 class="fi-section-header-heading">Headers</h4>

@@ -81,6 +81,21 @@
                             </template>
                         </div>
 
+                        <template x-if="hasPathParameters">
+                            <div class="foad-stack foad-stack-sm">
+                                <h4 class="fi-section-header-heading">Path parameters</h4>
+
+                                <div class="foad-grid">
+                                    <template x-for="parameter in pathParameters" x-bind:key="parameter.name">
+                                        <label class="foad-try-field">
+                                            <span class="foad-property-meta-label" x-text="parameter.name"></span>
+                                            <input class="foad-try-input" type="text" x-model="parameter.value" />
+                                        </label>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
                         <template x-if="hasQueryParameters">
                             <div class="foad-stack foad-stack-sm">
                                 <h4 class="fi-section-header-heading">Query parameters</h4>

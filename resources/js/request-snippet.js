@@ -71,6 +71,7 @@ export default function requestSnippet(config) {
         error: null,
         bodyText: '',
         bodyJsonError: null,
+        pathParameters: [],
         queryParameters: [],
         headerParameters: [],
         authParameters: [],
@@ -109,6 +110,10 @@ export default function requestSnippet(config) {
             return this.queryParameters.length > 0;
         },
 
+        get hasPathParameters() {
+            return this.pathParameters.length > 0;
+        },
+
         get hasAuthParameters() {
             return this.authParameters.length > 0;
         },
@@ -126,7 +131,7 @@ export default function requestSnippet(config) {
         },
 
         get hasRequestControls() {
-            return this.hasQueryParameters || this.hasHeaderParameters || this.hasAuthParameters || this.hasBody;
+            return this.hasPathParameters || this.hasQueryParameters || this.hasHeaderParameters || this.hasAuthParameters || this.hasBody;
         },
 
         get code() {
@@ -191,6 +196,7 @@ export default function requestSnippet(config) {
             this.bodyJsonError = null;
 
             if (! har) {
+                this.pathParameters = [];
                 this.queryParameters = [];
                 this.headerParameters = [];
                 this.authParameters = [];
@@ -206,6 +212,10 @@ export default function requestSnippet(config) {
 
             this.authParameters = auth;
             this.headerParameters = collectHeaderParameters(har, auth);
+            this.pathParameters = (this.selectedRequest?.pathParameters ?? []).map((parameter) => ({
+                name: parameter.name,
+                value: parameter.value ?? '',
+            }));
             this.queryParameters = (har.queryString ?? [])
                 .filter((parameter) => ! authQueryNames.includes(parameter.name))
                 .map((parameter) => ({
@@ -236,7 +246,10 @@ export default function requestSnippet(config) {
             }
 
             har.queryString = queryString;
-            har.url = buildUrlWithQueryString(har.url, queryString);
+            har.url = buildUrlWithQueryString(
+                buildUrlWithPathParameters(this.selectedRequest?.urlTemplate ?? har.url, this.pathParameters),
+                queryString,
+            );
 
             const authHeaderNames = this.authParameters
                 .filter((parameter) => parameter.location === 'header')
@@ -463,6 +476,20 @@ function buildUrlWithQueryString(url, queryString) {
     parsedUrl.search = searchParameters.toString();
 
     return parsedUrl.href;
+}
+
+function buildUrlWithPathParameters(url, pathParameters) {
+    return pathParameters.reduce(
+        (currentUrl, parameter) => currentUrl.replace(
+            new RegExp(`\\{${escapeRegExp(parameter.name)}\\}`, 'g'),
+            encodeURIComponent(String(parameter.value ?? '')),
+        ),
+        url,
+    );
+}
+
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function placeholderToEmpty(value) {

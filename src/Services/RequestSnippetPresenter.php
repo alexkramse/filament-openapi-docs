@@ -24,7 +24,7 @@ class RequestSnippetPresenter
     /**
      * @param  array<int, string>  $servers
      * @param  array<string, mixed>  $components
-     * @return array{requests: array<int, array{key: string, label: string, har: array<string, mixed>}>}
+     * @return array{requests: array<int, array{key: string, label: string, urlTemplate: string, pathParameters: array<int, array{name: string, value: string}>, har: array<string, mixed>}>}
      */
     public function present(Endpoint $endpoint, array $servers = [], array $components = []): array
     {
@@ -42,6 +42,8 @@ class RequestSnippetPresenter
                 $requests[] = [
                     'key' => "request-{$bodyIndex}-{$sampleIndex}",
                     'label' => $this->label($body, $sample),
+                    'urlTemplate' => $this->urlTemplate($endpoint, $servers),
+                    'pathParameters' => $this->parameters($endpoint, $components, 'path'),
                     'har' => $this->har($endpoint, $servers, $components, $body, $sample),
                 ];
             }
@@ -159,6 +161,14 @@ class RequestSnippetPresenter
             '&',
             PHP_QUERY_RFC3986,
         );
+    }
+
+    /**
+     * @param  array<int, string>  $servers
+     */
+    private function urlTemplate(Endpoint $endpoint, array $servers): string
+    {
+        return rtrim($this->server($servers), '/').'/'.ltrim($endpoint->path, '/');
     }
 
     /**
