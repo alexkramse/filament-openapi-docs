@@ -21,16 +21,12 @@
 
                 <div class="foad-inline-list foad-inline-list-sm foad-inline-list-end">
                     <label class="foad-developer-mode fi-fo-toggle">
-                        <input class="foad-developer-mode-input" type="checkbox" x-model="developerMode" />
+                        <x-filament::input.checkbox class="foad-developer-mode-input" x-model="developerMode" />
                         <span class="foad-developer-mode-switch" aria-hidden="true">
                             <span class="foad-developer-mode-knob"></span>
                         </span>
                         <span class="fi-fo-field-label-content">Developer mode</span>
                     </label>
-
-                    <button type="button" class="foad-send-request" x-on:click="sendRequest()" x-bind:disabled="sending">
-                        <span x-text="sending ? 'Sending' : 'Send API request'"></span>
-                    </button>
                 </div>
             </div>
 
@@ -45,12 +41,13 @@
                                     <template x-for="parameter in authParameters" x-bind:key="`${parameter.location}-${parameter.name}`">
                                         <label class="foad-try-field">
                                             <span class="foad-property-meta-label" x-text="parameter.label"></span>
-                                            <input
-                                                class="foad-try-input"
-                                                type="password"
-                                                x-model="parameter.value"
-                                                x-bind:placeholder="parameter.placeholder"
-                                            />
+                                            <x-filament::input.wrapper>
+                                                <x-filament::input
+                                                    type="password"
+                                                    x-model="parameter.value"
+                                                    x-bind:placeholder="parameter.placeholder"
+                                                />
+                                            </x-filament::input.wrapper>
                                         </label>
                                     </template>
                                 </div>
@@ -60,7 +57,7 @@
                         <div class="foad-stack foad-stack-sm">
                             <div class="foad-inline-list foad-inline-list-sm">
                                 <h4 class="fi-section-header-heading">Headers</h4>
-                                <button type="button" class="foad-sample-copy" x-show="developerMode" x-on:click="addHeader()">Add header</button>
+                                <x-filament::button color="gray" size="xs" type="button" x-show="developerMode" x-on:click="addHeader()">Add header</x-filament::button>
                             </div>
 
                             <template x-if="hasHeaderParameters">
@@ -69,22 +66,28 @@
                                         <div class="foad-header-row">
                                             <label class="foad-try-field">
                                                 <span class="foad-property-meta-label">Name</span>
-                                                <input class="foad-try-input" type="text" x-model="parameter.name" x-bind:disabled="parameter.disabled && ! developerMode" />
+                                                <x-filament::input.wrapper>
+                                                    <x-filament::input type="text" x-model="parameter.name" x-bind:disabled="parameter.disabled && ! developerMode" />
+                                                </x-filament::input.wrapper>
                                             </label>
 
                                             <label class="foad-try-field">
                                                 <span class="foad-property-meta-label">Value</span>
-                                                <input class="foad-try-input" type="text" x-model="parameter.value" x-bind:disabled="parameter.disabled && ! developerMode" />
+                                                <x-filament::input.wrapper>
+                                                    <x-filament::input type="text" x-model="parameter.value" x-bind:disabled="parameter.disabled && ! developerMode" />
+                                                </x-filament::input.wrapper>
                                             </label>
 
-                                            <button
+                                            <x-filament::button
+                                                color="gray"
+                                                size="xs"
                                                 type="button"
-                                                class="foad-sample-copy foad-header-remove"
+                                                class="foad-header-remove"
                                                 x-show="developerMode && parameter.removable"
                                                 x-on:click="removeHeader(index)"
                                             >
                                                 Remove
-                                            </button>
+                                            </x-filament::button>
                                         </div>
                                     </template>
                                 </div>
@@ -99,7 +102,9 @@
                                     <template x-for="parameter in pathParameters" x-bind:key="parameter.name">
                                         <label class="foad-try-field">
                                             <span class="foad-property-meta-label" x-text="parameter.name"></span>
-                                            <input class="foad-try-input" type="text" x-model="parameter.value" />
+                                            <x-filament::input.wrapper>
+                                                <x-filament::input type="text" x-model="parameter.value" />
+                                            </x-filament::input.wrapper>
                                         </label>
                                     </template>
                                 </div>
@@ -110,7 +115,7 @@
                             <div class="foad-stack foad-stack-sm">
                                 <div class="foad-inline-list foad-inline-list-sm">
                                     <h4 class="fi-section-header-heading">Query parameters</h4>
-                                    <button type="button" class="foad-sample-copy" x-show="developerMode" x-on:click="addQueryParameter()">Add parameter</button>
+                                    <x-filament::button color="gray" size="xs" type="button" x-show="developerMode" x-on:click="addQueryParameter()">Add parameter</x-filament::button>
                                 </div>
 
                                 <div class="foad-grid">
@@ -119,28 +124,36 @@
                                             <label class="foad-try-field">
                                                 <span class="foad-property-meta-label" x-text="parameter.removable ? 'Name' : parameter.name"></span>
                                                 <template x-if="parameter.removable">
-                                                    <input class="foad-try-input" type="text" x-model="parameter.name" />
+                                                    <x-filament::input.wrapper>
+                                                        <x-filament::input type="text" x-model="parameter.name" />
+                                                    </x-filament::input.wrapper>
                                                 </template>
                                                 <template x-if="! parameter.removable">
-                                                    <input class="foad-try-input" type="text" x-model="parameter.value" />
+                                                    <x-filament::input.wrapper>
+                                                        <x-filament::input type="text" x-model="parameter.value" />
+                                                    </x-filament::input.wrapper>
                                                 </template>
                                             </label>
 
                                             <template x-if="parameter.removable">
                                                 <label class="foad-try-field">
                                                     <span class="foad-property-meta-label">Value</span>
-                                                    <input class="foad-try-input" type="text" x-model="parameter.value" />
+                                                    <x-filament::input.wrapper>
+                                                        <x-filament::input type="text" x-model="parameter.value" />
+                                                    </x-filament::input.wrapper>
                                                 </label>
                                             </template>
 
-                                            <button
+                                            <x-filament::button
+                                                color="gray"
+                                                size="xs"
                                                 type="button"
-                                                class="foad-sample-copy foad-header-remove"
+                                                class="foad-header-remove"
                                                 x-show="developerMode && parameter.removable"
                                                 x-on:click="removeQueryParameter(index)"
                                             >
                                                 Remove
-                                            </button>
+                                            </x-filament::button>
                                         </div>
                                     </template>
                                 </div>
@@ -152,7 +165,7 @@
                                 <div class="foad-inline-list foad-inline-list-sm">
                                     <h4 class="fi-section-header-heading">Body</h4>
                                     <template x-if="hasJsonBody">
-                                        <button type="button" class="foad-sample-copy" x-on:click="formatJsonBody()">Format JSON</button>
+                                        <x-filament::button color="gray" size="xs" type="button" x-on:click="formatJsonBody()">Format JSON</x-filament::button>
                                     </template>
                                 </div>
 
@@ -163,6 +176,9 @@
                                 </template>
                             </div>
                         </template>
+
+
+                        <x-filament::button type="button" x-on:click="sendRequest()" x-bind:disabled="sending" x-text="sending ? 'Sending' : 'Send API request'" />
                     </div>
                 </template>
 
@@ -197,26 +213,32 @@
 
             <div class="foad-inline-list foad-inline-list-sm">
                 @if (count($requestSnippetData['requests']) > 1)
-                    <select class="foad-sample-select" x-model="activeRequest" aria-label="Request example">
-                        @foreach ($requestSnippetData['requests'] as $request)
-                            <option value="{{ $request['key'] }}">{{ $request['label'] }}</option>
-                        @endforeach
-                    </select>
+                    <x-filament::input.wrapper>
+                        <x-filament::input.select x-model="activeRequest" aria-label="Request example">
+                            @foreach ($requestSnippetData['requests'] as $request)
+                                <option value="{{ $request['key'] }}">{{ $request['label'] }}</option>
+                            @endforeach
+                        </x-filament::input.select>
+                    </x-filament::input.wrapper>
                 @endif
 
-                <select class="foad-sample-select" x-model="activeTarget" x-on:change="selectTarget()" aria-label="Request sample language">
-                    <template x-for="target in targets" x-bind:key="target.key">
-                        <option x-bind:value="target.key" x-text="target.label"></option>
-                    </template>
-                </select>
+                <x-filament::input.wrapper>
+                    <x-filament::input.select x-model="activeTarget" x-on:change="selectTarget()" aria-label="Request sample language">
+                        <template x-for="target in targets" x-bind:key="target.key">
+                            <option x-bind:value="target.key" x-text="target.label"></option>
+                        </template>
+                    </x-filament::input.select>
+                </x-filament::input.wrapper>
 
-                <select class="foad-sample-select" x-model="activeClient" aria-label="Request sample client">
-                    <template x-for="client in selectedClients" x-bind:key="client.key">
-                        <option x-bind:value="client.key" x-text="client.label"></option>
-                    </template>
-                </select>
+                <x-filament::input.wrapper>
+                    <x-filament::input.select x-model="activeClient" aria-label="Request sample client">
+                        <template x-for="client in selectedClients" x-bind:key="client.key">
+                            <option x-bind:value="client.key" x-text="client.label"></option>
+                        </template>
+                    </x-filament::input.select>
+                </x-filament::input.wrapper>
 
-                <button type="button" class="foad-sample-copy" x-on:click="copy()" x-text="copied ? 'Copied' : 'Copy'"></button>
+                <x-filament::button color="gray" size="xs" type="button" x-on:click="copy()" x-text="copied ? 'Copied' : 'Copy'" />
             </div>
         </div>
 
