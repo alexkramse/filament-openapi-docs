@@ -246,6 +246,71 @@
             border-bottom: 1px solid color-mix(in oklab, currentColor 12%, transparent);
         }
 
+        .foad-developer-mode {
+            align-items: center;
+            color: var(--gray-700);
+            cursor: pointer;
+            display: inline-flex;
+            font-size: .8125rem;
+            font-weight: 600;
+            gap: .375rem;
+            white-space: nowrap;
+        }
+
+        .foad-developer-mode-input {
+            height: 1px;
+            opacity: 0;
+            position: absolute;
+            width: 1px;
+        }
+
+        .foad-developer-mode-switch {
+            align-items: center;
+            background: var(--gray-200);
+            border-radius: 999px;
+            display: inline-flex;
+            height: 1.25rem;
+            padding: .125rem;
+            transition: background-color .15s ease;
+            width: 2.25rem;
+        }
+
+        .foad-developer-mode-knob {
+            background: white;
+            border-radius: 999px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .2);
+            display: block;
+            height: 1rem;
+            transform: translateX(0);
+            transition: transform .15s ease;
+            width: 1rem;
+        }
+
+        .foad-developer-mode-input:checked + .foad-developer-mode-switch {
+            background: var(--primary-600);
+        }
+
+        .foad-developer-mode-input:checked + .foad-developer-mode-switch .foad-developer-mode-knob {
+            transform: translateX(1rem);
+        }
+
+        .foad-developer-mode-input:focus-visible + .foad-developer-mode-switch {
+            outline: 2px solid var(--primary-500);
+            outline-offset: 2px;
+        }
+
+        .dark .foad-developer-mode {
+            color: var(--gray-300);
+        }
+
+        .dark .foad-developer-mode-switch {
+            background: var(--gray-700);
+        }
+
+        .dark .foad-developer-mode-input:checked + .foad-developer-mode-switch {
+            background: var(--primary-500);
+        }
+
         .foad-try-it-body {
             display: grid;
             gap: 1rem;
@@ -292,6 +357,11 @@
         .foad-try-input {
             min-height: 2rem;
             padding: .375rem .5rem;
+        }
+
+        .foad-try-input:disabled {
+            cursor: not-allowed;
+            opacity: .65;
         }
 
         .foad-try-textarea {

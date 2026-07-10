@@ -19,9 +19,19 @@
                     </template>
                 </div>
 
-                <button type="button" class="foad-send-request" x-on:click="sendRequest()" x-bind:disabled="sending">
-                    <span x-text="sending ? 'Sending' : 'Send API request'"></span>
-                </button>
+                <div class="foad-inline-list foad-inline-list-sm foad-inline-list-end">
+                    <label class="foad-developer-mode fi-fo-toggle">
+                        <input class="foad-developer-mode-input" type="checkbox" x-model="developerMode" />
+                        <span class="foad-developer-mode-switch" aria-hidden="true">
+                            <span class="foad-developer-mode-knob"></span>
+                        </span>
+                        <span class="fi-fo-field-label-content">Developer mode</span>
+                    </label>
+
+                    <button type="button" class="foad-send-request" x-on:click="sendRequest()" x-bind:disabled="sending">
+                        <span x-text="sending ? 'Sending' : 'Send API request'"></span>
+                    </button>
+                </div>
             </div>
 
             <div class="foad-try-it-body">
@@ -50,7 +60,7 @@
                         <div class="foad-stack foad-stack-sm">
                             <div class="foad-inline-list foad-inline-list-sm">
                                 <h4 class="fi-section-header-heading">Headers</h4>
-                                <button type="button" class="foad-sample-copy" x-on:click="addHeader()">Add header</button>
+                                <button type="button" class="foad-sample-copy" x-show="developerMode" x-on:click="addHeader()">Add header</button>
                             </div>
 
                             <template x-if="hasHeaderParameters">
@@ -59,18 +69,18 @@
                                         <div class="foad-header-row">
                                             <label class="foad-try-field">
                                                 <span class="foad-property-meta-label">Name</span>
-                                                <input class="foad-try-input" type="text" x-model="parameter.name" x-bind:disabled="parameter.disabled" />
+                                                <input class="foad-try-input" type="text" x-model="parameter.name" x-bind:disabled="parameter.disabled && ! developerMode" />
                                             </label>
 
                                             <label class="foad-try-field">
                                                 <span class="foad-property-meta-label">Value</span>
-                                                <input class="foad-try-input" type="text" x-model="parameter.value" x-bind:disabled="parameter.disabled" />
+                                                <input class="foad-try-input" type="text" x-model="parameter.value" x-bind:disabled="parameter.disabled && ! developerMode" />
                                             </label>
 
                                             <button
                                                 type="button"
                                                 class="foad-sample-copy foad-header-remove"
-                                                x-show="parameter.removable"
+                                                x-show="developerMode && parameter.removable"
                                                 x-on:click="removeHeader(index)"
                                             >
                                                 Remove
@@ -98,14 +108,40 @@
 
                         <template x-if="hasQueryParameters">
                             <div class="foad-stack foad-stack-sm">
-                                <h4 class="fi-section-header-heading">Query parameters</h4>
+                                <div class="foad-inline-list foad-inline-list-sm">
+                                    <h4 class="fi-section-header-heading">Query parameters</h4>
+                                    <button type="button" class="foad-sample-copy" x-show="developerMode" x-on:click="addQueryParameter()">Add parameter</button>
+                                </div>
 
                                 <div class="foad-grid">
-                                    <template x-for="parameter in queryParameters" x-bind:key="parameter.name">
-                                        <label class="foad-try-field">
-                                            <span class="foad-property-meta-label" x-text="parameter.name"></span>
-                                            <input class="foad-try-input" type="text" x-model="parameter.value" />
-                                        </label>
+                                    <template x-for="(parameter, index) in queryParameters" x-bind:key="`query-${index}`">
+                                        <div class="foad-header-row" x-show="developerMode || ! parameter.developerOnly">
+                                            <label class="foad-try-field">
+                                                <span class="foad-property-meta-label" x-text="parameter.removable ? 'Name' : parameter.name"></span>
+                                                <template x-if="parameter.removable">
+                                                    <input class="foad-try-input" type="text" x-model="parameter.name" />
+                                                </template>
+                                                <template x-if="! parameter.removable">
+                                                    <input class="foad-try-input" type="text" x-model="parameter.value" />
+                                                </template>
+                                            </label>
+
+                                            <template x-if="parameter.removable">
+                                                <label class="foad-try-field">
+                                                    <span class="foad-property-meta-label">Value</span>
+                                                    <input class="foad-try-input" type="text" x-model="parameter.value" />
+                                                </label>
+                                            </template>
+
+                                            <button
+                                                type="button"
+                                                class="foad-sample-copy foad-header-remove"
+                                                x-show="developerMode && parameter.removable"
+                                                x-on:click="removeQueryParameter(index)"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
                                     </template>
                                 </div>
                             </div>

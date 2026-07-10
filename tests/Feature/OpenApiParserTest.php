@@ -445,6 +445,11 @@ it('renders editable try it controls for auth and query request data', function 
 
     expect($html)->toContain('Try it')
         ->and($html)->toContain('Send API request')
+        ->and($html)->toContain('Developer mode')
+        ->and($html)->toContain('fi-fo-toggle')
+        ->and($html)->toContain('foad-developer-mode-switch')
+        ->and($html)->toContain('foad-developer-mode-knob')
+        ->and($html)->toContain('x-model="developerMode"')
         ->and($html)->toContain('Auth')
         ->and($html)->toContain('Headers')
         ->and($html)->toContain('Add header')
@@ -454,8 +459,11 @@ it('renders editable try it controls for auth and query request data', function 
         ->and($html)->toContain('headerParameters')
         ->and($html)->toContain('queryParameters')
         ->and($html)->toContain('authParameters')
+        ->and($html)->toContain('x-show="developerMode"')
         ->and($html)->toContain('x-on:click="addHeader()"')
         ->and($html)->toContain('x-on:click="removeHeader(index)"')
+        ->and($html)->toContain('x-on:click="addQueryParameter()"')
+        ->and($html)->toContain('x-on:click="removeQueryParameter(index)"')
         ->and($html)->toContain('x-bind:placeholder="parameter.placeholder"')
         ->and($html)->toContain('x-model="parameter.value"')
         ->and(strpos($html, 'Headers'))->toBeLessThan(strpos($html, 'Path parameters'))
@@ -468,9 +476,12 @@ it('loads generated default headers into disabled request header controls', func
 
     expect($script)->toContain("disabled: isDefaultHeader(header.name)")
         ->and($script)->toContain("['accept', 'content-type']")
+        ->and($script)->toContain('developerMode: false')
+        ->and($script)->toContain('addQueryParameter()')
+        ->and($script)->toContain('this.developerMode || ! parameter.developerOnly')
         ->and($script)->not->toContain("header.name.toLowerCase() !== 'accept'")
         ->and($script)->not->toContain("header.name.toLowerCase() !== 'content-type'")
-        ->and($view)->toContain('x-bind:disabled="parameter.disabled"');
+        ->and($view)->toContain('x-bind:disabled="parameter.disabled && ! developerMode"');
 });
 
 it('inherits global openapi security from scramble authenticated routes', function () {

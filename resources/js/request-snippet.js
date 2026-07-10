@@ -68,6 +68,7 @@ export default function requestSnippet(config) {
         activeTarget: targetOptions.find((target) => target.key === 'shell')?.key ?? targetOptions[0]?.key ?? null,
         activeClient: null,
         copied: false,
+        developerMode: false,
         error: null,
         bodyText: '',
         bodyJsonError: null,
@@ -107,7 +108,7 @@ export default function requestSnippet(config) {
         },
 
         get hasQueryParameters() {
-            return this.queryParameters.length > 0;
+            return this.developerMode || this.queryParameters.length > 0;
         },
 
         get hasPathParameters() {
@@ -131,7 +132,7 @@ export default function requestSnippet(config) {
         },
 
         get hasRequestControls() {
-            return this.hasPathParameters || this.hasQueryParameters || this.hasHeaderParameters || this.hasAuthParameters || this.hasBody;
+            return this.developerMode || this.hasPathParameters || this.hasQueryParameters || this.hasHeaderParameters || this.hasAuthParameters || this.hasBody;
         },
 
         get code() {
@@ -189,6 +190,19 @@ export default function requestSnippet(config) {
             this.headerParameters.splice(index, 1);
         },
 
+        addQueryParameter() {
+            this.queryParameters.push({
+                name: '',
+                value: '',
+                developerOnly: true,
+                removable: true,
+            });
+        },
+
+        removeQueryParameter(index) {
+            this.queryParameters.splice(index, 1);
+        },
+
         resetRequestState() {
             const har = this.selectedRequest?.har;
 
@@ -222,6 +236,8 @@ export default function requestSnippet(config) {
                 .map((parameter) => ({
                     name: parameter.name,
                     value: parameter.value ?? '',
+                    developerOnly: false,
+                    removable: false,
                 }));
             this.bodyText = har.postData?.text ?? '';
         },
@@ -229,6 +245,7 @@ export default function requestSnippet(config) {
         buildHarRequest(includePlaceholders = true) {
             const har = structuredCloneSafe(this.selectedRequest?.har ?? {});
             const queryString = this.queryParameters
+                .filter((parameter) => this.developerMode || ! parameter.developerOnly)
                 .filter((parameter) => parameter.name && String(parameter.value).length > 0)
                 .map((parameter) => ({
                     name: parameter.name,
