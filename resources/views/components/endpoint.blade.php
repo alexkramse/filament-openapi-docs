@@ -13,6 +13,9 @@
     $examplePresenter = app(\Kramarenko\FilamentOpenApiDocs\Services\ExamplePresenter::class);
     $schemaComponents = $components ?? [];
     $documentedServers = $servers ?? [];
+    $requestSnippetData = app(\Kramarenko\FilamentOpenApiDocs\Services\RequestSnippetPresenter::class)
+        ->present($endpoint, $documentedServers, $schemaComponents);
+    $hasRequestSamples = config('filament-openapi-docs.request_samples.enabled', true) && $requestSnippetData['requests'] !== [];
 @endphp
 
 <div id="{{ $endpoint->id }}" style="scroll-margin-top: 1.5rem;">
@@ -55,54 +58,76 @@
         </x-slot>
 
         <div class="foad-stack">
-            <x-filament::section heading="Request" collapsible secondary>
-                <div class="foad-stack foad-stack-md">
-                    @include('filament-openapi-docs::components.request-snippet', [
-                        'endpoint' => $endpoint,
-                        'servers' => $documentedServers,
-                        'components' => $schemaComponents,
-                    ])
+            <div
+                @if ($hasRequestSamples)
+                    x-load
+                    x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
+                    x-data="requestSnippet(@js($requestSnippetData))"
+                @endif
+            >
+                <x-filament::section heading="Request" collapsible secondary>
+                    @if ($hasRequestSamples)
+                        <x-slot name="afterHeader">
+                            <label class="foad-developer-mode fi-fo-toggle">
+                                <x-filament::input.checkbox class="foad-developer-mode-input" x-model="developerMode"/>
+                                <span class="foad-developer-mode-switch" aria-hidden="true">
+                                    <span class="foad-developer-mode-knob"></span>
+                                </span>
+                                <span class="fi-fo-field-label-content">Developer mode</span>
+                            </label>
+                        </x-slot>
+                    @endif
 
-                    @if ($headerParameters->isNotEmpty())
-                        <div class="foad-stack foad-stack-sm">
-                            <h4 class="fi-section-header-heading">Headers</h4>
+                    <div class="foad-stack foad-stack-md">
+                        @include('filament-openapi-docs::components.request-snippet', [
+                            'endpoint' => $endpoint,
+                            'servers' => $documentedServers,
+                            'components' => $schemaComponents,
+                            'requestSnippetData' => $requestSnippetData,
+                            'usesExternalRequestSnippetState' => $hasRequestSamples,
+                        ])
 
-                            <div class="foad-grid">
-                                @foreach ($headerParameters as $parameter)
-                                    @include('filament-openapi-docs::components.parameter-field', ['parameter' => $parameter])
+                        @if ($headerParameters->isNotEmpty())
+                            <div class="foad-stack foad-stack-sm">
+                                <h4 class="fi-section-header-heading">Headers</h4>
+
+                                <div class="foad-grid">
+                                    @foreach ($headerParameters as $parameter)
+                                        @include('filament-openapi-docs::components.parameter-field', ['parameter' => $parameter])
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if ($endpoint->hasRequestBody())
+                            <div class="foad-stack foad-stack-md">
+                                <h4 class="fi-section-header-heading">Body</h4>
+
+                                @foreach ($endpoint->requestBodies as $body)
+                                    <div class="foad-stack foad-stack-sm">
+                                        <div class="foad-inline-list foad-inline-list-sm">
+                                            <span class="foad-property-meta-label">Body</span>
+                                            <x-filament::badge color="gray" size="xs">{{ $body['contentType'] }}</x-filament::badge>
+                                        </div>
+
+                                        @include('filament-openapi-docs::components.sample', [
+                                            'label' => 'Request Sample',
+                                            'contentType' => $body['contentType'],
+                                            'samples' => $examplePresenter->samples($body, $schemaComponents),
+                                        ])
+
+                                        @include('filament-openapi-docs::components.schema', ['schema' => $body['schema'], 'components' => $schemaComponents])
+                                    </div>
                                 @endforeach
                             </div>
-                        </div>
-                    @endif
+                        @endif
 
-                    @if ($endpoint->hasRequestBody())
-                        <div class="foad-stack foad-stack-md">
-                            <h4 class="fi-section-header-heading">Body</h4>
-
-                            @foreach ($endpoint->requestBodies as $body)
-                                <div class="foad-stack foad-stack-sm">
-                                    <div class="foad-inline-list foad-inline-list-sm">
-                                        <span class="foad-property-meta-label">Body</span>
-                                        <x-filament::badge color="gray" size="xs">{{ $body['contentType'] }}</x-filament::badge>
-                                    </div>
-
-                                    @include('filament-openapi-docs::components.sample', [
-                                        'label' => 'Request Sample',
-                                        'contentType' => $body['contentType'],
-                                        'samples' => $examplePresenter->samples($body, $schemaComponents),
-                                    ])
-
-                                    @include('filament-openapi-docs::components.schema', ['schema' => $body['schema'], 'components' => $schemaComponents])
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    @if ($pathParameters->isEmpty() && $headerParameters->isEmpty() && ! $endpoint->hasRequestBody())
-                        <p class="fi-section-header-description">No request data documented.</p>
-                    @endif
-                </div>
-            </x-filament::section>
+                        @if ($pathParameters->isEmpty() && $headerParameters->isEmpty() && ! $endpoint->hasRequestBody())
+                            <p class="fi-section-header-description">No request data documented.</p>
+                        @endif
+                    </div>
+                </x-filament::section>
+            </div>
 
             <x-filament::section
                 heading="Query parameters"

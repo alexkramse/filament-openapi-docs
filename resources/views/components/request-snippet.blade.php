@@ -1,14 +1,17 @@
 @php
-    $requestSnippetData = app(\Kramarenko\FilamentOpenApiDocs\Services\RequestSnippetPresenter::class)
+    $requestSnippetData ??= app(\Kramarenko\FilamentOpenApiDocs\Services\RequestSnippetPresenter::class)
         ->present($endpoint, $servers ?? [], $components ?? []);
+    $usesExternalRequestSnippetState ??= false;
 @endphp
 
 @if (config('filament-openapi-docs.request_samples.enabled', true) && $requestSnippetData['requests'] !== [])
     <div
         class="foad-sample foad-request-snippet"
-        x-load
-        x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
-        x-data="requestSnippet(@js($requestSnippetData))"
+        @unless ($usesExternalRequestSnippetState)
+            x-load
+            x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
+            x-data="requestSnippet(@js($requestSnippetData))"
+        @endunless
     >
         <div class="foad-try-it">
             <div class="foad-sample-toolbar">
@@ -19,15 +22,17 @@
                     </template>
                 </div>
 
-                <div class="foad-inline-list foad-inline-list-sm foad-inline-list-end">
-                    <label class="foad-developer-mode fi-fo-toggle">
-                        <x-filament::input.checkbox class="foad-developer-mode-input" x-model="developerMode"/>
-                        <span class="foad-developer-mode-switch" aria-hidden="true">
-                            <span class="foad-developer-mode-knob"></span>
-                        </span>
-                        <span class="fi-fo-field-label-content">Developer mode</span>
-                    </label>
-                </div>
+                @unless ($usesExternalRequestSnippetState)
+                    <div class="foad-inline-list foad-inline-list-sm foad-inline-list-end">
+                        <label class="foad-developer-mode fi-fo-toggle">
+                            <x-filament::input.checkbox class="foad-developer-mode-input" x-model="developerMode"/>
+                            <span class="foad-developer-mode-switch" aria-hidden="true">
+                                <span class="foad-developer-mode-knob"></span>
+                            </span>
+                            <span class="fi-fo-field-label-content">Developer mode</span>
+                        </label>
+                    </div>
+                @endunless
             </div>
 
             <div class="foad-try-it-body">
