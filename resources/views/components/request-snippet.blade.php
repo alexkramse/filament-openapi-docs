@@ -47,6 +47,40 @@
                             </div>
                         </template>
 
+                        <div class="foad-stack foad-stack-sm">
+                            <div class="foad-inline-list foad-inline-list-sm">
+                                <h4 class="fi-section-header-heading">Headers</h4>
+                                <button type="button" class="foad-sample-copy" x-on:click="addHeader()">Add header</button>
+                            </div>
+
+                            <template x-if="hasHeaderParameters">
+                                <div class="foad-stack foad-stack-sm">
+                                    <template x-for="(parameter, index) in headerParameters" x-bind:key="`header-${index}`">
+                                        <div class="foad-header-row">
+                                            <label class="foad-try-field">
+                                                <span class="foad-property-meta-label">Name</span>
+                                                <input class="foad-try-input" type="text" x-model="parameter.name" />
+                                            </label>
+
+                                            <label class="foad-try-field">
+                                                <span class="foad-property-meta-label">Value</span>
+                                                <input class="foad-try-input" type="text" x-model="parameter.value" />
+                                            </label>
+
+                                            <button
+                                                type="button"
+                                                class="foad-sample-copy foad-header-remove"
+                                                x-show="parameter.removable"
+                                                x-on:click="removeHeader(index)"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+
                         <template x-if="hasQueryParameters">
                             <div class="foad-stack foad-stack-sm">
                                 <h4 class="fi-section-header-heading">Query parameters</h4>

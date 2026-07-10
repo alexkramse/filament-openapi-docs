@@ -72,6 +72,7 @@ export default function requestSnippet(config) {
         bodyText: '',
         bodyJsonError: null,
         queryParameters: [],
+        headerParameters: [],
         authParameters: [],
         response: null,
         sendError: null,
@@ -112,6 +113,10 @@ export default function requestSnippet(config) {
             return this.authParameters.length > 0;
         },
 
+        get hasHeaderParameters() {
+            return this.headerParameters.length > 0;
+        },
+
         get hasBody() {
             return Boolean(this.selectedRequest?.har?.postData);
         },
@@ -121,7 +126,7 @@ export default function requestSnippet(config) {
         },
 
         get hasRequestControls() {
-            return this.hasQueryParameters || this.hasAuthParameters || this.hasBody;
+            return this.hasQueryParameters || this.hasHeaderParameters || this.hasAuthParameters || this.hasBody;
         },
 
         get code() {
@@ -166,6 +171,18 @@ export default function requestSnippet(config) {
             this.activeClient = this.selectedTarget?.defaultClient ?? this.selectedClients[0]?.key ?? null;
         },
 
+        addHeader() {
+            this.headerParameters.push({
+                name: '',
+                value: '',
+                removable: true,
+            });
+        },
+
+        removeHeader(index) {
+            this.headerParameters.splice(index, 1);
+        },
+
         resetRequestState() {
             const har = this.selectedRequest?.har;
 
@@ -175,6 +192,7 @@ export default function requestSnippet(config) {
 
             if (! har) {
                 this.queryParameters = [];
+                this.headerParameters = [];
                 this.authParameters = [];
                 this.bodyText = '';
 
@@ -187,6 +205,7 @@ export default function requestSnippet(config) {
                 .map((parameter) => parameter.name);
 
             this.authParameters = auth;
+            this.headerParameters = collectHeaderParameters(har, auth);
             this.queryParameters = (har.queryString ?? [])
                 .filter((parameter) => ! authQueryNames.includes(parameter.name))
                 .map((parameter) => ({
@@ -222,13 +241,26 @@ export default function requestSnippet(config) {
             const authHeaderNames = this.authParameters
                 .filter((parameter) => parameter.location === 'header')
                 .map((parameter) => parameter.name.toLowerCase());
+            const editableHeaderNames = this.headerParameters
+                .map((parameter) => parameter.name.toLowerCase())
+                .filter((name) => name.length > 0);
 
             const headers = (har.headers ?? [])
                 .filter((header) => ! authHeaderNames.includes(header.name.toLowerCase()))
+                .filter((header) => ! editableHeaderNames.includes(header.name.toLowerCase()))
                 .map((header) => ({
                     name: header.name,
                     value: header.value ?? '',
                 }));
+
+            for (const parameter of this.headerParameters) {
+                if (parameter.name && String(parameter.value).length > 0) {
+                    headers.push({
+                        name: parameter.name,
+                        value: String(parameter.value),
+                    });
+                }
+            }
 
             for (const parameter of this.authParameters.filter((item) => item.location === 'header')) {
                 const authValue = parameter.value || (includePlaceholders ? parameter.placeholder : '');
@@ -403,6 +435,21 @@ function collectAuthParameters(har) {
     }
 
     return auth;
+}
+
+function collectHeaderParameters(har, authParameters) {
+    const authHeaderNames = authParameters
+        .filter((parameter) => parameter.location === 'header')
+        .map((parameter) => parameter.name.toLowerCase());
+
+    return (har.headers ?? [])
+        .filter((header) => ! authHeaderNames.includes(header.name.toLowerCase()))
+        .filter((header) => header.name.toLowerCase() !== 'content-type')
+        .map((header) => ({
+            name: header.name,
+            value: header.value ?? '',
+            removable: false,
+        }));
 }
 
 function buildUrlWithQueryString(url, queryString) {

@@ -268,6 +268,17 @@
             gap: .25rem;
         }
 
+        .foad-header-row {
+            align-items: end;
+            display: grid;
+            gap: .5rem;
+        }
+
+        .foad-header-remove {
+            justify-self: start;
+            margin-bottom: .375rem;
+        }
+
         .foad-try-input,
         .foad-try-textarea {
             background: white;
@@ -482,6 +493,10 @@
 
             .foad-inline-list-end {
                 justify-content: flex-end;
+            }
+
+            .foad-header-row {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
             }
         }
     </style>

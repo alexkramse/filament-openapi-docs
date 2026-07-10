@@ -356,6 +356,16 @@ it('renders editable try it controls for auth and query request data', function 
                 'schema' => ['type' => 'string', 'default' => 'profile'],
                 'examples' => [],
             ],
+            [
+                'name' => 'X-Trace',
+                'in' => 'header',
+                'type' => 'string',
+                'required' => false,
+                'description' => null,
+                'schema' => ['type' => 'string'],
+                'example' => 'trace-1',
+                'examples' => [],
+            ],
         ],
         requestBodies: [],
         responses: [],
@@ -381,11 +391,68 @@ it('renders editable try it controls for auth and query request data', function 
     expect($html)->toContain('Try it')
         ->and($html)->toContain('Send API request')
         ->and($html)->toContain('Auth')
+        ->and($html)->toContain('Headers')
+        ->and($html)->toContain('Add header')
         ->and($html)->toContain('Query parameters')
+        ->and($html)->toContain('headerParameters')
         ->and($html)->toContain('queryParameters')
         ->and($html)->toContain('authParameters')
+        ->and($html)->toContain('x-on:click="addHeader()"')
+        ->and($html)->toContain('x-on:click="removeHeader(index)"')
         ->and($html)->toContain('x-bind:placeholder="parameter.placeholder"')
         ->and($html)->toContain('x-model="parameter.value"');
+});
+
+it('inherits global openapi security from scramble authenticated routes', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'info' => [
+            'title' => 'Game API',
+            'version' => '1.0.0',
+        ],
+        'security' => [
+            ['bearerAuth' => []],
+        ],
+        'components' => [
+            'securitySchemes' => [
+                'bearerAuth' => [
+                    'type' => 'http',
+                    'scheme' => 'bearer',
+                ],
+            ],
+        ],
+        'paths' => [
+            '/profile' => [
+                'get' => [
+                    'tags' => ['Profile'],
+                    'summary' => 'Profile',
+                    'responses' => [
+                        '200' => ['description' => 'OK'],
+                    ],
+                ],
+            ],
+            '/health' => [
+                'get' => [
+                    'tags' => ['System'],
+                    'summary' => 'Health',
+                    'security' => [],
+                    'responses' => [
+                        '200' => ['description' => 'OK'],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $protectedEndpoint = $parsed['endpoints']['Profile'][0];
+    $publicEndpoint = $parsed['endpoints']['System'][0];
+    $presented = app(RequestSnippetPresenter::class)->present($protectedEndpoint, ['https://api.example.test'], $parsed['components']);
+
+    expect($protectedEndpoint->security)->toBe([['bearerAuth' => []]])
+        ->and($publicEndpoint->security)->toBe([])
+        ->and($presented['requests'][0]['har']['headers'])->toContain([
+            'name' => 'Authorization',
+            'value' => 'Bearer <token>',
+        ]);
 });
 
 it('builds har request data for httpsnippet samples', function () {

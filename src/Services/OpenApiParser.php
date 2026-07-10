@@ -30,6 +30,7 @@ class OpenApiParser
     public function parse(array $spec): array
     {
         $endpoints = [];
+        $globalSecurity = is_array($spec['security'] ?? null) ? $spec['security'] : [];
 
         foreach (($spec['paths'] ?? []) as $path => $pathItem) {
             if (! is_array($pathItem)) {
@@ -43,7 +44,7 @@ class OpenApiParser
                     continue;
                 }
 
-                $endpoint = $this->endpoint($method, (string) $path, $operation, $pathParameters);
+                $endpoint = $this->endpoint($method, (string) $path, $operation, $pathParameters, $globalSecurity);
 
                 $endpoints[$endpoint->group()][] = $endpoint;
             }
@@ -63,8 +64,9 @@ class OpenApiParser
     /**
      * @param  array<string, mixed>  $operation
      * @param  array<int, array{name: string, in: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, default?: mixed}>  $pathParameters
+     * @param  array<int, array<string, mixed>>  $globalSecurity
      */
-    private function endpoint(string $method, string $path, array $operation, array $pathParameters): Endpoint
+    private function endpoint(string $method, string $path, array $operation, array $pathParameters, array $globalSecurity): Endpoint
     {
         $summary = (string) ($operation['summary'] ?? $operation['operationId'] ?? '');
         $tags = array_values(array_filter(
@@ -86,7 +88,7 @@ class OpenApiParser
             parameters: $parameters,
             requestBodies: $this->requestBodies($operation['requestBody'] ?? []),
             responses: $this->responses($operation['responses'] ?? []),
-            security: is_array($operation['security'] ?? null) ? $operation['security'] : [],
+            security: is_array($operation['security'] ?? null) ? $operation['security'] : $globalSecurity,
             deprecated: (bool) ($operation['deprecated'] ?? false),
         );
     }
