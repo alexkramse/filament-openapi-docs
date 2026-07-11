@@ -513,6 +513,9 @@ it('renders editable try it controls for auth and query request data', function 
         ->and($html)->toContain('x-model="parameter.value"')
         ->and($requestSnippetSources)->toContain('<x-filament::input.checkbox')
         ->and($requestSnippetSources)->toContain('<x-filament::input type="text"')
+        ->and($requestSnippetSources)->toContain('<x-slot name="prefix">')
+        ->and($requestSnippetSources)->toContain('x-text="parameter.label"')
+        ->and($requestSnippetSources)->not->toContain('prefix="parameter.label"')
         ->and(strpos($html, 'Headers'))->toBeLessThan(strpos($html, 'Path parameters'))
         ->and(strpos($html, 'Path parameters'))->toBeLessThan(strpos($html, 'Query parameters'));
 });
