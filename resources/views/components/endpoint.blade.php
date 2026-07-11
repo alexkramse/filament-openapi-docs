@@ -23,46 +23,54 @@
     <x-filament::section
         :heading="$endpoint->title()"
     >
-        <x-slot name="description">
-            <p class="fi-section-header-description">{{$endpoint->description}}</p>
 
-            <div class="foad-inline-list">
-                <x-filament::badge :color="$methodColor">
-                    {{ $endpoint->method }}
-                </x-filament::badge>
 
+        <x-slot name="heading">
+
+            <div class="foad-justify-content-space-between">
+                <div class="foad-property-main">
+
+                    @if ($endpoint->deprecated)
+                        <x-filament::badge color="danger">
+                            Deprecated
+                        </x-filament::badge>
+                    @endif
+
+                    <x-filament::badge :color="$methodColor">
+                        {{ $endpoint->method }}
+                    </x-filament::badge>
+
+                    <h2 class="fi-section-header-heading">{{$endpoint->title()}}</h2>
+                </div>
                 <x-filament::badge color="gray">
                     {{ $endpoint->path }}
                 </x-filament::badge>
-
-                @if ($endpoint->deprecated)
-                    <x-filament::badge color="danger">
-                        Deprecated
-                    </x-filament::badge>
-                @endif
-
-                @if ($documentedServers !== [])
-                    <div class="foad-grid">
-                        @foreach ($documentedServers as $server)
-                            <label class="fi-fo-field">
-                                <x-filament::badge color="gray">
-                                    {{ $server }}{{$endpoint->path}}
-                                </x-filament::badge>
-                            </label>
-                        @endforeach
-                    </div>
-                @endif
-
-
             </div>
+
+            {{--  <div class="foad-inline-list">
+               {{--  @documentedServers !== [])
+                     <div class="foad-grid">
+                         @foreach ($documentedServers as $server)
+                             <label class="fi-fo-field">
+                                 <x-filament::badge color="gray">
+                                     {{ $server }}{{$endpoint->path}}
+                                 </x-filament::badge>
+                             </label>
+                         @endforeach
+                     </div>
+                 @endif
+                    </div>--}}
+        </x-slot>
+        <x-slot name="description">
+            <p class="fi-section-header-description">{{$endpoint->description}}</p>
         </x-slot>
 
         <div class="foad-stack">
             <div
                 @if ($hasRequestSamples)
                     x-load
-                    x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
-                    x-data="requestSnippet(@js($requestSnippetData))"
+                x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
+                x-data="requestSnippet(@js($requestSnippetData))"
                 @endif
             >
                 <x-filament::section heading="Request" collapsible secondary>
@@ -106,17 +114,46 @@
                                 @foreach ($endpoint->requestBodies as $body)
                                     <div class="foad-stack foad-stack-sm">
                                         <div class="foad-inline-list foad-inline-list-sm">
-                                            <span class="foad-property-meta-label">Body</span>
-                                            <x-filament::badge color="gray" size="xs">{{ $body['contentType'] }}</x-filament::badge>
+                                            <x-filament::badge color="gray" size="md">
+                                                Type: {{ $body['contentType'] }}</x-filament::badge>
                                         </div>
+                                        <div class="fi-sc-component">
+                                            <div x-data="{ tab: 'tab2' }" class="fi-sc-tabs fi-contained">
+                                                <x-filament::tabs label="Content Tabs" class="fi-contained">
+                                                    <x-filament::tabs.item
+                                                        @click="tab = 'tab2'"
+                                                        :alpine-active="'tab === \'tab2\''"
+                                                        active
+                                                    >
+                                                        Tree view
+                                                    </x-filament::tabs.item>
+                                                    <x-filament::tabs.item
+                                                        @click="tab = 'tab1'"
+                                                        :alpine-active="'tab === \'tab1\''"
 
-                                        @include('filament-openapi-docs::components.sample', [
-                                            'label' => 'Request Sample',
-                                            'contentType' => $body['contentType'],
-                                            'samples' => $examplePresenter->samples($body, $schemaComponents),
-                                        ])
+                                                    >
+                                                        JSON
+                                                    </x-filament::tabs.item>
 
-                                        @include('filament-openapi-docs::components.schema', ['schema' => $body['schema'], 'components' => $schemaComponents])
+                                                </x-filament::tabs>
+
+                                                <div class="fi-sc-tabs-tab fi-active">
+
+                                                    <div x-show="tab === 'tab2'">
+                                                        @include('filament-openapi-docs::components.schema', ['schema' => $body['schema'], 'components' => $schemaComponents])
+                                                    </div>
+                                                    <div x-show="tab === 'tab1'" x-cloak>
+
+                                                        @include('filament-openapi-docs::components.sample', [
+                                                            'label' => 'Request Sample',
+                                                            'contentType' => $body['contentType'],
+                                                            'samples' => $examplePresenter->samples($body, $schemaComponents),
+                                                        ])
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -129,23 +166,23 @@
                 </x-filament::section>
             </div>
 
-            <x-filament::section
-                heading="Query parameters"
-                :description="$queryParameters->count().' documented query parameters'"
-                collapsible
-                :collapsed="$queryParameters->isEmpty()"
-                secondary
-            >
-                @if ($queryParameters->isNotEmpty())
-                    <div class="foad-grid">
-                        @foreach ($queryParameters as $parameter)
-                            @include('filament-openapi-docs::components.parameter-field', ['parameter' => $parameter])
-                        @endforeach
-                    </div>
-                @else
-                    <p class="fi-section-header-description">No query parameters documented.</p>
-                @endif
-            </x-filament::section>
+            {{--            <x-filament::section
+                            heading="Query parameters"
+                            :description="$queryParameters->count().' documented query parameters'"
+                            collapsible
+                            :collapsed="$queryParameters->isEmpty()"
+                            secondary
+                        >
+                            @if ($queryParameters->isNotEmpty())
+                                <div class="foad-grid">
+                                    @foreach ($queryParameters as $parameter)
+                                        @include('filament-openapi-docs::components.parameter-field', ['parameter' => $parameter])
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="fi-section-header-description">No query parameters documented.</p>
+                            @endif
+                        </x-filament::section>--}}
 
             @include('filament-openapi-docs::components.endpoint.responses', [
                 'endpoint' => $endpoint,

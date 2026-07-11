@@ -6,38 +6,26 @@
 
 @if (config('filament-openapi-docs.request_samples.enabled', true) && $requestSnippetData['requests'] !== [])
     <div
-        class="foad-sample foad-request-snippet"
+        class="foad-request-snippet"
         @unless ($usesExternalRequestSnippetState)
             x-load
             x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
             x-data="requestSnippet(@js($requestSnippetData))"
         @endunless
     >
-        <div class="foad-try-it">
-            <div class="foad-sample-toolbar">
-                <div class="foad-inline-list foad-inline-list-sm">
-                    <span class="foad-property-meta-label">Try it</span>
-                    <template x-if="selectedRequest">
-                        <span class="foad-try-it-url" x-text="currentHar.method + ' ' + currentHar.url"></span>
-                    </template>
-                </div>
 
-                @unless ($usesExternalRequestSnippetState)
-                    <div class="foad-inline-list foad-inline-list-sm foad-inline-list-end">
-                        <label class="foad-developer-mode fi-fo-toggle">
-                            <x-filament::input.checkbox class="foad-developer-mode-input" x-model="developerMode"/>
-                            <span class="foad-developer-mode-switch" aria-hidden="true">
-                                <span class="foad-developer-mode-knob"></span>
-                            </span>
-                            <span class="fi-fo-field-label-content">Developer mode</span>
-                        </label>
-                    </div>
-                @endunless
-            </div>
 
-            <div class="foad-try-it-body">
-                <template x-if="hasRequestControls">
-                    <div class="foad-stack foad-stack-md">
+            {{--          <div class="foad-sample-toolbar">
+    {{--                <div class="foad-inline-list foad-inline-list-sm">
+                             <span class="foad-property-meta-label">Try it</span>
+                             <template x-if="selectedRequest">
+                                 <span class="foad-try-it-url" x-text="currentHar.method + ' ' + currentHar.url"></span>
+                             </template>
+                         </div>
+            </div>--}}
+
+{{--                <div x-if="hasRequestControls">--}}
+{{--                    <div class="foad-stack foad-stack-md">--}}
                         @include('filament-openapi-docs::components.request-snippet.auth')
                         @include('filament-openapi-docs::components.request-snippet.headers')
                         @include('filament-openapi-docs::components.request-snippet.path-parameters')
@@ -46,12 +34,12 @@
 
                         <x-filament::button type="button" x-on:click="sendRequest()" x-bind:disabled="sending"
                                             x-text="sending ? 'Sending' : 'Send API request'"/>
-                    </div>
-                </template>
+{{--                    </div>--}}
+{{--                </div>--}}
 
-                <template x-if="! hasRequestControls">
-                    <p class="fi-section-header-description">No request data documented.</p>
-                </template>
+{{--                <template x-if="! hasRequestControls">--}}
+{{--                    <p class="fi-section-header-description">No request data documented.</p>--}}
+{{--                </template>--}}
 
                 <template x-if="sendError">
                     <p class="foad-sample-error foad-try-message" x-text="sendError"></p>
@@ -71,8 +59,7 @@
                         <pre class="foad-sample-code foad-response-code"><code x-text="response.body"></code></pre>
                     </div>
                 </template>
-            </div>
-        </div>
+
 
         <div class="foad-sample-toolbar">
             <div class="foad-inline-list foad-inline-list-sm">

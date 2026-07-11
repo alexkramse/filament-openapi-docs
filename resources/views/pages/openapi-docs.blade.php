@@ -52,11 +52,6 @@
         .foad-response-block {
             display: grid;
             gap: .75rem;
-
-            .foad-property-main{
-                justify-content: start;
-            }
-
         }
 
         .foad-response-block + .foad-response-block {
@@ -91,6 +86,15 @@
         }
 
         .foad-property-main {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: flex-start;
+            flex-direction: row;
+        }
+
+        .foad-justify-content-space-between {
             align-items: center;
             display: flex;
             flex-wrap: wrap;
