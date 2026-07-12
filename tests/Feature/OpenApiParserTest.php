@@ -267,6 +267,9 @@ it('keeps request snippet javascript inside runtime boundaries', function () {
 
     expect($script)->not->toContain('collectAuthParameters')
         ->and($script)->not->toContain('collectHeaderParameters')
+        ->and($script)->toContain("const defaultTargetKey = 'shell'")
+        ->and($script)->toContain("const defaultClientKey = 'curl'")
+        ->and($script)->toContain('defaultClientForSelectedTarget')
         ->and($script)->toContain('applyRuntimeEditsToHar')
         ->and($script)->toContain('new HTTPSnippet')
         ->and($script)->toContain('fetch(')

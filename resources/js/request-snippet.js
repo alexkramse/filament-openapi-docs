@@ -48,6 +48,9 @@ const prismLanguagesByTarget = {
     swift: 'swift',
 };
 
+const defaultTargetKey = 'shell';
+const defaultClientKey = 'curl';
+
 const targetOptions = Object.values(targets)
     .map((target) => ({
         key: target.info.key,
@@ -65,7 +68,7 @@ const targetOptions = Object.values(targets)
 export default function requestSnippet(config) {
     return {
         activeRequest: config.requests[0]?.key ?? null,
-        activeTarget: targetOptions.find((target) => target.key === 'shell')?.key ?? targetOptions[0]?.key ?? null,
+        activeTarget: targetOptions.find((target) => target.key === defaultTargetKey)?.key ?? targetOptions[0]?.key ?? null,
         activeClient: null,
         sendMode: false,
         developerMode: false,
@@ -85,7 +88,7 @@ export default function requestSnippet(config) {
         targets: targetOptions,
 
         init() {
-            this.activeClient = this.selectedTarget?.defaultClient ?? this.selectedTarget?.clients[0]?.key ?? null;
+            this.activeClient = this.defaultClientForSelectedTarget();
             this.resetRequestState();
 
             this.$watch('activeRequest', () => {
@@ -186,7 +189,15 @@ export default function requestSnippet(config) {
         },
 
         selectTarget() {
-            this.activeClient = this.selectedTarget?.defaultClient ?? this.selectedClients[0]?.key ?? null;
+            this.activeClient = this.defaultClientForSelectedTarget();
+        },
+
+        defaultClientForSelectedTarget() {
+            if (this.selectedTarget?.key === defaultTargetKey && this.selectedClients.some((client) => client.key === defaultClientKey)) {
+                return defaultClientKey;
+            }
+
+            return this.selectedTarget?.defaultClient ?? this.selectedClients[0]?.key ?? null;
         },
 
         addHeader() {

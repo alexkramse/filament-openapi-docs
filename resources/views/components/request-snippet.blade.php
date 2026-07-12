@@ -23,7 +23,11 @@
                         aria-label="Request sample language"
                     >
                         <template x-for="target in targets" x-bind:key="target.key">
-                            <option x-bind:value="target.key" x-text="target.label"></option>
+                            <option
+                                x-bind:value="target.key"
+                                x-bind:selected="target.key === activeTarget"
+                                x-text="target.label"
+                            ></option>
                         </template>
                     </x-filament::input.select>
                 </x-filament::input.wrapper>
@@ -31,7 +35,11 @@
                 <x-filament::input.wrapper>
                     <x-filament::input.select x-model="activeClient" aria-label="Request sample client">
                         <template x-for="client in selectedClients" x-bind:key="client.key">
-                            <option x-bind:value="client.key" x-text="client.label"></option>
+                            <option
+                                x-bind:value="client.key"
+                                x-bind:selected="client.key === activeClient"
+                                x-text="client.label"
+                            ></option>
                         </template>
                     </x-filament::input.select>
                 </x-filament::input.wrapper>
