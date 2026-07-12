@@ -1,7 +1,9 @@
 <?php
 
+use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
 use Alexkramse\FilamentOpenapiDocs\Pages\OpenApiDocsPage;
+use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
 use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
@@ -112,14 +114,13 @@ it('exposes endpoints through native filament sub navigation', function () {
     expect($page::getSubNavigationPosition())->toBe(SubNavigationPosition::Start)
         ->and($subNavigation)->toHaveCount(1)
         ->and($subNavigation[0]->getLabel())->toContain('Users')
-        ->and($subNavigation[0]->getItems()[0]->getLabel())->toBe("List users\n/users")
-        ->and($subNavigation[0]->getItems()[1]->getLabel())->toBe("Show user\n/users/{user}")
-        ->and($subNavigation[0]->getItems()[2]->getLabel())->toBe('/health')
+        ->and($subNavigation[0]->getItems()[0]->getLabel())->toBe('List users')
+        ->and($subNavigation[0]->getItems()[1]->getLabel())->toBe('Show user')
+        ->and($subNavigation[0]->getItems()[2]->getLabel())->toBe('GET /health')
         ->and($subNavigation[0]->getItems()[0]->getBadge())->toBe('GET')
         ->and($subNavigation[0]->getItems()[0]->getBadgeColor())->toBe('success')
         ->and($subNavigation[0]->getItems()[0]->getUrl())->toBe('#')
         ->and($subNavigation[0]->getItems()[0]->isActive())->toBeTrue()
-        ->and($subNavigation[0]->getItems()[0]->getExtraAttributes()['class'])->toBe('foad-endpoint-navigation-item')
         ->and($subNavigation[0]->getItems()[0]->getExtraAttributes()['wire:click.prevent'])->toBe("selectEndpoint('get-users')");
 
     $page->selectEndpoint('get-usersuser');
@@ -129,3 +130,41 @@ it('exposes endpoints through native filament sub navigation', function () {
         ->and($subNavigation[0]->getItems()[0]->isActive())->toBeFalse()
         ->and($subNavigation[0]->getItems()[1]->isActive())->toBeTrue();
 });
+
+it('opens only the first endpoint navigation group by default', function () {
+    $navigation = app(OpenApiNavigationBuilder::class)->build([
+        'Users' => [endpointForNavigation('get-users', 'GET', '/users', 'List users', ['Users'])],
+        'Games' => [endpointForNavigation('get-games', 'GET', '/games', 'List games', ['Games'])],
+    ]);
+
+    expect($navigation)->toHaveCount(2)
+        ->and($navigation[0]->isCollapsible())->toBeTrue()
+        ->and($navigation[0]->isCollapsed())->toBeFalse()
+        ->and($navigation[1]->isCollapsible())->toBeTrue()
+        ->and($navigation[1]->isCollapsed())->toBeTrue();
+});
+
+it('normalizes persisted collapsed state for endpoint sub navigation groups', function () {
+    $view = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
+
+    expect($view)->toContain('collapsedGroups')
+        ->and($view)->toContain("document.querySelectorAll('.fi-page-sub-navigation-sidebar [data-group-label]')")
+        ->and($view)->toContain('labels.slice(1)');
+});
+
+function endpointForNavigation(string $id, string $method, string $path, string $summary, array $tags): Endpoint
+{
+    return new Endpoint(
+        id: $id,
+        method: $method,
+        path: $path,
+        summary: $summary,
+        description: null,
+        tags: $tags,
+        parameters: [],
+        requestBodies: [],
+        responses: [],
+        security: [],
+        deprecated: false,
+    );
+}

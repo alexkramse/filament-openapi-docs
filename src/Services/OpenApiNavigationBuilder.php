@@ -11,17 +11,28 @@ class OpenApiNavigationBuilder
 {
     /**
      * @param  array<string, array<int, Endpoint>>  $endpoints
-     * @return array<int, NavigationItem>
+     * @return array<int, NavigationGroup>
      */
     public function build(array $endpoints, ?string $selectedEndpointId = null): array
     {
-        return collect($endpoints)
-            ->map(fn (array $groupEndpoints, string $group): NavigationGroup => NavigationGroup::make($group)
+        $navigationGroups = [];
+        $index = 0;
+
+        foreach ($endpoints as $group => $groupEndpoints) {
+            $navigationGroup = NavigationGroup::make($group)
                 ->label(fn ($label) => $group)
                 ->collapsible()
-                ->items($this->items($groupEndpoints, $selectedEndpointId)))
-            ->values()
-            ->all();
+                ->items($this->items($groupEndpoints, $selectedEndpointId));
+
+            if ($index > 0) {
+                $navigationGroup->collapsed();
+            }
+
+            $navigationGroups[] = $navigationGroup;
+            $index++;
+        }
+
+        return $navigationGroups;
     }
 
     /**
@@ -31,24 +42,15 @@ class OpenApiNavigationBuilder
     private function items(array $endpoints, ?string $selectedEndpointId): array
     {
         return collect($endpoints)
-            ->map(fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($this->label($endpoint))
+            ->map(fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($endpoint->title())
                 ->url('#')
                 ->isActiveWhen(fn (): bool => $endpoint->id === $selectedEndpointId)
                 ->badge($endpoint->method, HttpMethod::color($endpoint->method))
                 ->extraAttributes([
-                    'class' => 'foad-endpoint-navigation-item',
                     'wire:click.prevent' => "selectEndpoint('{$endpoint->id}')",
-                ]))
+                ])
+            )
             ->values()
             ->all();
-    }
-
-    private function label(Endpoint $endpoint): string
-    {
-        if ($endpoint->summary === '') {
-            return $endpoint->path;
-        }
-
-        return "{$endpoint->summary}\n{$endpoint->path}";
     }
 }
