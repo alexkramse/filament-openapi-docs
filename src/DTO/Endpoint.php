@@ -1,6 +1,6 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs\DTO;
+namespace Alexkramse\FilamentOpenapiDocs\DTO;
 
 class Endpoint
 {

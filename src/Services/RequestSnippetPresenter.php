@@ -1,17 +1,17 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs\Services;
+namespace Alexkramse\FilamentOpenapiDocs\Services;
 
+use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Kramarenko\FilamentOpenApiDocs\DTO\Endpoint;
 
 class RequestSnippetPresenter
 {
     /**
      * @var array<int, string>
      */
-    private const array IGNORED_HEADER_PARAMETERS = [
+    private const array MEDIA_OR_AUTH_HEADERS = [
         'accept',
         'authorization',
         'content-type',
@@ -24,10 +24,23 @@ class RequestSnippetPresenter
     /**
      * @param  array<int, string>  $servers
      * @param  array<string, mixed>  $components
-     * @return array{requests: array<int, array{key: string, label: string, urlTemplate: string, pathParameters: array<int, array{name: string, value: string}>, har: array<string, mixed>}>}
+     * @return array{
+     *     securityItems: array<int, array<string, mixed>>,
+     *     mediaHeaders: array<int, array<string, mixed>>,
+     *     headerParameters: array<int, array<string, mixed>>,
+     *     pathParameters: array<int, array<string, mixed>>,
+     *     queryParameters: array<int, array<string, mixed>>,
+     *     requests: array<int, array<string, mixed>>,
+     *     hasRequestSamples: bool,
+     * }
      */
     public function present(Endpoint $endpoint, array $servers = [], array $components = []): array
     {
+        $securityItems = $this->securityItems($endpoint, $components);
+        $mediaHeaders = $this->mediaHeaders($endpoint);
+        $headerParameters = $this->parameters($endpoint, $components, 'header', true);
+        $pathParameters = $this->parameters($endpoint, $components, 'path');
+        $queryParameters = $this->parameters($endpoint, $components, 'query');
         $requestBodies = $endpoint->requestBodies === [] ? [null] : $endpoint->requestBodies;
         $requests = [];
 
@@ -39,73 +52,141 @@ class RequestSnippetPresenter
             }
 
             foreach ($samples as $sampleIndex => $sample) {
+                $bodyText = is_string($sample['value'] ?? null) ? $sample['value'] : '';
                 $requests[] = [
                     'key' => "request-{$bodyIndex}-{$sampleIndex}",
                     'label' => $this->label($body, $sample),
                     'urlTemplate' => $this->urlTemplate($endpoint, $servers),
-                    'pathParameters' => $this->parameters($endpoint, $components, 'path'),
-                    'har' => $this->har($endpoint, $servers, $components, $body, $sample),
+                    'authParameters' => $this->authParameters($securityItems),
+                    'mediaHeaderParameters' => $this->editableMediaHeaders($mediaHeaders),
+                    'headerParameters' => $this->editableParameters($headerParameters),
+                    'pathParameters' => $this->editableParameters($pathParameters),
+                    'queryParameters' => $this->editableParameters($queryParameters),
+                    'bodyText' => $bodyText,
+                    'bodyMimeType' => is_array($body) ? $body['contentType'] : null,
+                    'har' => $this->har(
+                        endpoint: $endpoint,
+                        servers: $servers,
+                        pathParameters: $pathParameters,
+                        queryParameters: $queryParameters,
+                        headerParameters: $headerParameters,
+                        mediaHeaders: $mediaHeaders,
+                        securityItems: $securityItems,
+                        body: $body,
+                        bodyText: $bodyText,
+                    ),
                 ];
             }
         }
 
         return [
+            'securityItems' => $securityItems,
+            'mediaHeaders' => $mediaHeaders,
+            'headerParameters' => $headerParameters,
+            'pathParameters' => $pathParameters,
+            'queryParameters' => $queryParameters,
             'requests' => $requests,
+            'hasRequestSamples' => config('filament-openapi-docs.request_samples.enabled', true) && $requests !== [],
         ];
     }
 
     /**
-     * @param  array<string, mixed>  $components
-     * @param  array<string, mixed>|null  $body
-     * @param  array<string, string>  $sample
-     * @return array<string, mixed>
+     * @return array<int, array<string, mixed>>
      */
-    private function har(Endpoint $endpoint, array $servers, array $components, ?array $body, array $sample): array
+    private function securityItems(Endpoint $endpoint, array $components): array
     {
-        $queryString = $this->parameters($endpoint, $components, 'query');
-        $headers = $this->parameters($endpoint, $components, 'header');
-        $cookies = [];
+        $securitySchemes = Arr::get($components, 'securitySchemes', []);
 
-        if ($responseContentType = $this->responseContentType($endpoint)) {
-            $headers = $this->replaceHeader($headers, 'Accept', $responseContentType);
+        if (! is_array($securitySchemes)) {
+            return [];
         }
 
-        $this->applySecurity($endpoint, $components, $headers, $queryString, $cookies);
+        return collect($endpoint->security)
+            ->filter(fn (mixed $securityRequirement): bool => is_array($securityRequirement))
+            ->flatMap(function (array $securityRequirement) use ($securitySchemes): array {
+                return collect(array_keys($securityRequirement))
+                    ->map(fn (string|int $schemeName): ?array => $this->securityItem((string) $schemeName, $securitySchemes[(string) $schemeName] ?? null))
+                    ->filter()
+                    ->values()
+                    ->all();
+            })
+            ->values()
+            ->all();
+    }
 
-        if (is_array($body)) {
-            $headers = $this->replaceHeader($headers, 'Content-Type', $body['contentType']);
+    /**
+     * @param  array<string, mixed>|null  $scheme
+     * @return array<string, mixed>|null
+     */
+    private function securityItem(string $schemeName, mixed $scheme): ?array
+    {
+        if (! is_array($scheme)) {
+            return null;
         }
 
-        $har = [
-            'method' => $endpoint->method,
-            'url' => $this->url($endpoint, $servers, $components, $queryString),
-            'httpVersion' => 'HTTP/1.1',
-            'headers' => array_values($headers),
-            'queryString' => array_values($queryString),
-            'cookies' => array_values($cookies),
-        ];
+        $description = isset($scheme['description']) ? (string) $scheme['description'] : null;
 
-        if (is_array($body) && filled($sample['value'] ?? null)) {
-            $har['postData'] = [
-                'mimeType' => $body['contentType'],
-                'text' => $sample['value'],
+        if (($scheme['type'] ?? null) === 'http' && ($scheme['scheme'] ?? null) === 'bearer') {
+            return [
+                'name' => 'Authorization',
+                'label' => $schemeName,
+                'location' => 'header',
+                'value' => 'Bearer <token>',
+                'prefix' => 'Bearer ',
+                'placeholder' => '<token>',
+                'description' => $description,
             ];
         }
 
-        return $har;
+        if (($scheme['type'] ?? null) === 'http' && ($scheme['scheme'] ?? null) === 'basic') {
+            return [
+                'name' => 'Authorization',
+                'label' => $schemeName,
+                'location' => 'header',
+                'value' => 'Basic <credentials>',
+                'prefix' => 'Basic ',
+                'placeholder' => '<credentials>',
+                'description' => $description,
+            ];
+        }
+
+        if (($scheme['type'] ?? null) === 'apiKey' && is_string($scheme['name'] ?? null)) {
+            return [
+                'name' => $scheme['name'],
+                'label' => $schemeName,
+                'location' => is_string($scheme['in'] ?? null) ? $scheme['in'] : 'header',
+                'value' => '<api-key>',
+                'prefix' => '',
+                'placeholder' => '<api-key>',
+                'description' => $description,
+            ];
+        }
+
+        if (in_array($scheme['type'] ?? null, ['oauth2', 'openIdConnect'], true)) {
+            return [
+                'name' => $schemeName,
+                'label' => Str::headline((string) $scheme['type']),
+                'location' => 'security',
+                'value' => '<credentials>',
+                'prefix' => '',
+                'placeholder' => '<credentials>',
+                'description' => $description,
+            ];
+        }
+
+        return null;
     }
 
     /**
-     * @param  array<string, mixed>  $components
-     * @return array<int, array{name: string, value: string}>
+     * @return array<int, array<string, mixed>>
      */
-    private function parameters(Endpoint $endpoint, array $components, string $location): array
+    private function parameters(Endpoint $endpoint, array $components, string $location, bool $rejectMediaOrAuthHeaders = false): array
     {
         return collect($endpoint->parameters)
             ->where('in', $location)
-            ->reject(fn (array $parameter): bool => $this->isIgnoredHeaderParameter($parameter, $location))
+            ->reject(fn (array $parameter): bool => $rejectMediaOrAuthHeaders && $this->isMediaOrAuthHeader($parameter))
             ->map(fn (array $parameter): array => [
-                'name' => $parameter['name'],
+                ...$parameter,
                 'value' => $this->stringValue($this->parameterValue($parameter, $components)),
             ])
             ->values()
@@ -115,41 +196,203 @@ class RequestSnippetPresenter
     /**
      * @param  array<string, mixed>  $parameter
      */
-    private function isIgnoredHeaderParameter(array $parameter, string $location): bool
+    private function isMediaOrAuthHeader(array $parameter): bool
     {
-        return $location === 'header'
-            && is_string($parameter['name'] ?? null)
-            && in_array(Str::lower($parameter['name']), self::IGNORED_HEADER_PARAMETERS, true);
-    }
-
-    private function responseContentType(Endpoint $endpoint): ?string
-    {
-        $contentTypes = collect($endpoint->responses)
-            ->filter(fn (array $response, string $status): bool => Str::startsWith($status, '2') && $response['content'] !== [])
-            ->pluck('content')
-            ->whenEmpty(fn ($responses) => collect($endpoint->responses)->pluck('content'))
-            ->flatMap(fn (array $content): array => array_keys($content))
-            ->values();
-
-        return $contentTypes->first(fn (string $contentType): bool => Str::contains($contentType, ['json', '+json']))
-            ?? $contentTypes->first();
+        return is_string($parameter['name'] ?? null)
+            && in_array(Str::lower($parameter['name']), self::MEDIA_OR_AUTH_HEADERS, true);
     }
 
     /**
-     * @param  array<string, mixed>  $components
+     * @return array<int, array<string, mixed>>
+     */
+    private function mediaHeaders(Endpoint $endpoint): array
+    {
+        $headers = [];
+        $contentTypes = collect($endpoint->requestBodies)
+            ->pluck('contentType')
+            ->filter(fn (mixed $contentType): bool => is_string($contentType) && filled($contentType))
+            ->unique()
+            ->values();
+
+        if ($contentTypes->isNotEmpty()) {
+            $headers[] = [
+                'name' => 'Content-Type',
+                'value' => $contentTypes->first(),
+                'description' => 'Request body media type',
+            ];
+        }
+
+        if ($accept = $this->responseContentType($endpoint)) {
+            $headers[] = [
+                'name' => 'Accept',
+                'value' => $accept,
+                'description' => 'Preferred response media type',
+            ];
+        }
+
+        return $headers;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function editableParameters(array $parameters): array
+    {
+        return collect($parameters)
+            ->map(fn (array $parameter): array => [
+                'name' => $parameter['name'],
+                'value' => $parameter['value'] ?? '',
+                'developerOnly' => false,
+                'removable' => false,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function editableMediaHeaders(array $mediaHeaders): array
+    {
+        return collect($mediaHeaders)
+            ->map(fn (array $header): array => [
+                'name' => $header['name'],
+                'value' => $header['value'],
+                'description' => $header['description'],
+                'developerOnly' => false,
+                'removable' => false,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function authParameters(array $securityItems): array
+    {
+        return collect($securityItems)
+            ->reject(fn (array $securityItem): bool => ($securityItem['location'] ?? null) === 'security')
+            ->map(fn (array $securityItem): array => [
+                'location' => $securityItem['location'],
+                'name' => $securityItem['name'],
+                'label' => $securityItem['label'],
+                'prefix' => $securityItem['prefix'],
+                'placeholder' => $securityItem['placeholder'],
+                'value' => '',
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $pathParameters
+     * @param  array<int, array<string, mixed>>  $queryParameters
+     * @param  array<int, array<string, mixed>>  $headerParameters
+     * @param  array<int, array<string, mixed>>  $mediaHeaders
+     * @param  array<int, array<string, mixed>>  $securityItems
+     * @param  array<string, mixed>|null  $body
+     * @return array<string, mixed>
+     */
+    private function har(
+        Endpoint $endpoint,
+        array $servers,
+        array $pathParameters,
+        array $queryParameters,
+        array $headerParameters,
+        array $mediaHeaders,
+        array $securityItems,
+        ?array $body,
+        string $bodyText,
+    ): array {
+        $queryString = collect($queryParameters)
+            ->map(fn (array $parameter): array => ['name' => $parameter['name'], 'value' => $parameter['value'] ?? ''])
+            ->values()
+            ->all();
+        $headers = collect([...$headerParameters, ...$mediaHeaders])
+            ->map(fn (array $parameter): array => ['name' => $parameter['name'], 'value' => $parameter['value'] ?? ''])
+            ->values()
+            ->all();
+        $cookies = [];
+
+        $this->applySecurity($securityItems, $headers, $queryString, $cookies);
+
+        $har = [
+            'method' => $endpoint->method,
+            'url' => $this->url($endpoint, $servers, $pathParameters, $queryString),
+            'httpVersion' => 'HTTP/1.1',
+            'headers' => array_values($headers),
+            'queryString' => array_values($queryString),
+            'cookies' => array_values($cookies),
+        ];
+
+        if (is_array($body) && filled($bodyText)) {
+            $har['postData'] = [
+                'mimeType' => $body['contentType'],
+                'text' => $bodyText,
+            ];
+        }
+
+        return $har;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $securityItems
+     * @param  array<int, array{name: string, value: string}>  $headers
+     * @param  array<int, array{name: string, value: string}>  $queryString
+     * @param  array<int, array{name: string, value: string}>  $cookies
+     */
+    private function applySecurity(array $securityItems, array &$headers, array &$queryString, array &$cookies): void
+    {
+        foreach ($securityItems as $securityItem) {
+            $value = $securityItem['value'] ?? '';
+            $parameter = [
+                'name' => $securityItem['name'],
+                'value' => is_string($value) ? $value : '',
+            ];
+
+            match ($securityItem['location'] ?? null) {
+                'query' => $queryString[] = $parameter,
+                'cookie' => $cookies[] = $parameter,
+                'header' => $headers = $this->replaceHeader($headers, $parameter['name'], $parameter['value']),
+                default => null,
+            };
+        }
+    }
+
+    /**
+     * @param  array<int, array{name: string, value: string}>  $headers
+     * @return array<int, array{name: string, value: string}>
+     */
+    private function replaceHeader(array $headers, string $name, string $value): array
+    {
+        $headers = collect($headers)
+            ->reject(fn (array $header): bool => Str::lower($header['name']) === Str::lower($name))
+            ->values()
+            ->all();
+
+        $headers[] = [
+            'name' => $name,
+            'value' => $value,
+        ];
+
+        return $headers;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $pathParameters
      * @param  array<int, array{name: string, value: string}>  $queryString
      */
-    private function url(Endpoint $endpoint, array $servers, array $components, array $queryString): string
+    private function url(Endpoint $endpoint, array $servers, array $pathParameters, array $queryString): string
     {
-        $path = preg_replace_callback('/\{([^}]+)\}/', function (array $matches) use ($endpoint, $components): string {
-            $parameter = collect($endpoint->parameters)
-                ->first(fn (array $parameter): bool => $parameter['in'] === 'path' && $parameter['name'] === $matches[1]);
+        $path = preg_replace_callback('/\{([^}]+)\}/', function (array $matches) use ($pathParameters): string {
+            $parameter = collect($pathParameters)
+                ->first(fn (array $parameter): bool => $parameter['name'] === $matches[1]);
 
-            return rawurlencode($this->stringValue($this->parameterValue(is_array($parameter) ? $parameter : [], $components)));
+            return rawurlencode((string) ($parameter['value'] ?? $matches[1]));
         }, $endpoint->path) ?? $endpoint->path;
 
-        $server = $this->server($servers);
-        $url = rtrim($server, '/').'/'.ltrim($path, '/');
+        $url = rtrim($this->server($servers), '/').'/'.ltrim($path, '/');
 
         if ($queryString === []) {
             return $url;
@@ -183,6 +426,20 @@ class RequestSnippetPresenter
         }
 
         return $servers[0] ?? url('/');
+    }
+
+    private function responseContentType(Endpoint $endpoint): ?string
+    {
+        $contentTypes = collect($endpoint->responses)
+            ->filter(fn (array $response, string $status): bool => Str::startsWith($status, '2') && $response['content'] !== [])
+            ->pluck('content')
+            ->whenEmpty(fn ($responses) => collect($endpoint->responses)->pluck('content'))
+            ->flatMap(fn (array $content): array => array_keys($content))
+            ->unique()
+            ->values();
+
+        return $contentTypes->first(fn (string $contentType): bool => Str::contains($contentType, ['json', '+json']))
+            ?? $contentTypes->first();
     }
 
     /**
@@ -226,79 +483,8 @@ class RequestSnippetPresenter
     }
 
     /**
-     * @param  array<int, array{name: string, value: string}>  $headers
-     * @param  array<int, array{name: string, value: string}>  $queryString
-     * @param  array<int, array{name: string, value: string}>  $cookies
-     */
-    private function applySecurity(Endpoint $endpoint, array $components, array &$headers, array &$queryString, array &$cookies): void
-    {
-        $securitySchemes = Arr::get($components, 'securitySchemes', []);
-
-        if (! is_array($securitySchemes)) {
-            return;
-        }
-
-        foreach ($endpoint->security as $securityRequirement) {
-            if (! is_array($securityRequirement)) {
-                continue;
-            }
-
-            foreach (array_keys($securityRequirement) as $schemeName) {
-                $scheme = $securitySchemes[$schemeName] ?? null;
-
-                if (! is_array($scheme)) {
-                    continue;
-                }
-
-                if (($scheme['type'] ?? null) === 'http' && ($scheme['scheme'] ?? null) === 'bearer') {
-                    $headers = $this->replaceHeader($headers, 'Authorization', 'Bearer <token>');
-
-                    continue;
-                }
-
-                if (($scheme['type'] ?? null) === 'http' && ($scheme['scheme'] ?? null) === 'basic') {
-                    $headers = $this->replaceHeader($headers, 'Authorization', 'Basic <credentials>');
-
-                    continue;
-                }
-
-                if (($scheme['type'] ?? null) !== 'apiKey' || ! is_string($scheme['name'] ?? null)) {
-                    continue;
-                }
-
-                $apiKey = ['name' => $scheme['name'], 'value' => '<api-key>'];
-
-                match ($scheme['in'] ?? null) {
-                    'query' => $queryString[] = $apiKey,
-                    'cookie' => $cookies[] = $apiKey,
-                    default => $headers = $this->replaceHeader($headers, $apiKey['name'], $apiKey['value']),
-                };
-            }
-        }
-    }
-
-    /**
-     * @param  array<int, array{name: string, value: string}>  $headers
-     * @return array<int, array{name: string, value: string}>
-     */
-    private function replaceHeader(array $headers, string $name, string $value): array
-    {
-        $headers = collect($headers)
-            ->reject(fn (array $header): bool => Str::lower($header['name']) === Str::lower($name))
-            ->values()
-            ->all();
-
-        $headers[] = [
-            'name' => $name,
-            'value' => $value,
-        ];
-
-        return $headers;
-    }
-
-    /**
      * @param  array<string, mixed>|null  $body
-     * @param  array<string, string>  $sample
+     * @param  array<string, mixed>  $sample
      */
     private function label(?array $body, array $sample): string
     {

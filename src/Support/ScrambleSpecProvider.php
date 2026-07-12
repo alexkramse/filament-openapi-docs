@@ -1,6 +1,6 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs\Support;
+namespace Alexkramse\FilamentOpenapiDocs\Support;
 
 use Dedoc\Scramble\CacheableGenerator;
 use Dedoc\Scramble\GeneratorConfig;

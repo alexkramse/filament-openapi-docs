@@ -1,9 +1,9 @@
 <?php
 
+use Alexkramse\FilamentOpenapiDocs\Support\ScrambleSpecProvider;
 use Dedoc\Scramble\CacheableGenerator;
 use Dedoc\Scramble\GeneratorConfig;
 use Dedoc\Scramble\Scramble;
-use Kramarenko\FilamentOpenApiDocs\Support\ScrambleSpecProvider;
 use Mockery as m;
 
 it('returns scramble renderer view and generated spec', function () {

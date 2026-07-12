@@ -2,7 +2,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "node bin/build.js"
+        "build": "node bin/build.js",
+        "dev": "node bin/build.js --watch --publish"
     },
     "devDependencies": {
         "@readme/httpsnippet": "^11.3.2",

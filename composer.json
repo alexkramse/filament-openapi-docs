@@ -6,12 +6,12 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Kramarenko\\FilamentOpenApiDocs\\": "src/"
+            "Alexkramse\\FilamentOpenapiDocs\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Kramarenko\\FilamentOpenApiDocs\\Tests\\": "tests/"
+            "Alexkramse\\FilamentOpenapiDocs\\Tests\\": "tests/"
         }
     },
     "require": {
@@ -32,7 +32,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Kramarenko\\FilamentOpenApiDocs\\FilamentOpenApiDocsServiceProvider"
+                "Alexkramse\\FilamentOpenapiDocs\\FilamentOpenApiDocsServiceProvider"
             ]
         }
     },

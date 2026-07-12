@@ -1,11 +1,12 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs;
+namespace Alexkramse\FilamentOpenapiDocs;
 
+use Alexkramse\FilamentOpenapiDocs\Support\ScrambleSpecProvider;
+use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
 use Filament\Support\Assets\AlpineComponent;
+use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
-use Kramarenko\FilamentOpenApiDocs\Support\ScrambleSpecProvider;
-use Kramarenko\FilamentOpenApiDocs\Support\SpecProvider;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -27,6 +28,7 @@ class FilamentOpenApiDocsServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         FilamentAsset::register([
+            Css::make('openapi-docs', __DIR__.'/../resources/css/openapi-docs.css')->loadedOnRequest(),
             AlpineComponent::make('request-snippet', __DIR__.'/../resources/js/dist/request-snippet.js'),
         ], 'alexkramse/filament-openapi-docs');
     }

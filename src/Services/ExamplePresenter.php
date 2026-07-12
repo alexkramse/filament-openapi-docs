@@ -1,6 +1,6 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs\Services;
+namespace Alexkramse\FilamentOpenapiDocs\Services;
 
 use Illuminate\Support\Str;
 

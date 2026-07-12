@@ -1,7 +1,11 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs\Pages;
+namespace Alexkramse\FilamentOpenapiDocs\Pages;
 
+use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
+use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
+use Alexkramse\FilamentOpenapiDocs\Services\OpenApiParser;
+use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
 use BackedEnum;
 use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Enums\SubNavigationPosition;
@@ -9,10 +13,6 @@ use Filament\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
-use Kramarenko\FilamentOpenApiDocs\DTO\Endpoint;
-use Kramarenko\FilamentOpenApiDocs\Services\OpenApiNavigationBuilder;
-use Kramarenko\FilamentOpenApiDocs\Services\OpenApiParser;
-use Kramarenko\FilamentOpenApiDocs\Support\SpecProvider;
 use UnitEnum;
 
 class OpenApiDocsPage extends Page

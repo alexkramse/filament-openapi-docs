@@ -1,10 +1,11 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs\Services;
+namespace Alexkramse\FilamentOpenapiDocs\Services;
 
+use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
+use Alexkramse\FilamentOpenapiDocs\Enums\HttpMethod;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
-use Kramarenko\FilamentOpenApiDocs\DTO\Endpoint;
 
 class OpenApiNavigationBuilder
 {
@@ -33,22 +34,11 @@ class OpenApiNavigationBuilder
             ->map(fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($endpoint->path)
                 ->url('#')
                 ->isActiveWhen(fn (): bool => $endpoint->id === $selectedEndpointId)
-                ->badge($endpoint->method, $this->methodColor($endpoint->method))
+                ->badge($endpoint->method, HttpMethod::color($endpoint->method))
                 ->extraAttributes([
                     'wire:click.prevent' => "selectEndpoint('{$endpoint->id}')",
                 ]))
             ->values()
             ->all();
-    }
-
-    private function methodColor(string $method): string
-    {
-        return match ($method) {
-            'GET' => 'success',
-            'POST' => 'info',
-            'PUT', 'PATCH' => 'warning',
-            'DELETE' => 'danger',
-            default => 'gray',
-        };
     }
 }

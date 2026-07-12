@@ -1,10 +1,10 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs;
+namespace Alexkramse\FilamentOpenapiDocs;
 
+use Alexkramse\FilamentOpenapiDocs\Pages\OpenApiDocsPage;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
-use Kramarenko\FilamentOpenApiDocs\Pages\OpenApiDocsPage;
 
 class FilamentOpenApiDocsPlugin implements Plugin
 {

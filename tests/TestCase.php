@@ -1,14 +1,14 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs\Tests;
+namespace Alexkramse\FilamentOpenapiDocs\Tests;
 
+use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsServiceProvider;
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
 use BladeUI\Icons\BladeIconsServiceProvider;
 use Dedoc\Scramble\ScrambleServiceProvider;
 use Filament\FilamentServiceProvider;
 use Filament\Support\SupportServiceProvider;
 use Illuminate\Foundation\Application;
-use Kramarenko\FilamentOpenApiDocs\FilamentOpenApiDocsServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 

@@ -67,14 +67,16 @@ export default function requestSnippet(config) {
         activeRequest: config.requests[0]?.key ?? null,
         activeTarget: targetOptions.find((target) => target.key === 'shell')?.key ?? targetOptions[0]?.key ?? null,
         activeClient: null,
-        copied: false,
+        sendMode: false,
         developerMode: false,
+        copied: false,
         error: null,
         bodyText: '',
         bodyJsonError: null,
         pathParameters: [],
         queryParameters: [],
         headerParameters: [],
+        mediaHeaderParameters: [],
         authParameters: [],
         response: null,
         sendError: null,
@@ -110,7 +112,7 @@ export default function requestSnippet(config) {
         },
 
         get currentHar() {
-            return this.buildHarRequest(true);
+            return this.applyRuntimeEditsToHar(true);
         },
 
         get hasQueryParameters() {
@@ -125,8 +127,12 @@ export default function requestSnippet(config) {
             return this.authParameters.length > 0;
         },
 
+        get hasMediaHeaderParameters() {
+            return this.mediaHeaderParameters.length > 0;
+        },
+
         get hasHeaderParameters() {
-            return this.headerParameters.length > 0;
+            return this.developerMode || this.headerParameters.length > 0;
         },
 
         get hasBody() {
@@ -138,7 +144,7 @@ export default function requestSnippet(config) {
         },
 
         get hasRequestControls() {
-            return this.developerMode || this.hasPathParameters || this.hasQueryParameters || this.hasHeaderParameters || this.hasAuthParameters || this.hasBody;
+            return this.developerMode || this.hasPathParameters || this.hasQueryParameters || this.hasHeaderParameters || this.hasMediaHeaderParameters || this.hasAuthParameters || this.hasBody;
         },
 
         get code() {
@@ -212,48 +218,34 @@ export default function requestSnippet(config) {
         resetDeveloperModeState() {
             this.headerParameters = this.headerParameters.filter((parameter) => ! parameter.removable);
             this.queryParameters = this.queryParameters.filter((parameter) => ! parameter.developerOnly);
+            this.mediaHeaderParameters = cloneParameters(this.selectedRequest?.mediaHeaderParameters ?? []);
         },
 
         resetRequestState() {
-            const har = this.selectedRequest?.har;
-
             this.response = null;
             this.sendError = null;
             this.bodyJsonError = null;
 
-            if (! har) {
+            if (! this.selectedRequest) {
                 this.pathParameters = [];
                 this.queryParameters = [];
                 this.headerParameters = [];
+                this.mediaHeaderParameters = [];
                 this.authParameters = [];
                 this.bodyText = '';
 
                 return;
             }
 
-            const auth = collectAuthParameters(har);
-            const authQueryNames = auth
-                .filter((parameter) => parameter.location === 'query')
-                .map((parameter) => parameter.name);
-
-            this.authParameters = auth;
-            this.headerParameters = collectHeaderParameters(har, auth);
-            this.pathParameters = (this.selectedRequest?.pathParameters ?? []).map((parameter) => ({
-                name: parameter.name,
-                value: parameter.value ?? '',
-            }));
-            this.queryParameters = (har.queryString ?? [])
-                .filter((parameter) => ! authQueryNames.includes(parameter.name))
-                .map((parameter) => ({
-                    name: parameter.name,
-                    value: parameter.value ?? '',
-                    developerOnly: false,
-                    removable: false,
-                }));
-            this.bodyText = har.postData?.text ?? '';
+            this.authParameters = cloneParameters(this.selectedRequest.authParameters ?? []);
+            this.mediaHeaderParameters = cloneParameters(this.selectedRequest.mediaHeaderParameters ?? []);
+            this.headerParameters = cloneParameters(this.selectedRequest.headerParameters ?? []);
+            this.pathParameters = cloneParameters(this.selectedRequest.pathParameters ?? []);
+            this.queryParameters = cloneParameters(this.selectedRequest.queryParameters ?? []);
+            this.bodyText = this.selectedRequest.bodyText ?? '';
         },
 
-        buildHarRequest(includePlaceholders = true) {
+        applyRuntimeEditsToHar(includePlaceholders = true) {
             const har = structuredCloneSafe(this.selectedRequest?.har ?? {});
             const queryString = this.queryParameters
                 .filter((parameter) => this.developerMode || ! parameter.developerOnly)
@@ -280,23 +272,24 @@ export default function requestSnippet(config) {
                 queryString,
             );
 
-            const authHeaderNames = this.authParameters
-                .filter((parameter) => parameter.location === 'header')
-                .map((parameter) => parameter.name.toLowerCase());
-            const editableHeaderNames = this.headerParameters
+            const editableHeaderNames = [
+                ...this.mediaHeaderParameters,
+                ...this.headerParameters,
+                ...this.authParameters.filter((parameter) => parameter.location === 'header'),
+            ]
                 .map((parameter) => parameter.name.toLowerCase())
                 .filter((name) => name.length > 0);
 
             const headers = (har.headers ?? [])
-                .filter((header) => ! authHeaderNames.includes(header.name.toLowerCase()))
                 .filter((header) => ! editableHeaderNames.includes(header.name.toLowerCase()))
+                .filter((header) => isValidHeaderName(header.name))
                 .map((header) => ({
                     name: header.name,
                     value: header.value ?? '',
                 }));
 
-            for (const parameter of this.headerParameters) {
-                if (parameter.name && String(parameter.value).length > 0) {
+            for (const parameter of [...this.mediaHeaderParameters, ...this.headerParameters]) {
+                if (parameter.name && String(parameter.value).length > 0 && isValidHeaderName(parameter.name)) {
                     headers.push({
                         name: parameter.name,
                         value: String(parameter.value),
@@ -307,7 +300,7 @@ export default function requestSnippet(config) {
             for (const parameter of this.authParameters.filter((item) => item.location === 'header')) {
                 const authValue = parameter.value || (includePlaceholders ? parameter.placeholder : '');
 
-                if (authValue) {
+                if (authValue && isValidHeaderName(parameter.name)) {
                     headers.push({
                         name: parameter.name,
                         value: `${parameter.prefix ?? ''}${authValue}`,
@@ -342,7 +335,16 @@ export default function requestSnippet(config) {
                 }
             }
 
-            const har = this.buildHarRequest(false);
+            const invalidHeader = [...this.mediaHeaderParameters, ...this.headerParameters, ...this.authParameters.filter((item) => item.location === 'header')]
+                .find((header) => header.name && ! isValidHeaderName(header.name));
+
+            if (invalidHeader) {
+                this.sendError = `Invalid header name: ${invalidHeader.name}`;
+
+                return;
+            }
+
+            const har = this.applyRuntimeEditsToHar(false);
             const headers = Object.fromEntries(
                 (har.headers ?? [])
                     .filter((header) => header.value && ! isPlaceholderValue(header.value))
@@ -406,96 +408,8 @@ export default function requestSnippet(config) {
     };
 };
 
-function collectAuthParameters(har) {
-    const auth = [];
-
-    for (const header of har.headers ?? []) {
-        const value = header.value ?? '';
-
-        if (header.name.toLowerCase() === 'authorization') {
-            if (value.toLowerCase().startsWith('bearer ')) {
-                auth.push({
-                    location: 'header',
-                    name: header.name,
-                    label: 'Bearer token',
-                    prefix: 'Bearer ',
-                    placeholder: '<token>',
-                    value: placeholderToEmpty(value.slice(7)),
-                });
-
-                continue;
-            }
-
-            if (value.toLowerCase().startsWith('basic ')) {
-                auth.push({
-                    location: 'header',
-                    name: header.name,
-                    label: 'Basic credentials',
-                    prefix: 'Basic ',
-                    placeholder: '<credentials>',
-                    value: placeholderToEmpty(value.slice(6)),
-                });
-
-                continue;
-            }
-
-            auth.push({
-                location: 'header',
-                name: header.name,
-                label: 'Authorization',
-                prefix: '',
-                placeholder: '<credentials>',
-                value: placeholderToEmpty(value),
-            });
-
-            continue;
-        }
-
-        if (value === '<api-key>') {
-            auth.push({
-                location: 'header',
-                name: header.name,
-                label: header.name,
-                prefix: '',
-                placeholder: '<api-key>',
-                value: '',
-            });
-        }
-    }
-
-    for (const parameter of har.queryString ?? []) {
-        if (parameter.value === '<api-key>') {
-            auth.push({
-                location: 'query',
-                name: parameter.name,
-                label: parameter.name,
-                prefix: '',
-                placeholder: '<api-key>',
-                value: '',
-            });
-        }
-    }
-
-    return auth;
-}
-
-function collectHeaderParameters(har, authParameters) {
-    const authHeaderNames = authParameters
-        .filter((parameter) => parameter.location === 'header')
-        .map((parameter) => parameter.name.toLowerCase());
-
-    return (har.headers ?? [])
-        .filter((header) => ! authHeaderNames.includes(header.name.toLowerCase()))
-        .map((header) => ({
-            name: header.name,
-            value: header.value ?? '',
-            disabled: isDefaultHeader(header.name),
-            removable: false,
-        }));
-}
-
-function isDefaultHeader(name) {
-    return ['accept', 'content-type'].includes(name.toLowerCase());
+function cloneParameters(parameters) {
+    return structuredCloneSafe(parameters);
 }
 
 function buildUrlWithQueryString(url, queryString) {
@@ -525,12 +439,12 @@ function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function placeholderToEmpty(value) {
-    return isPlaceholderValue(value) ? '' : value;
-}
-
 function isPlaceholderValue(value) {
     return /^<[^>]+>$/.test(String(value).trim());
+}
+
+function isValidHeaderName(name) {
+    return /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(String(name));
 }
 
 function formatResponseBody(body, contentType) {

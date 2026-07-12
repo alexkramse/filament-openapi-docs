@@ -1,5 +1,5 @@
 @php
-    $presenter = app(\Kramarenko\FilamentOpenApiDocs\Services\SchemaPresenter::class);
+    $presenter = app(\Alexkramse\FilamentOpenapiDocs\Services\SchemaPresenter::class);
     $schemaComponents = $components ?? [];
     $rows = $presenter->rows($schema, $schemaComponents);
 @endphp

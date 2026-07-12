@@ -1,6 +1,6 @@
 <?php
 
-use Kramarenko\FilamentOpenApiDocs\Tests\TestCase;
+use Alexkramse\FilamentOpenapiDocs\Tests\TestCase;
 
 pest()
     ->extend(TestCase::class)

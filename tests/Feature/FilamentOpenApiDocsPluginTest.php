@@ -1,11 +1,11 @@
 <?php
 
+use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
+use Alexkramse\FilamentOpenapiDocs\Pages\OpenApiDocsPage;
+use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Illuminate\Support\Facades\File;
-use Kramarenko\FilamentOpenApiDocs\FilamentOpenApiDocsPlugin;
-use Kramarenko\FilamentOpenApiDocs\Pages\OpenApiDocsPage;
-use Kramarenko\FilamentOpenApiDocs\Support\SpecProvider;
 use Mockery as m;
 
 it('registers the api docs page with a panel', function () {

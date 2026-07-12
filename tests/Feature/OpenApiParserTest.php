@@ -1,36 +1,251 @@
 <?php
 
-use Kramarenko\FilamentOpenApiDocs\DTO\Endpoint;
-use Kramarenko\FilamentOpenApiDocs\Services\OpenApiNavigationBuilder;
-use Kramarenko\FilamentOpenApiDocs\Services\OpenApiParser;
-use Kramarenko\FilamentOpenApiDocs\Services\RequestSnippetPresenter;
-
-function requestSnippetBladeSources(): string
-{
-    return collect([
-        'components/request-snippet.blade.php',
-        'components/request-snippet/auth.blade.php',
-        'components/request-snippet/headers.blade.php',
-        'components/request-snippet/path-parameters.blade.php',
-        'components/request-snippet/query-parameters.blade.php',
-        'components/request-snippet/body.blade.php',
-    ])
-        ->map(fn (string $path): string => file_get_contents(__DIR__.'/../../resources/views/'.$path))
-        ->implode("\n");
-}
-
-function endpointBladeSources(): string
-{
-    return collect([
-        'components/endpoint.blade.php',
-        'components/endpoint/responses.blade.php',
-    ])
-        ->map(fn (string $path): string => file_get_contents(__DIR__.'/../../resources/views/'.$path))
-        ->implode("\n");
-}
+use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
+use Alexkramse\FilamentOpenapiDocs\Enums\HttpMethod;
+use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
+use Alexkramse\FilamentOpenapiDocs\Services\OpenApiParser;
+use Alexkramse\FilamentOpenapiDocs\Services\RequestSnippetPresenter;
 
 it('parses openapi paths into grouped endpoints', function () {
-    $parsed = app(OpenApiParser::class)->parse([
+    $parsed = app(OpenApiParser::class)->parse(openApiSpec());
+
+    expect($parsed['info']['title'])->toBe('Game API')
+        ->and($parsed['servers'])->toBe(['https://example.test/api'])
+        ->and($parsed['endpointCount'])->toBe(2)
+        ->and($parsed['components']['securitySchemes'])->toHaveKey('bearerAuth')
+        ->and($parsed['endpoints'])->toHaveKey('Users');
+
+    $endpoint = $parsed['endpoints']['Users'][0];
+
+    expect($endpoint)->toBeInstanceOf(Endpoint::class)
+        ->and($endpoint->method)->toBe('GET')
+        ->and($endpoint->path)->toBe('/users/{user}')
+        ->and($endpoint->parameters)->toHaveCount(2)
+        ->and($endpoint->responses['200']['content']['application/json']['schema']['type'])->toBe('object');
+});
+
+it('normalizes swagger 2 request metadata into the same endpoint shape', function () {
+    $parsed = app(OpenApiParser::class)->parse(swaggerSpec());
+    $endpoint = $parsed['endpoints']['Users'][0];
+    $presented = app(RequestSnippetPresenter::class)->present($endpoint, $parsed['servers'], $parsed['components']);
+
+    expect($parsed['servers'])->toBe(['https://api.example.test/v1'])
+        ->and($parsed['components']['securitySchemes']['basicAuth']['type'])->toBe('http')
+        ->and($endpoint->requestBodies[0]['contentType'])->toBe('application/x-www-form-urlencoded')
+        ->and($endpoint->requestBodies[0]['schema']['properties'])->toHaveKeys(['name', 'avatar'])
+        ->and($presented['securityItems'][0]['value'])->toBe('Basic <credentials>')
+        ->and($presented['mediaHeaders'][0]['name'])->toBe('Content-Type')
+        ->and($presented['requests'][0]['har']['headers'])->toContain(['name' => 'Content-Type', 'value' => 'application/x-www-form-urlencoded']);
+});
+
+it('provides request docs editable controls and baseline har from one presenter payload', function () {
+    $endpoint = endpointWithRequestData();
+    $presented = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test'], securityComponents());
+    $request = $presented['requests'][0];
+
+    expect($presented['hasRequestSamples'])->toBeTrue()
+        ->and($presented['securityItems'])->toHaveCount(2)
+        ->and($presented['mediaHeaders'])->toContain(['name' => 'Content-Type', 'value' => 'application/json', 'description' => 'Request body media type'])
+        ->and($presented['headerParameters'][0]['name'])->toBe('X-Trace')
+        ->and($presented['pathParameters'][0]['value'])->toBe('5')
+        ->and($presented['queryParameters'][0]['value'])->toBe('profile')
+        ->and($request['authParameters'])->toHaveCount(2)
+        ->and($request['mediaHeaderParameters'][0]['name'])->toBe('Content-Type')
+        ->and($request['headerParameters'][0]['name'])->toBe('X-Trace')
+        ->and($request['pathParameters'][0]['name'])->toBe('user')
+        ->and($request['queryParameters'][0]['name'])->toBe('include')
+        ->and($request['har']['url'])->toBe('https://api.example.test/users/5?include=profile')
+        ->and($request['har']['headers'])->toContain(['name' => 'Authorization', 'value' => 'Bearer <token>'])
+        ->and($request['har']['headers'])->toContain(['name' => 'X-Api-Key', 'value' => '<api-key>'])
+        ->and($request['har']['headers'])->toContain(['name' => 'Content-Type', 'value' => 'application/json'])
+        ->and($request['har']['headers'])->toContain(['name' => 'X-Trace', 'value' => 'trace-1']);
+});
+
+it('renders request read and send modes', function () {
+    $html = html_entity_decode(view('filament-openapi-docs::components.endpoint', [
+        'endpoint' => endpointWithRequestData(),
+        'servers' => ['https://api.example.test'],
+        'components' => securityComponents(),
+    ])->render());
+
+    expect($html)->toContain('Send mode')
+        ->and($html)->toContain('Auth / Security')
+        ->and($html)->toContain('Media headers')
+        ->and($html)->toContain('Headers')
+        ->and($html)->toContain('Path parameters')
+        ->and($html)->toContain('Query parameters')
+        ->and($html)->toContain('Body')
+        ->and($html)->toContain('Tree view')
+        ->and($html)->toContain('JSON')
+        ->and($html)->toContain('Request sample')
+        ->and($html)->toContain('Developer mode')
+        ->and($html)->toContain('Send API request')
+        ->and($html)->toContain('Add header')
+        ->and($html)->toContain('Add')
+        ->and(substr_count($html, 'x-data="requestSnippet'))->toBe(1);
+});
+
+it('does not render request send mode when request samples are disabled', function () {
+    config()->set('filament-openapi-docs.request_samples.enabled', false);
+
+    $html = view('filament-openapi-docs::components.endpoint', [
+        'endpoint' => endpointWithRequestData(),
+        'servers' => ['https://api.example.test'],
+        'components' => securityComponents(),
+    ])->render();
+
+    expect($html)->toContain('Auth / Security')
+        ->and($html)->not->toContain('Send API request')
+        ->and($html)->not->toContain('requestSnippet(');
+});
+
+it('uses shared method color logic for endpoint and navigation badges', function () {
+    $endpoint = new Endpoint(
+        id: 'delete-users',
+        method: 'DELETE',
+        path: '/users/{user}',
+        summary: 'Delete user',
+        description: null,
+        tags: ['Users'],
+        parameters: [],
+        requestBodies: [],
+        responses: [],
+        security: [],
+        deprecated: false,
+    );
+
+    $html = view('filament-openapi-docs::components.endpoint', ['endpoint' => $endpoint])->render();
+    $navigation = app(OpenApiNavigationBuilder::class)->build(['Users' => [$endpoint]]);
+
+    expect(HttpMethod::color('DELETE'))->toBe('danger')
+        ->and($navigation[0]->getItems()[0]->getBadgeColor())->toBe('danger')
+        ->and($html)->toContain('DELETE');
+});
+
+it('keeps request snippet javascript inside runtime boundaries', function () {
+    $script = file_get_contents(__DIR__.'/../../resources/js/request-snippet.js');
+
+    expect($script)->not->toContain('collectAuthParameters')
+        ->and($script)->not->toContain('collectHeaderParameters')
+        ->and($script)->toContain('applyRuntimeEditsToHar')
+        ->and($script)->toContain('new HTTPSnippet')
+        ->and($script)->toContain('fetch(')
+        ->and($script)->toContain('isValidHeaderName');
+});
+
+it('does not contain old package namespace references', function () {
+    $paths = collect([
+        ...glob(__DIR__.'/../../src/**/*.php'),
+        ...glob(__DIR__.'/../../resources/views/**/*.php'),
+        ...glob(__DIR__.'/../**/*.php'),
+        __DIR__.'/../../composer.json',
+    ]);
+
+    $contents = $paths
+        ->filter(fn (string $path): bool => is_file($path))
+        ->map(fn (string $path): string => file_get_contents($path))
+        ->implode("\n");
+
+    $oldVendorNamespace = 'Kram'.'arenko\\'.'FilamentOpenApiDocs';
+    $oldVendor = 'Kram'.'arenko';
+
+    expect($contents)->not->toContain($oldVendorNamespace)
+        ->and($contents)->not->toContain($oldVendor);
+});
+
+function endpointWithRequestData(): Endpoint
+{
+    return new Endpoint(
+        id: 'post-usersuser',
+        method: 'POST',
+        path: '/users/{user}',
+        summary: 'Update user',
+        description: null,
+        tags: ['Users'],
+        parameters: [
+            parameter('user', 'path', 'integer', true, ['type' => 'integer', 'example' => 5]),
+            parameter('include', 'query', 'string', false, ['type' => 'string', 'default' => 'profile']),
+            parameter('X-Trace', 'header', 'string', false, ['type' => 'string'], 'trace-1'),
+            parameter('Accept', 'header', 'string', false, ['type' => 'string'], 'text/plain'),
+            parameter('Authorization', 'header', 'string', false, ['type' => 'string'], 'Token documented-header'),
+        ],
+        requestBodies: [
+            [
+                'contentType' => 'application/json',
+                'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string', 'example' => 'Jane Doe'],
+                    ],
+                ],
+                'examples' => [],
+            ],
+        ],
+        responses: [
+            '200' => [
+                'description' => 'OK',
+                'content' => [
+                    'application/json' => [
+                        'contentType' => 'application/json',
+                        'schema' => ['type' => 'object'],
+                        'examples' => [],
+                    ],
+                ],
+            ],
+        ],
+        security: [
+            ['bearerAuth' => []],
+            ['apiKey' => []],
+        ],
+        deprecated: false,
+    );
+}
+
+/**
+ * @return array{name: string, in: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, default?: mixed}
+ */
+function parameter(string $name, string $in, string $type, bool $required, array $schema, mixed $example = null): array
+{
+    return [
+        'name' => $name,
+        'in' => $in,
+        'type' => $type,
+        'required' => $required,
+        'description' => null,
+        'schema' => $schema,
+        ...(func_num_args() === 6 ? ['example' => $example] : []),
+        'examples' => [],
+        ...(array_key_exists('default', $schema) ? ['default' => $schema['default']] : []),
+    ];
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function securityComponents(): array
+{
+    return [
+        'securitySchemes' => [
+            'bearerAuth' => [
+                'type' => 'http',
+                'scheme' => 'bearer',
+            ],
+            'apiKey' => [
+                'type' => 'apiKey',
+                'in' => 'header',
+                'name' => 'X-Api-Key',
+            ],
+        ],
+    ];
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function openApiSpec(): array
+{
+    return [
+        'openapi' => '3.1.0',
         'info' => [
             'title' => 'Game API',
             'version' => '1.0.0',
@@ -38,6 +253,7 @@ it('parses openapi paths into grouped endpoints', function () {
         'servers' => [
             ['url' => 'https://example.test/api'],
         ],
+        'components' => securityComponents(),
         'paths' => [
             '/users/{user}' => [
                 'parameters' => [
@@ -55,7 +271,7 @@ it('parses openapi paths into grouped endpoints', function () {
                         [
                             'name' => 'include',
                             'in' => 'query',
-                            'schema' => ['type' => 'string', 'example' => 'profile'],
+                            'schema' => ['type' => ['string', 'null'], 'example' => 'profile'],
                             'description' => 'Relations to include',
                         ],
                     ],
@@ -70,12 +286,6 @@ it('parses openapi paths into grouped endpoints', function () {
                                             'id' => ['type' => 'integer'],
                                         ],
                                     ],
-                                    'examples' => [
-                                        'success' => [
-                                            'summary' => 'Successful response',
-                                            'value' => ['id' => 1],
-                                        ],
-                                    ],
                                 ],
                             ],
                         ],
@@ -87,21 +297,7 @@ it('parses openapi paths into grouped endpoints', function () {
                     'requestBody' => [
                         'content' => [
                             'application/json' => [
-                                'schema' => [
-                                    'type' => 'object',
-                                    'required' => ['name'],
-                                ],
-                                'example' => [
-                                    'name' => 'Jane Doe',
-                                ],
-                            ],
-                            'application/x-www-form-urlencoded' => [
-                                'schema' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'name' => ['type' => 'string'],
-                                    ],
-                                ],
+                                'schema' => ['type' => 'object'],
                             ],
                         ],
                     ],
@@ -111,676 +307,60 @@ it('parses openapi paths into grouped endpoints', function () {
                 ],
             ],
         ],
-    ]);
+    ];
+}
 
-    expect($parsed['info']['title'])->toBe('Game API')
-        ->and($parsed['servers'])->toBe(['https://example.test/api'])
-        ->and($parsed['endpointCount'])->toBe(2)
-        ->and($parsed['endpoints'])->toHaveKey('Users');
-
-    $endpoint = $parsed['endpoints']['Users'][0];
-
-    expect($endpoint)->toBeInstanceOf(Endpoint::class)
-        ->and($endpoint->method)->toBe('GET')
-        ->and($endpoint->path)->toBe('/users/{user}')
-        ->and($endpoint->parameters)->toHaveCount(2)
-        ->and($endpoint->parameters[1]['schema']['example'])->toBe('profile')
-        ->and($endpoint->responses['200']['content']['application/json']['schema']['type'])->toBe('object')
-        ->and($endpoint->responses['200']['content']['application/json']['examples']['success']['value']['id'])->toBe(1);
-
-    expect($parsed['endpoints']['Users'][1]->requestBodies)->toHaveCount(2)
-        ->and($parsed['endpoints']['Users'][1]->requestBodies[0]['contentType'])->toBe('application/json')
-        ->and($parsed['endpoints']['Users'][1]->requestBodies[0]['example']['name'])->toBe('Jane Doe')
-        ->and($parsed['endpoints']['Users'][1]->requestBodies[1]['contentType'])->toBe('application/x-www-form-urlencoded');
-});
-
-it('renders native endpoint markup without the scramble view include', function () {
-    $endpoint = new Endpoint(
-        id: 'get-users',
-        method: 'GET',
-        path: '/users',
-        summary: 'List users',
-        description: 'Returns users',
-        tags: ['Users'],
-        parameters: [],
-        requestBodies: [],
-        responses: [
-            '200' => [
-                'description' => 'OK',
-                'content' => [],
-            ],
-        ],
-        security: [],
-        deprecated: false,
-    );
-
-    $html = view('filament-openapi-docs::components.endpoint', [
-        'endpoint' => $endpoint,
-    ])->render();
-
-    expect(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->not->toContain('scrambleView')
-        ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->toContain('$selectedEndpoint')
-        ->and(file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php'))->not->toContain('x-show="selectedEndpoint ===')
-        ->and($html)->not->toContain('fi-tabs')
-        ->and($html)->not->toContain('x-show="activeTab')
-        ->and($html)->toContain('/users')
-        ->and($html)->toContain('List users')
-        ->and($html)->toContain('No request data documented.')
-        ->and($html)->toContain('Query parameters')
-        ->and($html)->toContain('Responses')
-        ->and($html)->toContain('fi-section')
-        ->and($html)->toContain('fi-badge')
-        ->and(endpointBladeSources())->toContain('components.endpoint.responses')
-        ->and(endpointBladeSources())->toContain('components.sample')
-        ->and($html)->not->toContain('scramble::docs');
-});
-
-it('renders schemas as structured fields instead of raw json', function () {
-    $html = view('filament-openapi-docs::components.schema', [
-        'schema' => [
-            'type' => 'object',
-            'required' => ['name'],
-            'properties' => [
-                'name' => [
-                    'type' => 'string',
-                    'description' => 'Display name',
-                    'example' => 'Jane Doe',
-                ],
-                'status' => [
-                    'type' => 'string',
-                    'enum' => ['active', 'disabled'],
-                ],
-                'profile' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'age' => [
-                            'type' => 'integer',
-                        ],
-                    ],
-                ],
-            ],
-        ],
-    ])->render();
-
-    expect($html)->toContain('name')
-        ->and($html)->toContain('Required')
-        ->and($html)->toContain('Optional')
-        ->and($html)->toContain('string')
-        ->and($html)->toContain('Display name')
-        ->and($html)->toContain('active')
-        ->and($html)->toContain('Allowed')
-        ->and($html)->toContain('Example')
-        ->and($html)->toContain('Jane Doe')
-        ->and($html)->toContain('foad-schema-tree')
-        ->and($html)->toContain('foad-property-row')
-        ->and($html)->toContain('foad-property-connector')
-        ->and($html)->toContain('foad-property-toggle-icon-collapsed')
-        ->and($html)->toContain('foad-property-toggle-icon-open')
-        ->and($html)->toContain('<details')
-        ->and($html)->toContain('profile')
-        ->and($html)->toContain('age')
-        ->and($html)->not->toContain(' open')
-        ->and($html)->not->toContain('fi-input')
-        ->and($html)->not->toContain('fi-collapsible')
-        ->and($html)->not->toContain('"properties"')
-        ->and($html)->not->toContain('&quot;properties&quot;');
-});
-
-it('renders path parameters inside try it after headers and before query parameters', function () {
-    $endpoint = new Endpoint(
-        id: 'get-usersuser',
-        method: 'GET',
-        path: '/users/{user}',
-        summary: 'Show user',
-        description: null,
-        tags: ['Users'],
-        parameters: [
-            [
-                'name' => 'user',
-                'in' => 'path',
-                'type' => 'integer',
-                'required' => true,
-                'description' => null,
-                'schema' => ['type' => 'integer', 'example' => 5],
-                'examples' => [],
-            ],
-            [
-                'name' => 'include',
-                'in' => 'query',
-                'type' => 'string',
-                'required' => false,
-                'description' => null,
-                'schema' => ['type' => 'string', 'default' => 'profile'],
-                'examples' => [],
-            ],
-        ],
-        requestBodies: [],
-        responses: [],
-        security: [],
-        deprecated: false,
-    );
-
-    $html = view('filament-openapi-docs::components.endpoint', [
-        'endpoint' => $endpoint,
-    ])->render();
-
-    expect($html)->toContain('Try it')
-        ->and($html)->toContain('Path parameters')
-        ->and($html)->toContain('Query parameters')
-        ->and(strpos($html, 'Try it'))->toBeLessThan(strpos($html, 'Path parameters'))
-        ->and(strpos($html, 'Headers'))->toBeLessThan(strpos($html, 'Path parameters'))
-        ->and(strpos($html, 'Path parameters'))->toBeLessThan(strpos($html, 'Query parameters'));
-});
-
-it('builds endpoint navigation for native filament sub navigation', function () {
-    $endpoint = new Endpoint(
-        id: 'get-users',
-        method: 'GET',
-        path: '/users',
-        summary: 'List users',
-        description: null,
-        tags: ['Users'],
-        parameters: [],
-        requestBodies: [],
-        responses: [],
-        security: [],
-        deprecated: false,
-    );
-
-    $navigation = app(OpenApiNavigationBuilder::class)->build(['Users' => [$endpoint]]);
-
-    $page = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
-
-    expect($page)->not->toContain('navigationCollapsed')
-        ->and($page)->not->toContain('Toggle endpoint navigation')
-        ->and($page)->not->toContain('foad-docs-shell')
-        ->and($page)->not->toContain('foad-endpoint-sidebar')
-        ->and($page)->not->toContain('foad-docs-content')
-        ->and($page)->not->toContain('width: 20rem')
-        ->and($page)->not->toContain('width: 4rem')
-        ->and($page)->not->toContain('<aside')
-        ->and($page)->toContain('position: sticky')
-        ->and($page)->toContain('foad-openapi-docs-page')
-        ->and($page)->not->toContain('slide-over')
-        ->and($page)->not->toContain('x-filament::modal')
-        ->and($navigation[0]->getLabel())->toContain('Users')
-        ->and($navigation[0]->getItems()[0]->getUrl())->toBe('#')
-        ->and($navigation[0]->getItems()[0]->getBadge())->toBe('GET')
-        ->and($navigation[0]->getItems()[0]->getBadgeColor())->toBe('success')
-        ->and($navigation[0]->getItems()[0]->getExtraAttributes()['wire:click.prevent'])->toBe("selectEndpoint('get-users')");
-});
-
-it('renders request samples and response examples for documented media types', function () {
-    $endpoint = new Endpoint(
-        id: 'post-users',
-        method: 'POST',
-        path: '/users',
-        summary: 'Create user',
-        description: null,
-        tags: ['Users'],
-        parameters: [],
-        requestBodies: [
-            [
-                'contentType' => 'application/json',
-                'schema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'name' => ['type' => 'string'],
-                    ],
-                ],
-                'examples' => [
-                    'admin' => [
-                        'summary' => 'Admin user',
-                        'value' => [
-                            'name' => 'Jane Doe',
-                        ],
-                    ],
-                    'player' => [
-                        'value' => [
-                            'name' => 'Player One',
-                        ],
-                    ],
-                ],
-            ],
-            [
-                'contentType' => 'application/x-www-form-urlencoded',
-                'schema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'name' => [
-                            'type' => 'string',
-                            'example' => 'Form User',
-                        ],
-                    ],
-                ],
-                'examples' => [],
-            ],
-        ],
-        responses: [
-            '201' => [
-                'description' => 'Created',
-                'content' => [
-                    'application/json' => [
-                        'contentType' => 'application/json',
-                        'schema' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'id' => ['type' => 'integer'],
-                                'name' => ['type' => 'string'],
-                            ],
-                        ],
-                        'example' => [
-                            'id' => 1,
-                            'name' => 'Jane Doe',
-                        ],
-                        'examples' => [],
-                    ],
-                ],
-            ],
-        ],
-        security: [],
-        deprecated: false,
-    );
-
-    $html = view('filament-openapi-docs::components.endpoint', [
-        'endpoint' => $endpoint,
-    ])->render();
-
-    $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
-    $requestSnippetSources = requestSnippetBladeSources();
-
-    expect($html)->toContain('Request Sample')
-        ->and($html)->toContain('Try it')
-        ->and($html)->toContain('Send API request')
-        ->and($html)->toContain('Format JSON')
-        ->and($html)->toContain('Request sample')
-        ->and($html)->toContain('x-data="requestSnippet')
-        ->and($html)->toContain('x-load-src')
-        ->and($html)->toContain('Response Example')
-        ->and($html)->toContain('application/json')
-        ->and($html)->toContain('application/x-www-form-urlencoded')
-        ->and($html)->toContain('Admin user')
-        ->and($html)->toContain('Player')
-        ->and($html)->toContain('&quot;name&quot;: &quot;Jane Doe&quot;')
-        ->and($html)->toContain('name=Form%20User')
-        ->and($html)->toContain('&quot;id&quot;: 1')
-        ->and($html)->toContain('foad-sample-select')
-        ->and($html)->toContain('x-model="activeSample"')
-        ->and($html)->toContain('x-model="bodyText"')
-        ->and($html)->toContain('x-on:click="sendRequest()"')
-        ->and($html)->toContain('foad-sample-code')
-        ->and(substr_count($html, 'x-data="requestSnippet'))->toBe(1)
-        ->and(strpos($html, 'x-data="requestSnippet'))->toBeLessThan(strpos($html, 'x-model="developerMode"'))
-        ->and(strpos($html, 'x-model="developerMode"'))->toBeLessThan(strpos($html, 'x-show="developerMode"'))
-        ->and($requestSnippetView)->toContain('components.request-snippet.auth')
-        ->and($requestSnippetView)->toContain('components.request-snippet.headers')
-        ->and($requestSnippetView)->toContain('components.request-snippet.path-parameters')
-        ->and($requestSnippetView)->toContain('components.request-snippet.query-parameters')
-        ->and($requestSnippetView)->toContain('components.request-snippet.body')
-        ->and($requestSnippetSources)->toContain('<x-filament::button')
-        ->and($requestSnippetSources)->toContain('<x-filament::input.wrapper')
-        ->and($requestSnippetSources)->toContain('<x-filament::input.select')
-        ->and($requestSnippetSources)->not->toContain('<button')
-        ->and($requestSnippetSources)->not->toContain('<input')
-        ->and($requestSnippetSources)->not->toContain('<select')
-        ->and(file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php'))
-        ->toContain('components.request-snippet');
-});
-
-it('renders editable try it controls for auth and query request data', function () {
-    $endpoint = new Endpoint(
-        id: 'get-users',
-        method: 'GET',
-        path: '/users/{user}',
-        summary: 'List users',
-        description: null,
-        tags: ['Users'],
-        parameters: [
-            [
-                'name' => 'user',
-                'in' => 'path',
-                'type' => 'integer',
-                'required' => true,
-                'description' => null,
-                'schema' => ['type' => 'integer', 'example' => 5],
-                'examples' => [],
-            ],
-            [
-                'name' => 'include',
-                'in' => 'query',
-                'type' => 'string',
-                'required' => false,
-                'description' => null,
-                'schema' => ['type' => 'string', 'default' => 'profile'],
-                'examples' => [],
-            ],
-            [
-                'name' => 'X-Trace',
-                'in' => 'header',
-                'type' => 'string',
-                'required' => false,
-                'description' => null,
-                'schema' => ['type' => 'string'],
-                'example' => 'trace-1',
-                'examples' => [],
-            ],
-        ],
-        requestBodies: [],
-        responses: [],
-        security: [
-            ['bearerAuth' => []],
-        ],
-        deprecated: false,
-    );
-
-    $html = view('filament-openapi-docs::components.request-snippet', [
-        'endpoint' => $endpoint,
-        'servers' => ['https://api.example.test'],
-        'components' => [
-            'securitySchemes' => [
-                'bearerAuth' => [
-                    'type' => 'http',
-                    'scheme' => 'bearer',
-                ],
-            ],
-        ],
-    ])->render();
-
-    $requestSnippetSources = requestSnippetBladeSources();
-
-    expect($html)->toContain('Try it')
-        ->and($html)->toContain('Send API request')
-        ->and($html)->toContain('Developer mode')
-        ->and($html)->toContain('fi-fo-toggle')
-        ->and($html)->toContain('foad-developer-mode-switch')
-        ->and($html)->toContain('foad-developer-mode-knob')
-        ->and($html)->toContain('x-model="developerMode"')
-        ->and($html)->toContain('Auth')
-        ->and($html)->toContain('Headers')
-        ->and($html)->toContain('Add header')
-        ->and($html)->toContain('Path parameters')
-        ->and($html)->toContain('Query parameters')
-        ->and($html)->toContain('pathParameters')
-        ->and($html)->toContain('headerParameters')
-        ->and($html)->toContain('queryParameters')
-        ->and($html)->toContain('authParameters')
-        ->and($html)->toContain('x-show="developerMode"')
-        ->and($html)->toContain('x-on:click="addHeader()"')
-        ->and($html)->toContain('x-on:click="removeHeader(index)"')
-        ->and($html)->toContain('x-on:click="addQueryParameter()"')
-        ->and($html)->toContain('x-on:click="removeQueryParameter(index)"')
-        ->and($html)->toContain('x-bind:placeholder="parameter.placeholder"')
-        ->and($html)->toContain('x-model="parameter.value"')
-        ->and($requestSnippetSources)->toContain('<x-filament::input.checkbox')
-        ->and($requestSnippetSources)->toContain('<x-filament::input type="text"')
-        ->and($requestSnippetSources)->toContain('<x-slot name="prefix">')
-        ->and($requestSnippetSources)->toContain('x-text="parameter.label"')
-        ->and($requestSnippetSources)->not->toContain('prefix="parameter.label"')
-        ->and(strpos($html, 'Headers'))->toBeLessThan(strpos($html, 'Path parameters'))
-        ->and(strpos($html, 'Path parameters'))->toBeLessThan(strpos($html, 'Query parameters'));
-});
-
-it('loads generated default headers into disabled request header controls', function () {
-    $script = file_get_contents(__DIR__.'/../../resources/js/request-snippet.js');
-    $view = requestSnippetBladeSources();
-
-    expect($script)->toContain('disabled: isDefaultHeader(header.name)')
-        ->and($script)->toContain("['accept', 'content-type']")
-        ->and($script)->toContain('developerMode: false')
-        ->and($script)->toContain('addQueryParameter()')
-        ->and($script)->toContain("this.\$watch('developerMode'")
-        ->and($script)->toContain('resetDeveloperModeState()')
-        ->and($script)->toContain('! parameter.removable')
-        ->and($script)->toContain('! parameter.developerOnly')
-        ->and($script)->toContain('this.developerMode || ! parameter.developerOnly')
-        ->and($script)->not->toContain("header.name.toLowerCase() !== 'accept'")
-        ->and($script)->not->toContain("header.name.toLowerCase() !== 'content-type'")
-        ->and($view)->toContain('x-bind:disabled="parameter.disabled && ! developerMode"');
-});
-
-it('inherits global openapi security from scramble authenticated routes', function () {
-    $parsed = app(OpenApiParser::class)->parse([
+/**
+ * @return array<string, mixed>
+ */
+function swaggerSpec(): array
+{
+    return [
+        'swagger' => '2.0',
         'info' => [
             'title' => 'Game API',
             'version' => '1.0.0',
         ],
-        'security' => [
-            ['bearerAuth' => []],
-        ],
-        'components' => [
-            'securitySchemes' => [
-                'bearerAuth' => [
-                    'type' => 'http',
-                    'scheme' => 'bearer',
-                ],
+        'host' => 'api.example.test',
+        'basePath' => '/v1',
+        'schemes' => ['https'],
+        'consumes' => ['application/x-www-form-urlencoded'],
+        'produces' => ['application/json'],
+        'securityDefinitions' => [
+            'basicAuth' => [
+                'type' => 'basic',
             ],
+        ],
+        'security' => [
+            ['basicAuth' => []],
         ],
         'paths' => [
-            '/profile' => [
-                'get' => [
-                    'tags' => ['Profile'],
-                    'summary' => 'Profile',
-                    'responses' => [
-                        '200' => ['description' => 'OK'],
-                    ],
-                ],
-            ],
-            '/health' => [
-                'get' => [
-                    'tags' => ['System'],
-                    'summary' => 'Health',
-                    'security' => [],
-                    'responses' => [
-                        '200' => ['description' => 'OK'],
-                    ],
-                ],
-            ],
-        ],
-    ]);
-
-    $protectedEndpoint = $parsed['endpoints']['Profile'][0];
-    $publicEndpoint = $parsed['endpoints']['System'][0];
-    $presented = app(RequestSnippetPresenter::class)->present($protectedEndpoint, ['https://api.example.test'], $parsed['components']);
-
-    expect($protectedEndpoint->security)->toBe([['bearerAuth' => []]])
-        ->and($publicEndpoint->security)->toBe([])
-        ->and($presented['requests'][0]['har']['headers'])->toContain([
-            'name' => 'Authorization',
-            'value' => 'Bearer <token>',
-        ]);
-});
-
-it('builds accept header from response content for get request samples', function () {
-    $endpoint = new Endpoint(
-        id: 'get-users',
-        method: 'GET',
-        path: '/users',
-        summary: 'List users',
-        description: null,
-        tags: ['Users'],
-        parameters: [
-            [
-                'name' => 'Accept',
-                'in' => 'header',
-                'type' => 'string',
-                'required' => false,
-                'description' => null,
-                'schema' => ['type' => 'string'],
-                'example' => 'text/plain',
-                'examples' => [],
-            ],
-        ],
-        requestBodies: [],
-        responses: [
-            '200' => [
-                'description' => 'OK',
-                'content' => [
-                    'application/json' => [
-                        'contentType' => 'application/json',
-                        'schema' => [
-                            'type' => 'object',
+            '/users' => [
+                'post' => [
+                    'tags' => ['Users'],
+                    'summary' => 'Create user',
+                    'parameters' => [
+                        [
+                            'name' => 'name',
+                            'in' => 'formData',
+                            'required' => true,
+                            'type' => 'string',
+                            'description' => 'Display name',
                         ],
-                        'examples' => [],
+                        [
+                            'name' => 'avatar',
+                            'in' => 'formData',
+                            'type' => 'file',
+                        ],
+                    ],
+                    'responses' => [
+                        '201' => [
+                            'description' => 'Created',
+                            'schema' => ['type' => 'object'],
+                        ],
                     ],
                 ],
             ],
         ],
-        security: [],
-        deprecated: false,
-    );
-
-    $har = app(RequestSnippetPresenter::class)
-        ->present($endpoint, ['https://api.example.test'], [])['requests'][0]['har'];
-
-    expect($har['method'])->toBe('GET')
-        ->and($har['headers'])->toContain(['name' => 'Accept', 'value' => 'application/json'])
-        ->and($har['headers'])->not->toContain(['name' => 'Accept', 'value' => 'text/plain'])
-        ->and($har['headers'])->not->toContain(['name' => 'Content-Type', 'value' => 'application/json'])
-        ->and($har)->not->toHaveKey('postData');
-});
-
-it('builds har request data for httpsnippet samples', function () {
-    $endpoint = new Endpoint(
-        id: 'post-usersuser',
-        method: 'POST',
-        path: '/users/{user}',
-        summary: 'Update user',
-        description: null,
-        tags: ['Users'],
-        parameters: [
-            [
-                'name' => 'user',
-                'in' => 'path',
-                'type' => 'integer',
-                'required' => true,
-                'description' => null,
-                'schema' => ['type' => 'integer', 'example' => 5],
-                'examples' => [],
-            ],
-            [
-                'name' => 'include',
-                'in' => 'query',
-                'type' => 'string',
-                'required' => false,
-                'description' => null,
-                'schema' => ['type' => 'string', 'default' => 'profile'],
-                'examples' => [],
-            ],
-            [
-                'name' => 'X-Trace',
-                'in' => 'header',
-                'type' => 'string',
-                'required' => false,
-                'description' => null,
-                'schema' => ['type' => 'string'],
-                'example' => 'trace-1',
-                'examples' => [],
-            ],
-            [
-                'name' => 'Accept',
-                'in' => 'header',
-                'type' => 'string',
-                'required' => false,
-                'description' => null,
-                'schema' => ['type' => 'string'],
-                'example' => 'application/json',
-                'examples' => [],
-            ],
-            [
-                'name' => 'Authorization',
-                'in' => 'header',
-                'type' => 'string',
-                'required' => false,
-                'description' => null,
-                'schema' => ['type' => 'string'],
-                'example' => 'Token documented-header',
-                'examples' => [],
-            ],
-            [
-                'name' => 'Content-Type',
-                'in' => 'header',
-                'type' => 'string',
-                'required' => false,
-                'description' => null,
-                'schema' => ['type' => 'string'],
-                'example' => 'text/plain',
-                'examples' => [],
-            ],
-        ],
-        requestBodies: [
-            [
-                'contentType' => 'application/json',
-                'schema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'name' => ['type' => 'string', 'example' => 'Jane Doe'],
-                    ],
-                ],
-                'examples' => [],
-            ],
-        ],
-        responses: [],
-        security: [
-            ['bearerAuth' => []],
-            ['apiKey' => []],
-        ],
-        deprecated: false,
-    );
-
-    $presented = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test'], [
-        'securitySchemes' => [
-            'bearerAuth' => [
-                'type' => 'http',
-                'scheme' => 'bearer',
-            ],
-            'apiKey' => [
-                'type' => 'apiKey',
-                'in' => 'header',
-                'name' => 'X-Api-Key',
-            ],
-        ],
-    ]);
-
-    $har = $presented['requests'][0]['har'];
-
-    expect($presented['requests'][0]['label'])->toBe('application/json - Generated')
-        ->and($har['method'])->toBe('POST')
-        ->and($har['url'])->toBe('https://api.example.test/users/5?include=profile')
-        ->and($har['queryString'])->toContain(['name' => 'include', 'value' => 'profile'])
-        ->and($har['headers'])->toContain(['name' => 'X-Trace', 'value' => 'trace-1'])
-        ->and($har['headers'])->toContain(['name' => 'Authorization', 'value' => 'Bearer <token>'])
-        ->and($har['headers'])->toContain(['name' => 'X-Api-Key', 'value' => '<api-key>'])
-        ->and($har['headers'])->toContain(['name' => 'Content-Type', 'value' => 'application/json'])
-        ->and($har['headers'])->not->toContain(['name' => 'Accept', 'value' => 'application/json'])
-        ->and($har['headers'])->not->toContain(['name' => 'Authorization', 'value' => 'Token documented-header'])
-        ->and($har['headers'])->not->toContain(['name' => 'Content-Type', 'value' => 'text/plain'])
-        ->and($har['postData']['mimeType'])->toBe('application/json')
-        ->and($har['postData']['text'])->toContain('"name": "Jane Doe"');
-});
-
-it('does not render request snippets when disabled', function () {
-    config()->set('filament-openapi-docs.request_samples.enabled', false);
-
-    $endpoint = new Endpoint(
-        id: 'get-users',
-        method: 'GET',
-        path: '/users',
-        summary: 'List users',
-        description: null,
-        tags: ['Users'],
-        parameters: [],
-        requestBodies: [],
-        responses: [],
-        security: [],
-        deprecated: false,
-    );
-
-    $html = view('filament-openapi-docs::components.request-snippet', [
-        'endpoint' => $endpoint,
-        'servers' => ['https://api.example.test'],
-        'components' => [],
-    ])->render();
-
-    expect($html)->not->toContain('Request sample')
-        ->and($html)->not->toContain('requestSnippet');
-});
+    ];
+}

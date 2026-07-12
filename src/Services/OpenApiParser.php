@@ -1,9 +1,9 @@
 <?php
 
-namespace Kramarenko\FilamentOpenApiDocs\Services;
+namespace Alexkramse\FilamentOpenapiDocs\Services;
 
+use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Illuminate\Support\Str;
-use Kramarenko\FilamentOpenApiDocs\DTO\Endpoint;
 
 class OpenApiParser
 {
@@ -31,20 +31,21 @@ class OpenApiParser
     {
         $endpoints = [];
         $globalSecurity = is_array($spec['security'] ?? null) ? $spec['security'] : [];
+        $components = $this->components($spec);
 
         foreach (($spec['paths'] ?? []) as $path => $pathItem) {
             if (! is_array($pathItem)) {
                 continue;
             }
 
-            $pathParameters = $this->parameters($pathItem['parameters'] ?? []);
+            $pathParameters = $this->parameters($pathItem['parameters'] ?? [], ['body', 'formData']);
 
             foreach ($pathItem as $method => $operation) {
                 if (! in_array($method, self::HTTP_METHODS, true) || ! is_array($operation)) {
                     continue;
                 }
 
-                $endpoint = $this->endpoint($method, (string) $path, $operation, $pathParameters, $globalSecurity);
+                $endpoint = $this->endpoint($method, (string) $path, $operation, $pathParameters, $globalSecurity, $spec);
 
                 $endpoints[$endpoint->group()][] = $endpoint;
             }
@@ -54,10 +55,10 @@ class OpenApiParser
 
         return [
             'info' => is_array($spec['info'] ?? null) ? $spec['info'] : [],
-            'servers' => $this->servers($spec['servers'] ?? []),
+            'servers' => $this->servers($spec),
             'endpoints' => $endpoints,
             'endpointCount' => collect($endpoints)->flatten(1)->count(),
-            'components' => $spec['components'] ?? [],
+            'components' => $components,
         ];
     }
 
@@ -66,7 +67,7 @@ class OpenApiParser
      * @param  array<int, array{name: string, in: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, default?: mixed}>  $pathParameters
      * @param  array<int, array<string, mixed>>  $globalSecurity
      */
-    private function endpoint(string $method, string $path, array $operation, array $pathParameters, array $globalSecurity): Endpoint
+    private function endpoint(string $method, string $path, array $operation, array $pathParameters, array $globalSecurity, array $spec): Endpoint
     {
         $summary = (string) ($operation['summary'] ?? $operation['operationId'] ?? '');
         $tags = array_values(array_filter(
@@ -75,7 +76,7 @@ class OpenApiParser
         ));
         $parameters = [
             ...$pathParameters,
-            ...$this->parameters($operation['parameters'] ?? []),
+            ...$this->parameters($operation['parameters'] ?? [], ['body', 'formData']),
         ];
 
         return new Endpoint(
@@ -86,7 +87,7 @@ class OpenApiParser
             description: isset($operation['description']) ? (string) $operation['description'] : null,
             tags: $tags,
             parameters: $parameters,
-            requestBodies: $this->requestBodies($operation['requestBody'] ?? []),
+            requestBodies: $this->requestBodies($operation, $spec),
             responses: $this->responses($operation['responses'] ?? []),
             security: is_array($operation['security'] ?? null) ? $operation['security'] : $globalSecurity,
             deprecated: (bool) ($operation['deprecated'] ?? false),
@@ -94,9 +95,10 @@ class OpenApiParser
     }
 
     /**
+     * @param  array<int, string>  $excludedLocations
      * @return array<int, array{name: string, in: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, default?: mixed}>
      */
-    private function parameters(mixed $parameters): array
+    private function parameters(mixed $parameters, array $excludedLocations = []): array
     {
         if (! is_array($parameters)) {
             return [];
@@ -104,6 +106,7 @@ class OpenApiParser
 
         return collect($parameters)
             ->filter(fn (mixed $parameter): bool => is_array($parameter))
+            ->reject(fn (array $parameter): bool => in_array((string) ($parameter['in'] ?? ''), $excludedLocations, true))
             ->map(function (array $parameter): array {
                 $schema = is_array($parameter['schema'] ?? null) ? $parameter['schema'] : [];
 
@@ -127,10 +130,12 @@ class OpenApiParser
     /**
      * @return array<int, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>
      */
-    private function requestBodies(mixed $requestBody): array
+    private function requestBodies(array $operation, array $spec): array
     {
+        $requestBody = $operation['requestBody'] ?? [];
+
         if (! is_array($requestBody) || ! is_array($requestBody['content'] ?? null)) {
-            return [];
+            return $this->swaggerRequestBodies($operation, $spec);
         }
 
         return collect($requestBody['content'])
@@ -143,6 +148,64 @@ class OpenApiParser
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array<int, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>
+     */
+    private function swaggerRequestBodies(array $operation, array $spec): array
+    {
+        $parameters = collect($operation['parameters'] ?? [])
+            ->filter(fn (mixed $parameter): bool => is_array($parameter));
+        $bodyParameter = $parameters->first(fn (array $parameter): bool => ($parameter['in'] ?? null) === 'body');
+
+        if (is_array($bodyParameter)) {
+            return [[
+                'contentType' => $this->consumes($operation, $spec)[0] ?? 'application/json',
+                'schema' => is_array($bodyParameter['schema'] ?? null) ? $bodyParameter['schema'] : [],
+                ...(array_key_exists('example', $bodyParameter) ? ['example' => $bodyParameter['example']] : []),
+                'examples' => [],
+            ]];
+        }
+
+        $formParameters = $parameters
+            ->filter(fn (array $parameter): bool => ($parameter['in'] ?? null) === 'formData')
+            ->values();
+
+        if ($formParameters->isEmpty()) {
+            return [];
+        }
+
+        $required = $formParameters
+            ->filter(fn (array $parameter): bool => (bool) ($parameter['required'] ?? false))
+            ->pluck('name')
+            ->filter(fn (mixed $name): bool => is_string($name) && $name !== '')
+            ->values()
+            ->all();
+        $properties = $formParameters
+            ->mapWithKeys(function (array $parameter): array {
+                $schema = is_array($parameter['schema'] ?? null)
+                    ? $parameter['schema']
+                    : ['type' => is_string($parameter['type'] ?? null) ? $parameter['type'] : 'string'];
+
+                return [(string) ($parameter['name'] ?? '') => array_filter([
+                    ...$schema,
+                    'description' => isset($parameter['description']) ? (string) $parameter['description'] : null,
+                    ...(array_key_exists('example', $parameter) ? ['example' => $parameter['example']] : []),
+                ], fn (mixed $value): bool => $value !== null)];
+            })
+            ->filter(fn (array $schema, string $name): bool => $name !== '')
+            ->all();
+
+        return [[
+            'contentType' => $this->formDataContentType($operation, $spec, $formParameters->all()),
+            'schema' => array_filter([
+                'type' => 'object',
+                'required' => $required,
+                'properties' => $properties,
+            ]),
+            'examples' => [],
+        ]];
     }
 
     /**
@@ -190,18 +253,106 @@ class OpenApiParser
     /**
      * @return array<int, string>
      */
-    private function servers(mixed $servers): array
+    private function servers(array $spec): array
     {
+        $servers = $spec['servers'] ?? [];
+
         if (! is_array($servers)) {
-            return [];
+            return $this->swaggerServers($spec);
         }
 
-        return collect($servers)
+        $openApiServers = collect($servers)
             ->filter(fn (mixed $server): bool => is_array($server))
             ->pluck('url')
             ->filter(fn (mixed $url): bool => is_string($url))
             ->values()
             ->all();
+
+        return $openApiServers !== [] ? $openApiServers : $this->swaggerServers($spec);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function swaggerServers(array $spec): array
+    {
+        if (! is_string($spec['host'] ?? null) || $spec['host'] === '') {
+            return [];
+        }
+
+        $scheme = collect($spec['schemes'] ?? [])
+            ->first(fn (mixed $scheme): bool => is_string($scheme) && $scheme !== '') ?? 'https';
+        $basePath = is_string($spec['basePath'] ?? null) ? $spec['basePath'] : '';
+
+        return [rtrim($scheme.'://'.$spec['host'], '/').'/'.ltrim($basePath, '/')];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function components(array $spec): array
+    {
+        if (is_array($spec['components'] ?? null)) {
+            return $spec['components'];
+        }
+
+        $securityDefinitions = is_array($spec['securityDefinitions'] ?? null) ? $spec['securityDefinitions'] : [];
+
+        if ($securityDefinitions === []) {
+            return [];
+        }
+
+        return [
+            'securitySchemes' => collect($securityDefinitions)
+                ->filter(fn (mixed $scheme): bool => is_array($scheme))
+                ->map(fn (array $scheme): array => $this->swaggerSecurityScheme($scheme))
+                ->all(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $scheme
+     * @return array<string, mixed>
+     */
+    private function swaggerSecurityScheme(array $scheme): array
+    {
+        if (($scheme['type'] ?? null) === 'basic') {
+            return [
+                ...$scheme,
+                'type' => 'http',
+                'scheme' => 'basic',
+            ];
+        }
+
+        return $scheme;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function consumes(array $operation, array $spec): array
+    {
+        return collect($operation['consumes'] ?? $spec['consumes'] ?? [])
+            ->filter(fn (mixed $contentType): bool => is_string($contentType) && $contentType !== '')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $formParameters
+     */
+    private function formDataContentType(array $operation, array $spec, array $formParameters): string
+    {
+        $consumes = $this->consumes($operation, $spec);
+
+        if ($consumes !== []) {
+            return $consumes[0];
+        }
+
+        $hasFile = collect($formParameters)
+            ->contains(fn (array $parameter): bool => ($parameter['type'] ?? null) === 'file');
+
+        return $hasFile ? 'multipart/form-data' : 'application/x-www-form-urlencoded';
     }
 
     private function schemaLabel(mixed $schema): string
@@ -212,6 +363,11 @@ class OpenApiParser
 
         if (isset($schema['$ref']) && is_string($schema['$ref'])) {
             return Str::afterLast($schema['$ref'], '/');
+        }
+
+        if (isset($schema['type']) && is_array($schema['type'])) {
+            return collect($schema['type'])
+                ->first(fn (mixed $type): bool => is_string($type) && $type !== 'null') ?? 'mixed';
         }
 
         if (isset($schema['type']) && is_string($schema['type'])) {
