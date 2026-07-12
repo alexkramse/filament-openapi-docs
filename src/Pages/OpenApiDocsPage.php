@@ -35,7 +35,7 @@ class OpenApiDocsPage extends Page
      */
     private ?array $openApiData = null;
 
-    #[Url(as: 'endpoint')]
+    #[Url(as: 'endpoint', history: true)]
     public ?string $selectedEndpointId = null;
 
     public function mount(): void

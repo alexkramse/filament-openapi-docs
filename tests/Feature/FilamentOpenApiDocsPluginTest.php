@@ -8,6 +8,7 @@ use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Illuminate\Support\Facades\File;
+use Livewire\Attributes\Url;
 use Mockery as m;
 
 it('registers the api docs page with a panel', function () {
@@ -28,6 +29,16 @@ it('reads navigation values from config', function () {
         ->and(OpenApiDocsPage::getNavigationIcon())->toBe('heroicon-o-code-bracket-square')
         ->and(OpenApiDocsPage::getNavigationGroup())->toBe('Engineering')
         ->and(OpenApiDocsPage::getNavigationSort())->toBe(42);
+});
+
+it('stores selected endpoint in browser history', function () {
+    $attribute = collect((new ReflectionProperty(OpenApiDocsPage::class, 'selectedEndpointId'))->getAttributes(Url::class))
+        ->first()
+        ?->newInstance();
+
+    expect($attribute)->toBeInstanceOf(Url::class)
+        ->and(invade($attribute)->as)->toBe('endpoint')
+        ->and(invade($attribute)->history)->toBeTrue();
 });
 
 it('uses compiled filament or package classes in blade views', function () {
