@@ -30,7 +30,9 @@
         @if (filled($value))
             <div class="foad-property-meta">
                 <span class="foad-property-meta-label">{{ $label }}</span>
-                <span class="foad-property-meta-value">{{ $value }}</span>
+                <x-filament::badge color="primary" size="xs">
+                    <span class="foad-property-meta-value">{{ $value }}</span>
+                </x-filament::badge>
             </div>
         @endif
     @endforeach

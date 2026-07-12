@@ -24,14 +24,10 @@
             <div class="foad-grid">
                 @foreach ($requestData['mediaHeaders'] as $mediaHeader)
                     @include('filament-openapi-docs::components.request-doc-item', [
-                        'title' => $mediaHeader['name'],
+                        'title' => $mediaHeader['name'].': '.$mediaHeader['value'],
                         'description' => $mediaHeader['description'],
-                        'badges' => [
-                            ['label' => 'header', 'color' => 'gray'],
-                        ],
-                        'metadata' => [
-                            'Value' => $mediaHeader['value'],
-                        ],
+                        'badges' => [],
+                        'metadata' => [],
                     ])
                 @endforeach
             </div>
@@ -53,11 +49,10 @@
                             'description' => $parameter['description'],
                             'badges' => [
                                 ['label' => $parameter['type'], 'color' => 'info'],
+                                ...(filled($parameter['value'] ?? null) ? [['label' => 'example: '.$parameter['value'], 'color' => 'primary']] : []),
                                 ['label' => $parameter['required'] ? 'Required' : 'Optional', 'color' => $parameter['required'] ? 'danger' : 'gray'],
                             ],
                             'metadata' => [
-                                'Value' => $parameter['value'] ?? null,
-                                'Default' => $parameter['default'] ?? null,
                                 'Example' => $parameter['example'] ?? null,
                             ],
                         ])

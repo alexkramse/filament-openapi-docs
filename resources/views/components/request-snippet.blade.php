@@ -37,8 +37,6 @@
                 </x-filament::input.wrapper>
 
                 <x-filament::button
-                    color="gray"
-                    size="xs"
                     type="button"
                     x-on:click="copy()"
                     x-text="copied ? 'Copied' : 'Copy'"

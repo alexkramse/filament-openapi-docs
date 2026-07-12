@@ -218,7 +218,7 @@ it('renders request read mode as static documentation rows', function () {
         ->and($html)->toContain('Query parameters')
         ->and($html)->toContain('Required')
         ->and($html)->toContain('Optional')
-        ->and($html)->toContain('Value')
+        ->and($html)->toContain('example: trace-1')
         ->and($html)->toContain('X-Trace')
         ->and($html)->toContain('trace-1')
         ->and($html)->not->toContain('fi-fo-field')
