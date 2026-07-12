@@ -28,22 +28,19 @@
             <x-slot name="heading">
                 @if ($servers !== [])
                     @foreach ($servers as $server)
-                        <x-filament::badge color="gray">
+                        <x-filament::badge color="info">
                             {{ $server }}
                         </x-filament::badge>
                     @endforeach
                 @endif
 
                 @if (filled($info['version'] ?? null))
-                    <x-filament::badge color="gray">
+                    <x-filament::badge color="primary">
                         v{{ $info['version'] }}
                     </x-filament::badge>
                 @endif
-                <x-filament::badge color="primary">
-                    {{ $endpointCount }} endpoints
-                </x-filament::badge>
                 <x-filament::badge color="gray">
-                    {{ count($endpoints) }} groups
+                    {{ $endpointCount }} endpoints
                 </x-filament::badge>
             </x-slot>
 

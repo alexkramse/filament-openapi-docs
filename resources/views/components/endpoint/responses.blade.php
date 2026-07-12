@@ -3,7 +3,7 @@
         heading="Responses"
         :description="count($endpoint->responses).' documented responses'"
         collapsible
-        :collapsed="$endpoint->responses === []"
+        collapsed
         secondary
     >
         <x-slot name="heading">
