@@ -2,6 +2,7 @@
 
 use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Alexkramse\FilamentOpenapiDocs\Enums\HttpMethod;
+use Alexkramse\FilamentOpenapiDocs\Services\ExamplePresenter;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiParser;
 use Alexkramse\FilamentOpenapiDocs\Services\RequestSnippetPresenter;
@@ -61,6 +62,117 @@ it('provides request docs editable controls and baseline har from one presenter 
         ->and($request['har']['headers'])->toContain(['name' => 'X-Trace', 'value' => 'trace-1']);
 });
 
+it('detects bearer security from the referenced scheme definition', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.1.0',
+        'info' => [
+            'title' => 'Laravel',
+            'version' => '0.0.1',
+        ],
+        'servers' => [
+            ['url' => 'https://laravel-game-api-dashboard.test/api'],
+        ],
+        'security' => [
+            ['http' => []],
+        ],
+        'components' => [
+            'securitySchemes' => [
+                'http' => [
+                    'type' => 'http',
+                    'scheme' => 'bearer',
+                ],
+            ],
+        ],
+        'paths' => [
+            '/profile' => [
+                'get' => [
+                    'summary' => 'Profile',
+                    'responses' => [
+                        '200' => ['description' => 'OK'],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $endpoint = $parsed['endpoints']['API'][0];
+    $requestData = app(RequestSnippetPresenter::class)->present($endpoint, $parsed['servers'], $parsed['components']);
+    $html = html_entity_decode(view('filament-openapi-docs::components.endpoint.request.read', [
+        'endpoint' => $endpoint,
+        'components' => $parsed['components'],
+        'examplePresenter' => app(ExamplePresenter::class),
+        'requestData' => $requestData,
+    ])->render());
+
+    expect($requestData['securityItems'][0]['label'])->toBe('Bearer token')
+        ->and($requestData['securityItems'][0]['schemeType'])->toBe('http')
+        ->and($requestData['securityItems'][0]['scheme'])->toBe('bearer')
+        ->and($requestData['requests'][0]['har']['headers'])->toContain(['name' => 'Authorization', 'value' => 'Bearer <token>'])
+        ->and($html)->toContain('Provide your bearer token in the Authorization header when making requests to protected resources.')
+        ->and($html)->toContain('Authorization: Bearer 123')
+        ->and($html)->toContain('Header')
+        ->and($html)->toContain('Authorization')
+        ->and($html)->not->toContain('Auth / Security')
+        ->and($html)->not->toContain('Bearer <token>');
+});
+
+it('renders non bearer security schemes without bearer documentation', function () {
+    $endpoint = new Endpoint(
+        id: 'get-security',
+        method: 'GET',
+        path: '/security',
+        summary: 'Security',
+        description: null,
+        tags: ['Security'],
+        parameters: [],
+        requestBodies: [],
+        responses: [],
+        security: [
+            ['basicAuth' => []],
+            ['apiKeyHeader' => []],
+            ['clientCertificate' => []],
+            ['oauth' => []],
+            ['oidc' => []],
+        ],
+        deprecated: false,
+    );
+    $components = [
+        'securitySchemes' => [
+            'basicAuth' => [
+                'type' => 'http',
+                'scheme' => 'basic',
+            ],
+            'apiKeyHeader' => [
+                'type' => 'apiKey',
+                'in' => 'header',
+                'name' => 'X-Api-Key',
+            ],
+            'clientCertificate' => [
+                'type' => 'mutualTLS',
+            ],
+            'oauth' => [
+                'type' => 'oauth2',
+                'flows' => [],
+            ],
+            'oidc' => [
+                'type' => 'openIdConnect',
+                'openIdConnectUrl' => 'https://example.test/.well-known/openid-configuration',
+            ],
+        ],
+    ];
+    $requestData = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test'], $components);
+
+    expect($requestData['securityItems'])->toHaveCount(5)
+        ->and($requestData['securityItems'])->sequence(
+            fn ($item) => $item->schemeType->toBe('http')->scheme->toBe('basic')->sendable->toBeTrue(),
+            fn ($item) => $item->schemeType->toBe('apiKey')->sendable->toBeTrue(),
+            fn ($item) => $item->schemeType->toBe('mutualTLS')->sendable->toBeFalse(),
+            fn ($item) => $item->schemeType->toBe('oauth2')->sendable->toBeFalse(),
+            fn ($item) => $item->schemeType->toBe('openIdConnect')->sendable->toBeFalse(),
+        )
+        ->and($requestData['securityItems'])->not->toContain('description', 'Provide your bearer token in the Authorization header when making requests to protected resources.')
+        ->and($requestData['requests'][0]['authParameters'])->toHaveCount(2);
+});
+
 it('renders request read and send modes', function () {
     $html = html_entity_decode(view('filament-openapi-docs::components.endpoint', [
         'endpoint' => endpointWithRequestData(),
@@ -69,7 +181,7 @@ it('renders request read and send modes', function () {
     ])->render());
 
     expect($html)->toContain('Send mode')
-        ->and($html)->toContain('Auth / Security')
+        ->and($html)->toContain('Security')
         ->and($html)->toContain('Media headers')
         ->and($html)->toContain('Headers')
         ->and($html)->toContain('Path parameters')
@@ -85,6 +197,35 @@ it('renders request read and send modes', function () {
         ->and(substr_count($html, 'x-data="requestSnippet'))->toBe(1);
 });
 
+it('renders request read mode as static documentation rows', function () {
+    config()->set('filament-openapi-docs.request_samples.enabled', false);
+
+    $endpoint = endpointWithRequestData();
+    $requestData = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test'], securityComponents());
+    $html = html_entity_decode(view('filament-openapi-docs::components.endpoint.request.read', [
+        'endpoint' => $endpoint,
+        'components' => securityComponents(),
+        'examplePresenter' => app(ExamplePresenter::class),
+        'requestData' => $requestData,
+    ])->render());
+
+    expect($html)->toContain('foad-property-row')
+        ->and($html)->toContain('foad-property-name')
+        ->and($html)->toContain('Security')
+        ->and($html)->toContain('Media headers')
+        ->and($html)->toContain('Headers')
+        ->and($html)->toContain('Path parameters')
+        ->and($html)->toContain('Query parameters')
+        ->and($html)->toContain('Required')
+        ->and($html)->toContain('Optional')
+        ->and($html)->toContain('Value')
+        ->and($html)->toContain('X-Trace')
+        ->and($html)->toContain('trace-1')
+        ->and($html)->not->toContain('fi-fo-field')
+        ->and($html)->not->toContain('fi-input-wrp')
+        ->and($html)->not->toContain('readonly');
+});
+
 it('does not render request send mode when request samples are disabled', function () {
     config()->set('filament-openapi-docs.request_samples.enabled', false);
 
@@ -94,7 +235,7 @@ it('does not render request send mode when request samples are disabled', functi
         'components' => securityComponents(),
     ])->render();
 
-    expect($html)->toContain('Auth / Security')
+    expect($html)->toContain('Security')
         ->and($html)->not->toContain('Send API request')
         ->and($html)->not->toContain('requestSnippet(');
 });

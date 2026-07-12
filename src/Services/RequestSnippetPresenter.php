@@ -124,33 +124,59 @@ class RequestSnippetPresenter
             return null;
         }
 
+        $type = is_string($scheme['type'] ?? null) ? Str::lower($scheme['type']) : null;
+        $schemeValue = is_string($scheme['scheme'] ?? null) ? Str::lower($scheme['scheme']) : null;
         $description = isset($scheme['description']) ? (string) $scheme['description'] : null;
 
-        if (($scheme['type'] ?? null) === 'http' && ($scheme['scheme'] ?? null) === 'bearer') {
+        if ($type === 'http' && $schemeValue === 'bearer') {
             return [
                 'name' => 'Authorization',
-                'label' => $schemeName,
+                'label' => 'Bearer token',
                 'location' => 'header',
                 'value' => 'Bearer <token>',
                 'prefix' => 'Bearer ',
                 'placeholder' => '<token>',
-                'description' => $description,
+                'description' => $description ?? 'Provide your bearer token in the Authorization header when making requests to protected resources.',
+                'schemeType' => 'http',
+                'scheme' => 'bearer',
+                'documentationExample' => 'Authorization: Bearer 123',
+                'sendable' => true,
             ];
         }
 
-        if (($scheme['type'] ?? null) === 'http' && ($scheme['scheme'] ?? null) === 'basic') {
+        if ($type === 'http' && $schemeValue === 'basic') {
             return [
                 'name' => 'Authorization',
-                'label' => $schemeName,
+                'label' => 'Basic auth',
                 'location' => 'header',
                 'value' => 'Basic <credentials>',
                 'prefix' => 'Basic ',
                 'placeholder' => '<credentials>',
                 'description' => $description,
+                'schemeType' => 'http',
+                'scheme' => 'basic',
+                'documentationExample' => 'Authorization: Basic <credentials>',
+                'sendable' => true,
             ];
         }
 
-        if (($scheme['type'] ?? null) === 'apiKey' && is_string($scheme['name'] ?? null)) {
+        if ($type === 'http' && is_string($scheme['scheme'] ?? null)) {
+            return [
+                'name' => 'Authorization',
+                'label' => Str::headline($scheme['scheme']),
+                'location' => 'header',
+                'value' => Str::headline($scheme['scheme']).' <credentials>',
+                'prefix' => Str::headline($scheme['scheme']).' ',
+                'placeholder' => '<credentials>',
+                'description' => $description,
+                'schemeType' => 'http',
+                'scheme' => $schemeValue,
+                'documentationExample' => 'Authorization: '.Str::headline($scheme['scheme']).' <credentials>',
+                'sendable' => true,
+            ];
+        }
+
+        if ($type === 'apikey' && is_string($scheme['name'] ?? null)) {
             return [
                 'name' => $scheme['name'],
                 'label' => $schemeName,
@@ -159,18 +185,58 @@ class RequestSnippetPresenter
                 'prefix' => '',
                 'placeholder' => '<api-key>',
                 'description' => $description,
+                'schemeType' => 'apiKey',
+                'scheme' => null,
+                'documentationExample' => $scheme['name'].': <api-key>',
+                'sendable' => true,
             ];
         }
 
-        if (in_array($scheme['type'] ?? null, ['oauth2', 'openIdConnect'], true)) {
+        if ($type === 'mutualtls') {
             return [
                 'name' => $schemeName,
-                'label' => Str::headline((string) $scheme['type']),
+                'label' => 'Mutual TLS',
+                'location' => 'security',
+                'value' => '<client-certificate>',
+                'prefix' => '',
+                'placeholder' => '<client-certificate>',
+                'description' => $description,
+                'schemeType' => 'mutualTLS',
+                'scheme' => null,
+                'documentationExample' => null,
+                'sendable' => false,
+            ];
+        }
+
+        if ($type === 'oauth2') {
+            return [
+                'name' => $schemeName,
+                'label' => 'OAuth 2',
                 'location' => 'security',
                 'value' => '<credentials>',
                 'prefix' => '',
                 'placeholder' => '<credentials>',
                 'description' => $description,
+                'schemeType' => 'oauth2',
+                'scheme' => null,
+                'documentationExample' => null,
+                'sendable' => false,
+            ];
+        }
+
+        if ($type === 'openidconnect') {
+            return [
+                'name' => $schemeName,
+                'label' => 'OpenID Connect',
+                'location' => 'security',
+                'value' => '<credentials>',
+                'prefix' => '',
+                'placeholder' => '<credentials>',
+                'description' => $description,
+                'schemeType' => 'openIdConnect',
+                'scheme' => null,
+                'documentationExample' => is_string($scheme['openIdConnectUrl'] ?? null) ? $scheme['openIdConnectUrl'] : null,
+                'sendable' => false,
             ];
         }
 
@@ -272,7 +338,7 @@ class RequestSnippetPresenter
     private function authParameters(array $securityItems): array
     {
         return collect($securityItems)
-            ->reject(fn (array $securityItem): bool => ($securityItem['location'] ?? null) === 'security')
+            ->reject(fn (array $securityItem): bool => ! ($securityItem['sendable'] ?? false))
             ->map(fn (array $securityItem): array => [
                 'location' => $securityItem['location'],
                 'name' => $securityItem['name'],

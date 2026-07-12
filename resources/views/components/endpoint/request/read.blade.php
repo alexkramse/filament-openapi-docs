@@ -1,22 +1,18 @@
 <div class="foad-stack foad-stack-md">
     @if ($requestData['securityItems'] !== [])
         <div class="foad-stack foad-stack-sm">
-            <h4 class="fi-section-header-heading">Auth / Security</h4>
+            <h4 class="fi-section-header-heading">Security</h4>
             <div class="foad-grid">
                 @foreach ($requestData['securityItems'] as $securityItem)
-                    <label class="fi-fo-field">
-                        <span class="fi-fo-field-label-content foad-inline-list">
-                            <span>{{ $securityItem['label'] }}</span>
-
-                            <x-filament::badge color="gray" size="xs">
-                                {{ $securityItem['location'] }}
-                            </x-filament::badge>
-                        </span>
-
-                        <x-filament::input.wrapper :suffix="$securityItem['description']">
-                            <x-filament::input :value="$securityItem['name'].': '.$securityItem['value']" readonly />
-                        </x-filament::input.wrapper>
-                    </label>
+                    @include('filament-openapi-docs::components.request-doc-item', [
+                        'title' => $securityItem['label'],
+                        'description' => $securityItem['description'],
+                        'badges' => [],
+                        'metadata' => [
+                            \Illuminate\Support\Str::headline($securityItem['location']) => $securityItem['name'],
+                            'Example' => $securityItem['documentationExample'] ?? $securityItem['value'],
+                        ],
+                    ])
                 @endforeach
             </div>
         </div>
@@ -27,19 +23,16 @@
             <h4 class="fi-section-header-heading">Media headers</h4>
             <div class="foad-grid">
                 @foreach ($requestData['mediaHeaders'] as $mediaHeader)
-                    <label class="fi-fo-field">
-                        <span class="fi-fo-field-label-content foad-inline-list">
-                            <span>{{ $mediaHeader['name'] }}</span>
-
-                            <x-filament::badge color="gray" size="xs">
-                                {{ $mediaHeader['description'] }}
-                            </x-filament::badge>
-                        </span>
-
-                        <x-filament::input.wrapper>
-                            <x-filament::input :value="$mediaHeader['name'].': '.$mediaHeader['value']" readonly />
-                        </x-filament::input.wrapper>
-                    </label>
+                    @include('filament-openapi-docs::components.request-doc-item', [
+                        'title' => $mediaHeader['name'],
+                        'description' => $mediaHeader['description'],
+                        'badges' => [
+                            ['label' => 'header', 'color' => 'gray'],
+                        ],
+                        'metadata' => [
+                            'Value' => $mediaHeader['value'],
+                        ],
+                    ])
                 @endforeach
             </div>
         </div>
@@ -55,7 +48,19 @@
                 <h4 class="fi-section-header-heading">{{ $heading }}</h4>
                 <div class="foad-grid">
                     @foreach ($parameters as $parameter)
-                        @include('filament-openapi-docs::components.parameter-field', ['parameter' => $parameter])
+                        @include('filament-openapi-docs::components.request-doc-item', [
+                            'title' => $parameter['name'],
+                            'description' => $parameter['description'],
+                            'badges' => [
+                                ['label' => $parameter['type'], 'color' => 'info'],
+                                ['label' => $parameter['required'] ? 'Required' : 'Optional', 'color' => $parameter['required'] ? 'danger' : 'gray'],
+                            ],
+                            'metadata' => [
+                                'Value' => $parameter['value'] ?? null,
+                                'Default' => $parameter['default'] ?? null,
+                                'Example' => $parameter['example'] ?? null,
+                            ],
+                        ])
                     @endforeach
                 </div>
             </div>
