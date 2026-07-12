@@ -139,7 +139,7 @@ class RequestSnippetPresenter
                 'description' => $description ?? 'Provide your bearer token in the Authorization header when making requests to protected resources.',
                 'schemeType' => 'http',
                 'scheme' => 'bearer',
-                'documentationExample' => 'Authorization: Bearer 123',
+                'documentationExample' => 'Bearer 123',
                 'sendable' => true,
             ];
         }

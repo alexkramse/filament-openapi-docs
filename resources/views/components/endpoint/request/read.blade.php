@@ -5,12 +5,11 @@
             <div class="foad-grid">
                 @foreach ($requestData['securityItems'] as $securityItem)
                     @include('filament-openapi-docs::components.request-doc-item', [
-                        'title' => $securityItem['label'],
+                        'title' => $securityItem['name'].': '.$securityItem['value'],
                         'description' => $securityItem['description'],
                         'badges' => [],
                         'metadata' => [
-                            \Illuminate\Support\Str::headline($securityItem['location']) => $securityItem['name'],
-                            'Example' => $securityItem['documentationExample'] ?? $securityItem['value'],
+                            'Example' => $securityItem['documentationExample'] ?? $securityItem['value'] ?? null,
                         ],
                     ])
                 @endforeach

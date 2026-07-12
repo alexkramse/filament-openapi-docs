@@ -108,11 +108,10 @@ it('detects bearer security from the referenced scheme definition', function () 
         ->and($requestData['securityItems'][0]['scheme'])->toBe('bearer')
         ->and($requestData['requests'][0]['har']['headers'])->toContain(['name' => 'Authorization', 'value' => 'Bearer <token>'])
         ->and($html)->toContain('Provide your bearer token in the Authorization header when making requests to protected resources.')
-        ->and($html)->toContain('Authorization: Bearer 123')
-        ->and($html)->toContain('Header')
+        ->and($html)->toContain('Authorization: Bearer <token>')
+        ->and($html)->toContain('Bearer 123')
         ->and($html)->toContain('Authorization')
-        ->and($html)->not->toContain('Auth / Security')
-        ->and($html)->not->toContain('Bearer <token>');
+        ->and($html)->not->toContain('Auth / Security');
 });
 
 it('renders non bearer security schemes without bearer documentation', function () {
