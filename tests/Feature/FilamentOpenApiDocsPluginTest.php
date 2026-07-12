@@ -96,6 +96,11 @@ it('exposes endpoints through native filament sub navigation', function () {
                         'summary' => 'Show user',
                     ],
                 ],
+                '/health' => [
+                    'get' => [
+                        'tags' => ['Users'],
+                    ],
+                ],
             ],
         ]);
 
@@ -107,9 +112,14 @@ it('exposes endpoints through native filament sub navigation', function () {
     expect($page::getSubNavigationPosition())->toBe(SubNavigationPosition::Start)
         ->and($subNavigation)->toHaveCount(1)
         ->and($subNavigation[0]->getLabel())->toContain('Users')
-        ->and($subNavigation[0]->getItems()[0]->getLabel())->toBe('/users')
+        ->and($subNavigation[0]->getItems()[0]->getLabel())->toBe("List users\n/users")
+        ->and($subNavigation[0]->getItems()[1]->getLabel())->toBe("Show user\n/users/{user}")
+        ->and($subNavigation[0]->getItems()[2]->getLabel())->toBe('/health')
+        ->and($subNavigation[0]->getItems()[0]->getBadge())->toBe('GET')
+        ->and($subNavigation[0]->getItems()[0]->getBadgeColor())->toBe('success')
         ->and($subNavigation[0]->getItems()[0]->getUrl())->toBe('#')
         ->and($subNavigation[0]->getItems()[0]->isActive())->toBeTrue()
+        ->and($subNavigation[0]->getItems()[0]->getExtraAttributes()['class'])->toBe('foad-endpoint-navigation-item')
         ->and($subNavigation[0]->getItems()[0]->getExtraAttributes()['wire:click.prevent'])->toBe("selectEndpoint('get-users')");
 
     $page->selectEndpoint('get-usersuser');

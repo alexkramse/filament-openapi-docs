@@ -13,6 +13,41 @@
     padding-inline: .25rem;
 }
 
+.foad-openapi-docs-page .foad-endpoint-navigation-item {
+    .fi-sidebar-item-btn {
+        align-items: flex-start;
+    }
+
+    .fi-sidebar-item-label {
+        color: var(--gray-500);
+        font-size: .75rem;
+        line-height: 1.25rem;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        white-space: pre-line;
+    }
+
+    .fi-sidebar-item-label::first-line {
+        color: var(--gray-950);
+        font-size: .875rem;
+        font-weight: 600;
+    }
+
+    .fi-sidebar-item-badge-ctn {
+        margin-top: .125rem;
+    }
+}
+
+.dark .foad-openapi-docs-page .foad-endpoint-navigation-item {
+    .fi-sidebar-item-label {
+        color: var(--gray-400);
+    }
+
+    .fi-sidebar-item-label::first-line {
+        color: white;
+    }
+}
+
 .foad-stack {
     display: grid;
     gap: 1.5rem;

@@ -17,7 +17,7 @@ class OpenApiNavigationBuilder
     {
         return collect($endpoints)
             ->map(fn (array $groupEndpoints, string $group): NavigationGroup => NavigationGroup::make($group)
-                ->label(fn ($label) => $group.' '.count($this->items($groupEndpoints, $selectedEndpointId)))
+                ->label(fn ($label) => $group)
                 ->collapsible()
                 ->items($this->items($groupEndpoints, $selectedEndpointId)))
             ->values()
@@ -31,14 +31,24 @@ class OpenApiNavigationBuilder
     private function items(array $endpoints, ?string $selectedEndpointId): array
     {
         return collect($endpoints)
-            ->map(fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($endpoint->path)
+            ->map(fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($this->label($endpoint))
                 ->url('#')
                 ->isActiveWhen(fn (): bool => $endpoint->id === $selectedEndpointId)
                 ->badge($endpoint->method, HttpMethod::color($endpoint->method))
                 ->extraAttributes([
+                    'class' => 'foad-endpoint-navigation-item',
                     'wire:click.prevent' => "selectEndpoint('{$endpoint->id}')",
                 ]))
             ->values()
             ->all();
+    }
+
+    private function label(Endpoint $endpoint): string
+    {
+        if ($endpoint->summary === '') {
+            return $endpoint->path;
+        }
+
+        return "{$endpoint->summary}\n{$endpoint->path}";
     }
 }
