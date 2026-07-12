@@ -78,9 +78,10 @@ class OpenApiParser
             ...$pathParameters,
             ...$this->parameters($operation['parameters'] ?? [], ['body', 'formData']),
         ];
+        $operationId = isset($operation['operationId']) ? trim((string) $operation['operationId']) : '';
 
         return new Endpoint(
-            id: Str::slug("{$method}-{$path}"),
+            id: $operationId !== '' ? $operationId : Str::slug("{$method}-{$path}"),
             method: Str::upper($method),
             path: $path,
             summary: $summary,

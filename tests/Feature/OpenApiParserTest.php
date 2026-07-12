@@ -19,6 +19,7 @@ it('parses openapi paths into grouped endpoints', function () {
     $endpoint = $parsed['endpoints']['Users'][0];
 
     expect($endpoint)->toBeInstanceOf(Endpoint::class)
+        ->and($endpoint->id)->toBe('showUser')
         ->and($endpoint->method)->toBe('GET')
         ->and($endpoint->path)->toBe('/users/{user}')
         ->and($endpoint->parameters)->toHaveCount(2)
@@ -32,11 +33,35 @@ it('normalizes swagger 2 request metadata into the same endpoint shape', functio
 
     expect($parsed['servers'])->toBe(['https://api.example.test/v1'])
         ->and($parsed['components']['securitySchemes']['basicAuth']['type'])->toBe('http')
+        ->and($endpoint->id)->toBe('createSwaggerUser')
         ->and($endpoint->requestBodies[0]['contentType'])->toBe('application/x-www-form-urlencoded')
         ->and($endpoint->requestBodies[0]['schema']['properties'])->toHaveKeys(['name', 'avatar'])
         ->and($presented['securityItems'][0]['value'])->toBe('Basic <credentials>')
         ->and($presented['mediaHeaders'][0]['name'])->toBe('Content-Type')
         ->and($presented['requests'][0]['har']['headers'])->toContain(['name' => 'Content-Type', 'value' => 'application/x-www-form-urlencoded']);
+});
+
+it('falls back to method and path slug when operation id is missing', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.1.0',
+        'info' => [
+            'title' => 'Laravel',
+            'version' => '0.0.1',
+        ],
+        'paths' => [
+            '/health-check' => [
+                'get' => [
+                    'tags' => ['System'],
+                    'operationId' => '   ',
+                    'responses' => [
+                        '200' => ['description' => 'OK'],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    expect($parsed['endpoints']['System'][0]->id)->toBe('get-health-check');
 });
 
 it('provides request docs editable controls and baseline har from one presenter payload', function () {
@@ -409,6 +434,7 @@ function openApiSpec(): array
                 ],
                 'get' => [
                     'tags' => ['Users'],
+                    'operationId' => 'showUser',
                     'summary' => 'Show user',
                     'parameters' => [
                         [
@@ -436,6 +462,7 @@ function openApiSpec(): array
                 ],
                 'post' => [
                     'tags' => ['Users'],
+                    'operationId' => 'createUser',
                     'summary' => 'Create user',
                     'requestBody' => [
                         'content' => [
@@ -481,6 +508,7 @@ function swaggerSpec(): array
             '/users' => [
                 'post' => [
                     'tags' => ['Users'],
+                    'operationId' => 'createSwaggerUser',
                     'summary' => 'Create user',
                     'parameters' => [
                         [

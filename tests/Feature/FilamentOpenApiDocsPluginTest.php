@@ -89,12 +89,14 @@ it('exposes endpoints through native filament sub navigation', function () {
                 '/users' => [
                     'get' => [
                         'tags' => ['Users'],
+                        'operationId' => 'listUsers',
                         'summary' => 'List users',
                     ],
                 ],
                 '/users/{user}' => [
                     'get' => [
                         'tags' => ['Users'],
+                        'operationId' => 'showUser',
                         'summary' => 'Show user',
                     ],
                 ],
@@ -119,14 +121,51 @@ it('exposes endpoints through native filament sub navigation', function () {
         ->and($subNavigation[0]->getItems()[2]->getLabel())->toBe('GET /health')
         ->and($subNavigation[0]->getItems()[0]->getBadge())->toBe('GET')
         ->and($subNavigation[0]->getItems()[0]->getBadgeColor())->toBe('success')
-        ->and($subNavigation[0]->getItems()[0]->getUrl())->toBe('#')
+        ->and($subNavigation[0]->getItems()[0]->getUrl())->toBe('?endpoint=listUsers')
+        ->and($subNavigation[0]->getItems()[1]->getUrl())->toBe('?endpoint=showUser')
         ->and($subNavigation[0]->getItems()[0]->isActive())->toBeTrue()
-        ->and($subNavigation[0]->getItems()[0]->getExtraAttributes()['wire:click.prevent'])->toBe("selectEndpoint('get-users')");
+        ->and($subNavigation[0]->getItems()[0]->getExtraAttributes()['wire:click.prevent'])->toBe("selectEndpoint('listUsers')");
 
-    $page->selectEndpoint('get-usersuser');
+    $page->selectEndpoint('showUser');
     $subNavigation = $page->getSubNavigation();
 
-    expect($page->selectedEndpointId)->toBe('get-usersuser')
+    expect($page->selectedEndpointId)->toBe('showUser')
+        ->and($subNavigation[0]->getItems()[0]->isActive())->toBeFalse()
+        ->and($subNavigation[0]->getItems()[1]->isActive())->toBeTrue();
+});
+
+it('uses a valid url endpoint selection when building sub navigation', function () {
+    $provider = m::mock(SpecProvider::class);
+    $provider
+        ->shouldReceive('spec')
+        ->once()
+        ->andReturn([
+            'paths' => [
+                '/users' => [
+                    'get' => [
+                        'tags' => ['Users'],
+                        'operationId' => 'listUsers',
+                        'summary' => 'List users',
+                    ],
+                ],
+                '/users/{user}' => [
+                    'get' => [
+                        'tags' => ['Users'],
+                        'operationId' => 'showUser',
+                        'summary' => 'Show user',
+                    ],
+                ],
+            ],
+        ]);
+
+    app()->instance(SpecProvider::class, $provider);
+
+    $page = app(OpenApiDocsPage::class);
+    $page->selectedEndpointId = 'showUser';
+
+    $subNavigation = $page->getSubNavigation();
+
+    expect($page->selectedEndpointId)->toBe('showUser')
         ->and($subNavigation[0]->getItems()[0]->isActive())->toBeFalse()
         ->and($subNavigation[0]->getItems()[1]->isActive())->toBeTrue();
 });
@@ -142,6 +181,16 @@ it('opens only the first endpoint navigation group by default', function () {
         ->and($navigation[0]->isCollapsed())->toBeFalse()
         ->and($navigation[1]->isCollapsible())->toBeTrue()
         ->and($navigation[1]->isCollapsed())->toBeTrue();
+});
+
+it('escapes operation ids in endpoint navigation click handlers', function () {
+    $navigation = app(OpenApiNavigationBuilder::class)->build([
+        'Users' => [endpointForNavigation('showUser\'sProfile', 'GET', '/users/{user}', 'Show user', ['Users'])],
+    ]);
+
+    expect($navigation[0]->getItems()[0]->getExtraAttributes()['wire:click.prevent'])
+        ->toBe('selectEndpoint(\'showUser\\u0027sProfile\')')
+        ->and($navigation[0]->getItems()[0]->getUrl())->toBe('?endpoint=showUser%27sProfile');
 });
 
 it('normalizes persisted collapsed state for endpoint sub navigation groups', function () {

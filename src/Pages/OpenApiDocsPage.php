@@ -13,6 +13,7 @@ use Filament\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Url;
 use UnitEnum;
 
 class OpenApiDocsPage extends Page
@@ -34,6 +35,7 @@ class OpenApiDocsPage extends Page
      */
     private ?array $openApiData = null;
 
+    #[Url(as: 'endpoint')]
     public ?string $selectedEndpointId = null;
 
     public function mount(): void

@@ -6,6 +6,7 @@ use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Alexkramse\FilamentOpenapiDocs\Enums\HttpMethod;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
+use Illuminate\Support\Js;
 
 class OpenApiNavigationBuilder
 {
@@ -43,14 +44,19 @@ class OpenApiNavigationBuilder
     {
         return collect($endpoints)
             ->map(fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($endpoint->title())
-                ->url('#')
+                ->url($this->url($endpoint))
                 ->isActiveWhen(fn (): bool => $endpoint->id === $selectedEndpointId)
                 ->badge($endpoint->method, HttpMethod::color($endpoint->method))
                 ->extraAttributes([
-                    'wire:click.prevent' => "selectEndpoint('{$endpoint->id}')",
+                    'wire:click.prevent' => 'selectEndpoint('.Js::from($endpoint->id).')',
                 ])
             )
             ->values()
             ->all();
+    }
+
+    private function url(Endpoint $endpoint): string
+    {
+        return '?endpoint='.rawurlencode($endpoint->id);
     }
 }
