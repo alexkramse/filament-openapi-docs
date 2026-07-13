@@ -2,7 +2,7 @@
     @if ($requestData['securityItems'] !== [])
         <div class="foad-stack foad-stack-sm">
             <h4 class="fi-section-header-heading">Security</h4>
-            <div class="foad-grid">
+            <div class="">
                 @foreach ($requestData['securityItems'] as $securityItem)
                     @include('filament-openapi-docs::components.request-doc-item', [
                         'title' => $securityItem['name'].': '.$securityItem['value'],
@@ -20,7 +20,7 @@
     @if ($requestData['mediaHeaders'] !== [])
         <div class="foad-stack foad-stack-sm">
             <h4 class="fi-section-header-heading">Media headers</h4>
-            <div class="foad-grid">
+            <div class="">
                 @foreach ($requestData['mediaHeaders'] as $mediaHeader)
                     @include('filament-openapi-docs::components.request-doc-item', [
                         'title' => $mediaHeader['name'].': '.$mediaHeader['value'],
@@ -41,7 +41,7 @@
         @if ($parameters !== [])
             <div class="foad-stack foad-stack-sm">
                 <h4 class="fi-section-header-heading">{{ $heading }}</h4>
-                <div class="foad-grid">
+                <div class="">
                     @foreach ($parameters as $parameter)
                         @include('filament-openapi-docs::components.request-doc-item', [
                             'title' => $parameter['name'],

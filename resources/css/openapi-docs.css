@@ -1,6 +1,6 @@
 .foad-openapi-docs-page .fi-page-sub-navigation-sidebar-ctn {
     position: sticky;
-    top: 1.5rem;
+    top: 5rem;
     max-height: calc(100vh - 3rem);
     overflow-y: auto;
 
@@ -40,8 +40,7 @@
 
 .foad-openapi-summary {
     display: grid;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 0.5rem;
 }
 
 .foad-openapi-summary-copy {
@@ -66,7 +65,6 @@
 .foad-openapi-summary-servers {
     display: grid;
     gap: .375rem;
-    margin-bottom: .75rem;
 }
 
 .foad-openapi-summary-server {
