@@ -35,47 +35,52 @@
             <p class="fi-section-header-description">{{ $endpoint->description }}</p>
         </x-slot>
 
-        <div class="foad-stack">
-            <div
+        <div
+            class="foad-stack"
+            @if ($requestData['hasRequestSamples'])
+                x-load
+                x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
+                x-data="requestSnippet(@js($requestData))"
+            @else
+                x-data="{ sendMode: false, developerMode: false }"
+            @endif
+        >
+            <x-filament::section heading="Request" collapsible secondary>
                 @if ($requestData['hasRequestSamples'])
-                    x-load
-                    x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
-                    x-data="requestSnippet(@js($requestData))"
-                @else
-                    x-data="{ sendMode: false, developerMode: false }"
+                    <x-slot name="afterHeader">
+                        <label class="foad-developer-mode fi-fo-toggle">
+                            <x-filament::input.checkbox class="foad-developer-mode-input" x-model="sendMode" />
+                            <span class="foad-developer-mode-switch" aria-hidden="true">
+                                <span class="foad-developer-mode-knob"></span>
+                            </span>
+                            <span class="fi-fo-field-label-content">Send mode</span>
+                        </label>
+                    </x-slot>
                 @endif
-            >
-                <x-filament::section heading="Request" collapsible secondary>
-                    @if ($requestData['hasRequestSamples'])
-                        <x-slot name="afterHeader">
-                            <label class="foad-developer-mode fi-fo-toggle">
-                                <x-filament::input.checkbox class="foad-developer-mode-input" x-model="sendMode" />
-                                <span class="foad-developer-mode-switch" aria-hidden="true">
-                                    <span class="foad-developer-mode-knob"></span>
-                                </span>
-                                <span class="fi-fo-field-label-content">Send mode</span>
-                            </label>
-                        </x-slot>
-                    @endif
 
-                    <div x-show="! sendMode">
-                        @include('filament-openapi-docs::components.endpoint.request.read', [
-                            'endpoint' => $endpoint,
-                            'components' => $schemaComponents,
-                            'examplePresenter' => $examplePresenter,
+                <div x-show="! sendMode">
+                    @include('filament-openapi-docs::components.endpoint.request.read', [
+                        'endpoint' => $endpoint,
+                        'components' => $schemaComponents,
+                        'examplePresenter' => $examplePresenter,
+                        'requestData' => $requestData,
+                    ])
+                </div>
+
+                @if ($requestData['hasRequestSamples'])
+                    <div x-show="sendMode" x-cloak>
+                        @include('filament-openapi-docs::components.endpoint.request.send', [
                             'requestData' => $requestData,
                         ])
                     </div>
+                @endif
+            </x-filament::section>
 
-                    @if ($requestData['hasRequestSamples'])
-                        <div x-show="sendMode" x-cloak>
-                            @include('filament-openapi-docs::components.endpoint.request.send', [
-                                'requestData' => $requestData,
-                            ])
-                        </div>
-                    @endif
-                </x-filament::section>
-            </div>
+            <x-filament::section heading="Request sample" collapsible secondary>
+                @include('filament-openapi-docs::components.request-snippet', [
+                    'requestData' => $requestData,
+                ])
+            </x-filament::section>
 
             @include('filament-openapi-docs::components.endpoint.responses', [
                 'endpoint' => $endpoint,

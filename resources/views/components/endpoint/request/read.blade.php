@@ -112,12 +112,6 @@
         </div>
     @endif
 
-    @if ($requestData['hasRequestSamples'])
-        @include('filament-openapi-docs::components.request-snippet', [
-            'requestData' => $requestData,
-        ])
-    @endif
-
     @if ($requestData['securityItems'] === [] && $requestData['mediaHeaders'] === [] && $requestData['headerParameters'] === [] && $requestData['pathParameters'] === [] && $requestData['queryParameters'] === [] && ! $endpoint->hasRequestBody())
         <p class="fi-section-header-description">No request data documented.</p>
     @endif

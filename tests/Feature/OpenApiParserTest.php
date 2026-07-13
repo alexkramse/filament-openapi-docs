@@ -206,6 +206,7 @@ it('renders request read and send modes', function () {
 
     $removableParameterMarkup = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/headers.blade.php')
         .file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/query-parameters.blade.php');
+    $endpointMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
 
     expect($html)->toContain('Send mode')
         ->and($html)->toContain('Security')
@@ -228,7 +229,8 @@ it('renders request read and send modes', function () {
         ->and(substr_count($removableParameterMarkup, '<x-filament::icon-button'))->toBe(2)
         ->and(substr_count($removableParameterMarkup, 'icon="heroicon-m-trash"'))->toBe(2)
         ->and(substr_count($removableParameterMarkup, 'label="Remove"'))->toBe(2)
-        ->and($removableParameterMarkup)->not->toContain('>Remove');
+        ->and($removableParameterMarkup)->not->toContain('>Remove')
+        ->and($endpointMarkup)->not->toContain('<div'.PHP_EOL.'                @if ($requestData[\'hasRequestSamples\'])');
 });
 
 it('renders request read mode as static documentation rows', function () {
@@ -270,6 +272,8 @@ it('does not render request send mode when request samples are disabled', functi
     ])->render();
 
     expect($html)->toContain('Security')
+        ->and($html)->toContain('Request sample')
+        ->and($html)->toContain('No request sample available.')
         ->and($html)->not->toContain('Send API request')
         ->and($html)->not->toContain('requestSnippet(');
 });
