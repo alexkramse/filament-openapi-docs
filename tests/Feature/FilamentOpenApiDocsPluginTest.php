@@ -31,6 +31,147 @@ it('reads navigation values from config', function () {
         ->and(OpenApiDocsPage::getNavigationSort())->toBe(42);
 });
 
+it('uses left sub navigation by default', function () {
+    expect(OpenApiDocsPage::getSubNavigationPosition())->toBe(SubNavigationPosition::Start);
+});
+
+it('can render sub navigation on the right from config', function () {
+    config()->set('filament-openapi-docs.sub_navigation.position', 'right');
+
+    expect(OpenApiDocsPage::getSubNavigationPosition())->toBe(SubNavigationPosition::End);
+});
+
+it('uses configured page title before openapi title', function () {
+    config()->set('filament-openapi-docs.page.title', 'Configured Docs');
+
+    expect(app(OpenApiDocsPage::class)->getTitle())->toBe('Configured Docs');
+});
+
+it('falls back to openapi title when configured page title is empty', function () {
+    config()->set('filament-openapi-docs.page.title', '');
+    bindOpenApiSpec([
+        'info' => [
+            'title' => 'Game API',
+        ],
+    ]);
+
+    expect(app(OpenApiDocsPage::class)->getTitle())->toBe('Game API');
+});
+
+it('falls back to application name when configured and openapi titles are empty', function () {
+    config()->set('app.name', 'Game Dashboard');
+    config()->set('filament-openapi-docs.page.title', '');
+    bindOpenApiSpec([
+        'info' => [
+            'title' => '',
+        ],
+    ]);
+
+    expect(app(OpenApiDocsPage::class)->getTitle())->toBe('Game Dashboard');
+});
+
+it('uses laravel as the final page title fallback', function () {
+    config()->set('app.name', '');
+    config()->set('filament-openapi-docs.page.title', '');
+    bindOpenApiSpec([
+        'info' => [],
+    ]);
+
+    expect(app(OpenApiDocsPage::class)->getTitle())->toBe('Laravel');
+});
+
+it('uses configured page description before openapi description', function () {
+    config()->set('filament-openapi-docs.page.description', 'Configured description');
+
+    expect(app(OpenApiDocsPage::class)->getSubheading())->toBe('Configured description');
+});
+
+it('falls back to openapi description when configured page description is empty', function () {
+    config()->set('filament-openapi-docs.page.description', '');
+    bindOpenApiSpec([
+        'info' => [
+            'description' => 'Generated from OpenAPI.',
+        ],
+    ]);
+
+    expect(app(OpenApiDocsPage::class)->getSubheading())->toBe('Generated from OpenAPI.');
+});
+
+it('uses an empty page description when configured and openapi descriptions are empty', function () {
+    config()->set('filament-openapi-docs.page.description', '');
+    bindOpenApiSpec([
+        'info' => [
+            'description' => '',
+        ],
+    ]);
+
+    expect(app(OpenApiDocsPage::class)->getSubheading())->toBe('');
+});
+
+it('uses openapi version as the navigation badge', function () {
+    bindOpenApiSpec([
+        'info' => [
+            'version' => '1.2.3',
+        ],
+    ]);
+
+    expect(OpenApiDocsPage::getNavigationBadge())->toBe('1.2.3');
+});
+
+it('can use the endpoint count as the navigation badge', function () {
+    config()->set('filament-openapi-docs.navigation.badge', 'count');
+    bindOpenApiSpec(openApiSpecWithEndpoints());
+
+    expect(OpenApiDocsPage::getNavigationBadge())->toBe('2');
+});
+
+it('does not render a navigation badge when configured badge is null', function () {
+    config()->set('filament-openapi-docs.navigation.badge', null);
+
+    expect(OpenApiDocsPage::getNavigationBadge())->toBeNull();
+});
+
+it('does not render a navigation badge when configured badge is unknown', function () {
+    config()->set('filament-openapi-docs.navigation.badge', 'unknown');
+
+    expect(OpenApiDocsPage::getNavigationBadge())->toBeNull();
+});
+
+it('wraps version navigation badge with configured prefix and suffix', function () {
+    config()->set('filament-openapi-docs.navigation.badge_prefix', 'v');
+    config()->set('filament-openapi-docs.navigation.badge_suffix', ' beta');
+    bindOpenApiSpec([
+        'info' => [
+            'version' => '1.2.3',
+        ],
+    ]);
+
+    expect(OpenApiDocsPage::getNavigationBadge())->toBe('v1.2.3 beta');
+});
+
+it('wraps endpoint count navigation badge with configured prefix and suffix', function () {
+    config()->set('filament-openapi-docs.navigation.badge', 'count');
+    config()->set('filament-openapi-docs.navigation.badge_prefix', '');
+    config()->set('filament-openapi-docs.navigation.badge_suffix', ' endpoints');
+    bindOpenApiSpec(openApiSpecWithEndpoints([
+        'version' => '1.2.3',
+    ]));
+
+    expect(OpenApiDocsPage::getNavigationBadge())->toBe('2 endpoints');
+});
+
+it('does not render a version navigation badge when openapi version is empty even with configured prefix and suffix', function () {
+    config()->set('filament-openapi-docs.navigation.badge_prefix', 'v');
+    config()->set('filament-openapi-docs.navigation.badge_suffix', ' beta');
+    bindOpenApiSpec([
+        'info' => [
+            'version' => '',
+        ],
+    ]);
+
+    expect(OpenApiDocsPage::getNavigationBadge())->toBeNull();
+});
+
 it('stores selected endpoint in browser history', function () {
     $attribute = collect((new ReflectionProperty(OpenApiDocsPage::class, 'selectedEndpointId'))->getAttributes(Url::class))
         ->first()
@@ -227,4 +368,34 @@ function endpointForNavigation(string $id, string $method, string $path, string 
         security: [],
         deprecated: false,
     );
+}
+
+function bindOpenApiSpec(array $spec): void
+{
+    $provider = m::mock(SpecProvider::class);
+    $provider
+        ->shouldReceive('spec')
+        ->once()
+        ->andReturn($spec);
+
+    app()->instance(SpecProvider::class, $provider);
+}
+
+function openApiSpecWithEndpoints(array $info = []): array
+{
+    return [
+        'info' => $info,
+        'paths' => [
+            '/users' => [
+                'get' => [
+                    'summary' => 'List users',
+                ],
+            ],
+            '/health' => [
+                'get' => [
+                    'summary' => 'Health check',
+                ],
+            ],
+        ],
+    ];
 }

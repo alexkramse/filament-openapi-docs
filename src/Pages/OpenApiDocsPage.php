@@ -20,8 +20,6 @@ class OpenApiDocsPage extends Page
 {
     protected static ?string $slug = 'api-docs';
 
-    protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Start;
-
     protected string $view = 'filament-openapi-docs::pages.openapi-docs';
 
     /**
@@ -52,6 +50,21 @@ class OpenApiDocsPage extends Page
         return parent::getMaxContentWidth();
     }
 
+    public function getTitle(): string|Htmlable
+    {
+        return $this->stringValue(config('filament-openapi-docs.page.title'))
+            ?? $this->stringValue($this->openApiInfo()['title'] ?? null)
+            ?? $this->stringValue(config('app.name'))
+            ?? 'Laravel';
+    }
+
+    public function getSubheading(): string|Htmlable|null
+    {
+        return $this->stringValue(config('filament-openapi-docs.page.description'))
+            ?? $this->stringValue($this->openApiInfo()['description'] ?? null)
+            ?? '';
+    }
+
     public static function getNavigationLabel(): string
     {
         return config('filament-openapi-docs.navigation.label', 'API Docs');
@@ -70,6 +83,37 @@ class OpenApiDocsPage extends Page
     public static function getNavigationSort(): ?int
     {
         return (int) config('filament-openapi-docs.navigation.sort', 100);
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $mode = config('filament-openapi-docs.navigation.badge', 'version');
+
+        $openApiData = static::staticOpenApiData();
+        $badge = match ($mode) {
+            'version' => static::staticStringValue($openApiData['info']['version'] ?? null),
+            'count' => (string) $openApiData['endpointCount'],
+            default => null,
+        };
+
+        if ($badge === null) {
+            return null;
+        }
+
+        return sprintf(
+            '%s%s%s',
+            (string) config('filament-openapi-docs.navigation.badge_prefix', ''),
+            $badge,
+            (string) config('filament-openapi-docs.navigation.badge_suffix', ''),
+        );
+    }
+
+    public static function getSubNavigationPosition(): SubNavigationPosition
+    {
+        return match (config('filament-openapi-docs.sub_navigation.position', 'left')) {
+            'right' => SubNavigationPosition::End,
+            default => SubNavigationPosition::Start,
+        };
     }
 
     public function selectEndpoint(string $endpointId): void
@@ -141,6 +185,44 @@ class OpenApiDocsPage extends Page
         return $this->openApiData ??= app(OpenApiParser::class)->parse(
             app(SpecProvider::class)->spec(),
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function openApiInfo(): array
+    {
+        return $this->openApiData()['info'];
+    }
+
+    private function stringValue(mixed $value): ?string
+    {
+        return static::staticStringValue($value);
+    }
+
+    /**
+     * @return array{
+     *     info: array<string, mixed>,
+     *     servers: array<int, string>,
+     *     endpoints: array<string, array<int, Endpoint>>,
+     *     endpointCount: int,
+     *     components: array<string, mixed>
+     * }
+     */
+    private static function staticOpenApiData(): array
+    {
+        return app(OpenApiParser::class)->parse(
+            app(SpecProvider::class)->spec(),
+        );
+    }
+
+    private static function staticStringValue(mixed $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return (string) $value;
     }
 
     private function ensureSelectedEndpoint(): void
