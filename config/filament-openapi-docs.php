@@ -114,7 +114,7 @@ return [
         | are "left" and "right".
         |
         */
-        'position' => 'right',
+        'position' => 'left',
     ],
 
     'page' => [

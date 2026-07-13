@@ -7,6 +7,8 @@ use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
 use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\File;
 use Livewire\Attributes\Url;
 use Mockery as m;
@@ -229,6 +231,62 @@ it('uses compiled filament or package classes in blade views', function () {
         ->values();
 
     expect($classes->intersect($unsupportedUtilityClasses)->values()->all())->toBe([]);
+});
+
+it('moves openapi summary from the page content to the sub navigation partial', function () {
+    $pageView = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
+    $summaryView = file_get_contents(__DIR__.'/../../resources/views/sub-navigation/openapi-summary.blade.php');
+
+    expect($pageView)->not->toContain(':heading="$info[\'title\'] ?? \'API Documentation\'"')
+        ->and($summaryView)->not->toContain('<x-filament::section')
+        ->and($summaryView)->toContain('{{ $endpointCount }} endpoints');
+});
+
+it('registers openapi summary at the top of the endpoint sub navigation sidebar', function () {
+    expect(FilamentView::hasRenderHook(PanelsRenderHook::PAGE_SUB_NAVIGATION_SIDEBAR_BEFORE, OpenApiDocsPage::class))->toBeTrue()
+        ->and(FilamentView::hasRenderHook(PanelsRenderHook::PAGE_SUB_NAVIGATION_START_BEFORE, OpenApiDocsPage::class))->toBeFalse()
+        ->and(FilamentView::hasRenderHook(PanelsRenderHook::PAGE_SUB_NAVIGATION_END_BEFORE, OpenApiDocsPage::class))->toBeFalse();
+});
+
+it('renders openapi summary data above endpoint sub navigation', function () {
+    bindOpenApiSpec([
+        'info' => [
+            'title' => 'Game API',
+            'description' => 'Developer documentation.',
+            'version' => '1.2.3',
+        ],
+        'servers' => [
+            ['url' => 'https://api.example.test'],
+        ],
+        'paths' => [
+            '/users' => [
+                'get' => [
+                    'summary' => 'List users',
+                ],
+            ],
+            '/health' => [
+                'get' => [
+                    'summary' => 'Health check',
+                ],
+            ],
+        ],
+    ]);
+
+    $html = html_entity_decode((string) FilamentView::renderHook(
+        PanelsRenderHook::PAGE_SUB_NAVIGATION_SIDEBAR_BEFORE,
+        OpenApiDocsPage::class,
+    ));
+
+    expect($html)->toContain('https://api.example.test')
+        ->and($html)->toContain('v1.2.3')
+        ->and($html)->toContain('2 endpoints');
+});
+
+it('adds spacing between openapi summary server urls and meta badges', function () {
+    $styles = file_get_contents(__DIR__.'/../../resources/css/openapi-docs.css');
+
+    expect($styles)->toContain('.foad-openapi-summary-servers')
+        ->and($styles)->toContain('margin-bottom: .75rem;');
 });
 
 it('exposes endpoints through native filament sub navigation', function () {
