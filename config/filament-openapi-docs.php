@@ -90,7 +90,7 @@ return [
         | when a badge value is available.
         |
         */
-        'badge_prefix' => '',
+        'badge_prefix' => 'v',
 
         /*
         |--------------------------------------------------------------------------
