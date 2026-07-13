@@ -45,16 +45,26 @@
                 x-data="{ sendMode: false, developerMode: false }"
             @endif
         >
-            <x-filament::section heading="Request" collapsible secondary>
+            <x-filament::section class="foad-request-section" heading="Request" collapsible secondary>
                 @if ($requestData['hasRequestSamples'])
                     <x-slot name="afterHeader">
-                        <label class="foad-developer-mode fi-fo-toggle">
-                            <x-filament::input.checkbox class="foad-developer-mode-input" x-model="sendMode" />
-                            <span class="foad-developer-mode-switch" aria-hidden="true">
-                                <span class="foad-developer-mode-knob"></span>
-                            </span>
-                            <span class="fi-fo-field-label-content">Send mode</span>
-                        </label>
+                        <div class="foad-request-mode-controls">
+                            <label class="foad-developer-mode fi-fo-toggle">
+                                <x-filament::input.checkbox class="foad-developer-mode-input" x-model="sendMode" />
+                                <span class="foad-developer-mode-switch" aria-hidden="true">
+                                    <span class="foad-developer-mode-knob"></span>
+                                </span>
+                                <span class="fi-fo-field-label-content">Send mode</span>
+                            </label>
+
+                            <label class="foad-developer-mode fi-fo-toggle" x-show="sendMode" x-cloak>
+                                <x-filament::input.checkbox class="foad-developer-mode-input" x-model="developerMode" />
+                                <span class="foad-developer-mode-switch" aria-hidden="true">
+                                    <span class="foad-developer-mode-knob"></span>
+                                </span>
+                                <span class="fi-fo-field-label-content">Developer mode</span>
+                            </label>
+                        </div>
                     </x-slot>
                 @endif
 

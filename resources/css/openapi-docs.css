@@ -143,6 +143,23 @@
     align-items: flex-end;
 }
 
+.foad-request-mode-controls {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.foad-request-section > .fi-section-header > .fi-section-header-text-ctn {
+    flex: 0 0 auto;
+}
+
+.foad-request-section > .fi-section-header > .fi-section-header-after-ctn {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 .foad-schema-row-header {
     display: grid;
     gap: .75rem;

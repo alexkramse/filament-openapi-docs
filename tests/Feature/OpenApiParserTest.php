@@ -207,6 +207,7 @@ it('renders request read and send modes', function () {
     $removableParameterMarkup = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/headers.blade.php')
         .file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/query-parameters.blade.php');
     $endpointMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
+    $sendModeMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/send.blade.php');
 
     expect($html)->toContain('Send mode')
         ->and($html)->toContain('Security')
@@ -223,6 +224,8 @@ it('renders request read and send modes', function () {
         ->and($html)->toContain('Add header')
         ->and($html)->toContain('Add')
         ->and($html)->toContain('fi-tabs fi-contained foad-sample-toolbar')
+        ->and($html)->toContain('foad-request-section')
+        ->and($html)->toContain('foad-request-mode-controls')
         ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(5)
         ->and(substr_count($html, 'foad-send-controls foad-justify-content-space-between'))->toBe(2)
         ->and(substr_count($html, 'class="foad-header-row"'))->toBe(2)
@@ -231,7 +234,11 @@ it('renders request read and send modes', function () {
         ->and(substr_count($removableParameterMarkup, 'icon="heroicon-m-trash"'))->toBe(2)
         ->and(substr_count($removableParameterMarkup, 'label="Remove"'))->toBe(2)
         ->and($removableParameterMarkup)->not->toContain('>Remove')
-        ->and($endpointMarkup)->not->toContain('<div'.PHP_EOL.'                @if ($requestData[\'hasRequestSamples\'])');
+        ->and($endpointMarkup)->toContain('x-model="sendMode"')
+        ->and($endpointMarkup)->toContain('x-show="sendMode" x-cloak')
+        ->and($endpointMarkup)->toContain('x-model="developerMode"')
+        ->and($endpointMarkup)->not->toContain('<div'.PHP_EOL.'                @if ($requestData[\'hasRequestSamples\'])')
+        ->and($sendModeMarkup)->not->toContain('Developer mode');
 });
 
 it('renders request read mode as static documentation rows', function () {

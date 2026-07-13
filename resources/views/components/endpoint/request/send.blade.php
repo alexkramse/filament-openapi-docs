@@ -1,12 +1,4 @@
 <div class="foad-stack foad-stack-md">
-    <label class="foad-developer-mode fi-fo-toggle">
-        <x-filament::input.checkbox class="foad-developer-mode-input" x-model="developerMode" />
-        <span class="foad-developer-mode-switch" aria-hidden="true">
-            <span class="foad-developer-mode-knob"></span>
-        </span>
-        <span class="fi-fo-field-label-content">Developer mode</span>
-    </label>
-
     @include('filament-openapi-docs::components.request-snippet.auth')
     @include('filament-openapi-docs::components.request-snippet.media-headers')
     @include('filament-openapi-docs::components.request-snippet.headers')
