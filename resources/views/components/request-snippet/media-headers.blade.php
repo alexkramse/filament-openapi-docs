@@ -4,7 +4,7 @@
             <h4 class="fi-section-header-heading">Media headers</h4>
         </div>
 
-        <div class="foad-grid">
+        <div class="foad-send-controls-grid">
             <template x-for="parameter in mediaHeaderParameters" x-bind:key="`media-header-${parameter.name}`">
                 <x-filament::input.wrapper>
                     <x-slot name="prefix">

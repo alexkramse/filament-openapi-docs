@@ -7,7 +7,7 @@
             </x-filament::button>
         </div>
 
-        <div class="foad-grid">
+        <div class="foad-send-controls-grid">
             <template x-for="(parameter, index) in queryParameters" x-bind:key="`query-${index}`">
                 <div class="foad-header-row" x-show="developerMode || ! parameter.developerOnly">
                     <template x-if="! parameter.removable">

@@ -218,6 +218,7 @@ it('renders request read and send modes', function () {
         ->and($html)->toContain('Send API request')
         ->and($html)->toContain('Add header')
         ->and($html)->toContain('Add')
+        ->and(substr_count($html, 'class="foad-send-controls-grid"'))->toBe(4)
         ->and(substr_count($html, 'x-data="requestSnippet'))->toBe(1);
 });
 

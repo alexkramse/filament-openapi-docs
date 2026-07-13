@@ -119,6 +119,12 @@
     gap: .75rem;
 }
 
+.foad-send-controls-grid {
+    display: grid;
+    gap: .75rem;
+    width: 100%;
+}
+
 .foad-inline-list {
     display: flex;
     flex-wrap: wrap;
@@ -657,6 +663,10 @@
 @media (min-width: 48rem) {
     .foad-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .foad-send-controls-grid {
+        width: 50%;
     }
 
     .foad-schema-row-header {
