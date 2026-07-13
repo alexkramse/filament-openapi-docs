@@ -119,10 +119,13 @@
     gap: .75rem;
 }
 
+.foad-send-controls {
+    width: 100%;
+}
+
 .foad-send-controls-grid {
     display: grid;
     gap: .75rem;
-    width: 100%;
 }
 
 .foad-inline-list {
@@ -443,14 +446,14 @@
 }
 
 .foad-header-row {
-    align-items: end;
+    align-items: center;
     display: grid;
     gap: .5rem;
 }
 
 .foad-header-remove {
+    align-self: center;
     justify-self: start;
-    margin-bottom: .375rem;
 }
 
 .foad-try-input,
@@ -665,7 +668,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .foad-send-controls-grid {
+    .foad-send-controls {
         width: 50%;
     }
 

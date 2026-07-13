@@ -204,6 +204,9 @@ it('renders request read and send modes', function () {
         'components' => securityComponents(),
     ])->render());
 
+    $removableParameterMarkup = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/headers.blade.php')
+        .file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/query-parameters.blade.php');
+
     expect($html)->toContain('Send mode')
         ->and($html)->toContain('Security')
         ->and($html)->toContain('Media headers')
@@ -218,8 +221,14 @@ it('renders request read and send modes', function () {
         ->and($html)->toContain('Send API request')
         ->and($html)->toContain('Add header')
         ->and($html)->toContain('Add')
-        ->and(substr_count($html, 'class="foad-send-controls-grid"'))->toBe(4)
-        ->and(substr_count($html, 'x-data="requestSnippet'))->toBe(1);
+        ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(5)
+        ->and(substr_count($html, 'foad-send-controls foad-justify-content-space-between'))->toBe(2)
+        ->and(substr_count($html, 'class="foad-header-row"'))->toBe(2)
+        ->and(substr_count($html, 'x-data="requestSnippet'))->toBe(1)
+        ->and(substr_count($removableParameterMarkup, '<x-filament::icon-button'))->toBe(2)
+        ->and(substr_count($removableParameterMarkup, 'icon="heroicon-m-trash"'))->toBe(2)
+        ->and(substr_count($removableParameterMarkup, 'label="Remove"'))->toBe(2)
+        ->and($removableParameterMarkup)->not->toContain('>Remove');
 });
 
 it('renders request read mode as static documentation rows', function () {
