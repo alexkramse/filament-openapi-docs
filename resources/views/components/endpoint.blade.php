@@ -76,7 +76,7 @@
                 @endif
             </x-filament::section>
 
-            <x-filament::section heading="Request sample" collapsible secondary>
+            <x-filament::section heading="Request sample" collapsible collapsed secondary>
                 @include('filament-openapi-docs::components.request-snippet', [
                     'requestData' => $requestData,
                 ])

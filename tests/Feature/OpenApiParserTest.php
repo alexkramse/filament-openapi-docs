@@ -222,6 +222,7 @@ it('renders request read and send modes', function () {
         ->and($html)->toContain('Send API request')
         ->and($html)->toContain('Add header')
         ->and($html)->toContain('Add')
+        ->and($html)->toContain('fi-tabs fi-contained foad-sample-toolbar')
         ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(5)
         ->and(substr_count($html, 'foad-send-controls foad-justify-content-space-between'))->toBe(2)
         ->and(substr_count($html, 'class="foad-header-row"'))->toBe(2)

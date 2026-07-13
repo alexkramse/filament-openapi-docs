@@ -307,7 +307,6 @@
 
 .foad-sample-toolbar {
     align-items: center;
-    background: color-mix(in oklab, currentColor 4%, transparent);
     border-bottom: 1px solid color-mix(in oklab, currentColor 12%, transparent);
     display: flex;
     flex-wrap: wrap;
