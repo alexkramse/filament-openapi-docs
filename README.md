@@ -1,5 +1,9 @@
 # Filament OpenAPI Docs
 
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
+![Stable Version](https://img.shields.io/badge/stable-v0.5.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 Native OpenAPI documentation for Filament panels, powered by Scramble.
 
 Filament OpenAPI Docs adds a dashboard page to your Filament panel where authenticated dashboard users can browse your generated OpenAPI specification, inspect endpoints, view request examples, and test API calls without leaving the admin area.
