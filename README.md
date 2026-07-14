@@ -19,11 +19,9 @@ Filament OpenAPI Docs adds a dashboard page to your Filament panel where authent
 ## Requirements
 
 - PHP `^8.3`
-- Laravel / Illuminate `^13.0`
+- Laravel `^13.0`
 - Filament `^5.0`
 - Scramble `^0.13.30`
-- A configured Filament panel
-- Published Filament assets in every environment where the page is used
 
 Scramble is installed as a package dependency, but your Laravel application still needs a working Scramble configuration so the OpenAPI document can be generated correctly.
 
