@@ -3,13 +3,14 @@
 namespace Alexkramse\FilamentOpenapiDocs\Pages;
 
 use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
+use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
+use Alexkramse\FilamentOpenapiDocs\Services\OpenApiDataResolver;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
-use Alexkramse\FilamentOpenapiDocs\Services\OpenApiParser;
-use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
 use BackedEnum;
 use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Pages\Page;
+use Filament\Pages\PageConfiguration;
 use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
@@ -18,20 +19,11 @@ use UnitEnum;
 
 class OpenApiDocsPage extends Page
 {
+    protected static ?string $configurationClass = PageConfiguration::class;
+
     protected static ?string $slug = 'api-docs';
 
     protected string $view = 'filament-openapi-docs::pages.openapi-docs';
-
-    /**
-     * @var array{
-     *     info: array<string, mixed>,
-     *     servers: array<int, string>,
-     *     endpoints: array<string, array<int, Endpoint>>,
-     *     endpointCount: int,
-     *     components: array<string, mixed>,
-     * }|null
-     */
-    private ?array $openApiData = null;
 
     #[Url(as: 'endpoint', history: true)]
     public ?string $selectedEndpointId = null;
@@ -43,7 +35,7 @@ class OpenApiDocsPage extends Page
 
     public function getMaxContentWidth(): Width|string|null
     {
-        if (config('filament-openapi-docs.layout.full_width', true)) {
+        if (static::plugin()?->hasFullWidthLayout() ?? (bool) config('filament-openapi-docs.layout.full_width', true)) {
             return Width::Full;
         }
 
@@ -52,7 +44,7 @@ class OpenApiDocsPage extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return $this->stringValue(config('filament-openapi-docs.page.title'))
+        return $this->stringValue(static::plugin()?->getTitle() ?? config('filament-openapi-docs.page.title'))
             ?? $this->stringValue($this->openApiInfo()['title'] ?? null)
             ?? $this->stringValue(config('app.name'))
             ?? 'Laravel';
@@ -60,34 +52,50 @@ class OpenApiDocsPage extends Page
 
     public function getSubheading(): string|Htmlable|null
     {
-        return $this->stringValue(config('filament-openapi-docs.page.description'))
+        return $this->stringValue(static::plugin()?->getDescription() ?? config('filament-openapi-docs.page.description'))
             ?? $this->stringValue($this->openApiInfo()['description'] ?? null)
             ?? '';
     }
 
     public static function getNavigationLabel(): string
     {
-        return config('filament-openapi-docs.navigation.label', 'API Docs');
+        return static::plugin()?->getNavigationLabel()
+            ?? config('filament-openapi-docs.navigation.label', 'API Docs');
     }
 
     public static function getNavigationIcon(): string|BackedEnum|Htmlable|null
     {
+        if ($plugin = static::plugin()) {
+            return $plugin->getNavigationIcon();
+        }
+
         return config('filament-openapi-docs.navigation.icon', 'heroicon-o-document-text');
     }
 
     public static function getNavigationGroup(): string|UnitEnum|null
     {
+        if ($plugin = static::plugin()) {
+            return $plugin->getNavigationGroup();
+        }
+
         return config('filament-openapi-docs.navigation.group');
     }
 
     public static function getNavigationSort(): ?int
     {
+        if ($plugin = static::plugin()) {
+            return $plugin->getNavigationSort();
+        }
+
         return (int) config('filament-openapi-docs.navigation.sort', 100);
     }
 
     public static function getNavigationBadge(): ?string
     {
-        $mode = config('filament-openapi-docs.navigation.badge', 'version');
+        $plugin = static::plugin();
+        $mode = $plugin
+            ? $plugin->getNavigationBadgeMode()
+            : config('filament-openapi-docs.navigation.badge', 'version');
 
         $openApiData = static::staticOpenApiData();
         $badge = match ($mode) {
@@ -102,15 +110,17 @@ class OpenApiDocsPage extends Page
 
         return sprintf(
             '%s%s%s',
-            (string) config('filament-openapi-docs.navigation.badge_prefix', ''),
+            $plugin?->getNavigationBadgePrefix()
+                ?? (string) config('filament-openapi-docs.navigation.badge_prefix', ''),
             $badge,
-            (string) config('filament-openapi-docs.navigation.badge_suffix', ''),
+            $plugin?->getNavigationBadgeSuffix()
+                ?? (string) config('filament-openapi-docs.navigation.badge_suffix', ''),
         );
     }
 
     public static function getSubNavigationPosition(): SubNavigationPosition
     {
-        return match (config('filament-openapi-docs.sub_navigation.position', 'left')) {
+        return match (static::plugin()?->getSubNavigationPosition() ?? config('filament-openapi-docs.sub_navigation.position', 'left')) {
             'right' => SubNavigationPosition::End,
             default => SubNavigationPosition::Start,
         };
@@ -182,9 +192,7 @@ class OpenApiDocsPage extends Page
      */
     private function openApiData(): array
     {
-        return $this->openApiData ??= app(OpenApiParser::class)->parse(
-            app(SpecProvider::class)->spec(),
-        );
+        return app(OpenApiDataResolver::class)->data();
     }
 
     /**
@@ -211,9 +219,7 @@ class OpenApiDocsPage extends Page
      */
     private static function staticOpenApiData(): array
     {
-        return app(OpenApiParser::class)->parse(
-            app(SpecProvider::class)->spec(),
-        );
+        return app(OpenApiDataResolver::class)->data();
     }
 
     private static function staticStringValue(mixed $value): ?string
@@ -245,5 +251,10 @@ class OpenApiDocsPage extends Page
         return collect($this->openApiData()['endpoints'])
             ->flatMap(fn (array $groupEndpoints): array => $groupEndpoints)
             ->values();
+    }
+
+    private static function plugin(): ?FilamentOpenApiDocsPlugin
+    {
+        return FilamentOpenApiDocsPlugin::current();
     }
 }

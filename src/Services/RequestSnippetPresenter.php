@@ -3,6 +3,7 @@
 namespace Alexkramse\FilamentOpenapiDocs\Services;
 
 use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
+use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -86,7 +87,7 @@ class RequestSnippetPresenter
             'pathParameters' => $pathParameters,
             'queryParameters' => $queryParameters,
             'requests' => $requests,
-            'hasRequestSamples' => config('filament-openapi-docs.request_samples.enabled', true) && $requests !== [],
+            'hasRequestSamples' => $this->hasRequestSamples() && $requests !== [],
         ];
     }
 
@@ -485,13 +486,20 @@ class RequestSnippetPresenter
      */
     private function server(array $servers): string
     {
-        $configuredServer = config('filament-openapi-docs.request_samples.default_server');
+        $configuredServer = FilamentOpenApiDocsPlugin::current()?->getDefaultServer()
+            ?? config('filament-openapi-docs.request_samples.default_server');
 
         if (is_string($configuredServer) && filled($configuredServer)) {
             return $configuredServer;
         }
 
         return $servers[0] ?? url('/');
+    }
+
+    private function hasRequestSamples(): bool
+    {
+        return FilamentOpenApiDocsPlugin::current()?->hasRequestSamples()
+            ?? (bool) config('filament-openapi-docs.request_samples.enabled', true);
     }
 
     private function responseContentType(Endpoint $endpoint): ?string

@@ -3,8 +3,10 @@
 use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
 use Alexkramse\FilamentOpenapiDocs\Pages\OpenApiDocsPage;
+use Alexkramse\FilamentOpenapiDocs\Services\OpenApiDataResolver;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
 use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
+use Filament\Facades\Filament;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\Support\Facades\FilamentView;
@@ -12,6 +14,10 @@ use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\File;
 use Livewire\Attributes\Url;
 use Mockery as m;
+
+afterEach(function () {
+    Filament::setCurrentPanel(null);
+});
 
 it('registers the api docs page with a panel', function () {
     $panel = Panel::make()->id('admin');
@@ -33,14 +39,14 @@ it('reads navigation values from config', function () {
         ->and(OpenApiDocsPage::getNavigationSort())->toBe(42);
 });
 
-it('uses left sub navigation by default', function () {
-    expect(OpenApiDocsPage::getSubNavigationPosition())->toBe(SubNavigationPosition::Start);
+it('uses right sub navigation by default', function () {
+    expect(OpenApiDocsPage::getSubNavigationPosition())->toBe(SubNavigationPosition::End);
 });
 
-it('can render sub navigation on the right from config', function () {
-    config()->set('filament-openapi-docs.sub_navigation.position', 'right');
+it('can render sub navigation on the left from config', function () {
+    config()->set('filament-openapi-docs.sub_navigation.position', 'left');
 
-    expect(OpenApiDocsPage::getSubNavigationPosition())->toBe(SubNavigationPosition::End);
+    expect(OpenApiDocsPage::getSubNavigationPosition())->toBe(SubNavigationPosition::Start);
 });
 
 it('uses configured page title before openapi title', function () {
@@ -117,14 +123,71 @@ it('uses openapi version as the navigation badge', function () {
         ],
     ]);
 
-    expect(OpenApiDocsPage::getNavigationBadge())->toBe('1.2.3');
+    expect(OpenApiDocsPage::getNavigationBadge())->toBe('v1.2.3');
 });
 
 it('can use the endpoint count as the navigation badge', function () {
     config()->set('filament-openapi-docs.navigation.badge', 'count');
     bindOpenApiSpec(openApiSpecWithEndpoints());
 
-    expect(OpenApiDocsPage::getNavigationBadge())->toBe('2');
+    expect(OpenApiDocsPage::getNavigationBadge())->toBe('v2');
+});
+
+it('uses fluent plugin configuration before package config', function () {
+    config()->set('filament-openapi-docs.navigation.label', 'Config Docs');
+    config()->set('filament-openapi-docs.navigation.icon', 'heroicon-o-document-text');
+    config()->set('filament-openapi-docs.navigation.group', 'Developer');
+    config()->set('filament-openapi-docs.navigation.sort', 100);
+    config()->set('filament-openapi-docs.navigation.badge', 'version');
+    config()->set('filament-openapi-docs.navigation.badge_prefix', 'v');
+    config()->set('filament-openapi-docs.navigation.badge_suffix', '');
+    config()->set('filament-openapi-docs.sub_navigation.position', 'right');
+    config()->set('filament-openapi-docs.layout.full_width', true);
+
+    bindOpenApiSpec(openApiSpecWithEndpoints([
+        'version' => '1.2.3',
+    ]));
+
+    $panel = Panel::make()
+        ->id('admin')
+        ->plugin(
+            FilamentOpenApiDocsPlugin::make()
+                ->navigationLabel('OpenAPI')
+                ->navigationIcon('heroicon-o-code-bracket-square')
+                ->navigationGroup('Engineering')
+                ->navigationSort(42)
+                ->navigationBadge('count')
+                ->navigationBadgePrefix('')
+                ->navigationBadgeSuffix(' endpoints')
+                ->subNavigationPosition('left')
+                ->fullWidth(false),
+        );
+
+    Filament::setCurrentPanel($panel);
+
+    expect(OpenApiDocsPage::getNavigationLabel())->toBe('OpenAPI')
+        ->and(OpenApiDocsPage::getNavigationIcon())->toBe('heroicon-o-code-bracket-square')
+        ->and(OpenApiDocsPage::getNavigationGroup())->toBe('Engineering')
+        ->and(OpenApiDocsPage::getNavigationSort())->toBe(42)
+        ->and(OpenApiDocsPage::getNavigationBadge())->toBe('2 endpoints')
+        ->and(OpenApiDocsPage::getSubNavigationPosition())->toBe(SubNavigationPosition::Start)
+        ->and(app(OpenApiDocsPage::class)->getMaxContentWidth())->toBeNull();
+});
+
+it('can disable the navigation badge from fluent plugin configuration', function () {
+    bindOpenApiSpec([
+        'info' => [
+            'version' => '1.2.3',
+        ],
+    ]);
+
+    $panel = Panel::make()
+        ->id('admin')
+        ->plugin(FilamentOpenApiDocsPlugin::make()->navigationBadge(null));
+
+    Filament::setCurrentPanel($panel);
+
+    expect(OpenApiDocsPage::getNavigationBadge())->toBeNull();
 });
 
 it('does not render a navigation badge when configured badge is null', function () {
@@ -182,6 +245,19 @@ it('stores selected endpoint in browser history', function () {
     expect($attribute)->toBeInstanceOf(Url::class)
         ->and(invade($attribute)->as)->toBe('endpoint')
         ->and(invade($attribute)->history)->toBeTrue();
+});
+
+it('registers package assets for lazy loading', function () {
+    $serviceProvider = file_get_contents(__DIR__.'/../../src/FilamentOpenApiDocsServiceProvider.php');
+    $pageView = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
+    $endpointView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
+
+    expect($serviceProvider)->toContain("Css::make('openapi-docs'")
+        ->and($serviceProvider)->toContain('->loadedOnRequest()')
+        ->and($serviceProvider)->toContain("AlpineComponent::make('request-snippet'")
+        ->and($serviceProvider)->toContain("'alexkramse/filament-openapi-docs'")
+        ->and($pageView)->toContain("FilamentAsset::getStyleHref('openapi-docs', package: 'alexkramse/filament-openapi-docs')")
+        ->and($endpointView)->toContain("FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs')");
 });
 
 it('uses compiled filament or package classes in blade views', function () {
@@ -286,7 +362,8 @@ it('adds spacing between openapi summary server urls and meta badges', function 
     $styles = file_get_contents(__DIR__.'/../../resources/css/openapi-docs.css');
 
     expect($styles)->toContain('.foad-openapi-summary-servers')
-        ->and($styles)->toContain('margin-bottom: .75rem;');
+        ->and($styles)->toContain('gap: .375rem;')
+        ->and($styles)->toContain('.foad-openapi-summary-meta');
 });
 
 it('exposes endpoints through native filament sub navigation', function () {
@@ -323,7 +400,7 @@ it('exposes endpoints through native filament sub navigation', function () {
     $page = app(OpenApiDocsPage::class);
     $subNavigation = $page->getSubNavigation();
 
-    expect($page::getSubNavigationPosition())->toBe(SubNavigationPosition::Start)
+    expect($page::getSubNavigationPosition())->toBe(SubNavigationPosition::End)
         ->and($subNavigation)->toHaveCount(1)
         ->and($subNavigation[0]->getLabel())->toContain('Users')
         ->and($subNavigation[0]->getItems()[0]->getLabel())->toBe('List users')
@@ -342,6 +419,21 @@ it('exposes endpoints through native filament sub navigation', function () {
     expect($page->selectedEndpointId)->toBe('showUser')
         ->and($subNavigation[0]->getItems()[0]->isActive())->toBeFalse()
         ->and($subNavigation[0]->getItems()[1]->isActive())->toBeTrue();
+});
+
+it('caches parsed openapi data for the current request', function () {
+    $provider = m::mock(SpecProvider::class);
+    $provider
+        ->shouldReceive('spec')
+        ->once()
+        ->andReturn(openApiSpecWithEndpoints());
+
+    app()->instance(SpecProvider::class, $provider);
+    app()->forgetInstance(OpenApiDataResolver::class);
+
+    $resolver = app(OpenApiDataResolver::class);
+
+    expect($resolver->data())->toBe($resolver->data());
 });
 
 it('uses a valid url endpoint selection when building sub navigation', function () {
@@ -437,6 +529,7 @@ function bindOpenApiSpec(array $spec): void
         ->andReturn($spec);
 
     app()->instance(SpecProvider::class, $provider);
+    app()->forgetInstance(OpenApiDataResolver::class);
 }
 
 function openApiSpecWithEndpoints(array $info = []): array

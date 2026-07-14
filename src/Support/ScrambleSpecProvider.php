@@ -2,6 +2,7 @@
 
 namespace Alexkramse\FilamentOpenapiDocs\Support;
 
+use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
 use Dedoc\Scramble\CacheableGenerator;
 use Dedoc\Scramble\GeneratorConfig;
 use Dedoc\Scramble\Scramble;
@@ -15,7 +16,8 @@ class ScrambleSpecProvider implements SpecProvider
     public function config(): GeneratorConfig
     {
         return Scramble::getGeneratorConfig(
-            config('filament-openapi-docs.scramble.generator', Scramble::DEFAULT_API),
+            FilamentOpenApiDocsPlugin::current()?->getScrambleGenerator()
+                ?? config('filament-openapi-docs.scramble.generator', Scramble::DEFAULT_API),
         );
     }
 
