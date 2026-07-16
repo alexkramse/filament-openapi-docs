@@ -2,7 +2,7 @@
     <div class="foad-stack foad-stack-sm">
         <div class="foad-send-controls foad-justify-content-space-between">
             <h4 class="fi-section-header-heading">Headers</h4>
-            <x-filament::button size="xs" type="button" x-show="developerMode" x-on:click="addHeader()">Add header</x-filament::button>
+            <x-filament::link size="xs" type="button" x-show="developerMode" x-on:click="addHeader()">Add header</x-filament::link>
         </div>
 
         <div class="foad-send-controls foad-send-controls-grid">

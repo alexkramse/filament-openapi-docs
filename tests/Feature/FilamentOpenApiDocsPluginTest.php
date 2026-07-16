@@ -354,6 +354,10 @@ it('renders openapi summary data above endpoint sub navigation', function () {
     ));
 
     expect($html)->toContain('https://api.example.test')
+        ->and($html)->toContain('Click to copy')
+        ->and($html)->toContain('navigator.clipboard?.writeText')
+        ->and($html)->toContain('x-on:keydown.enter.prevent="$el.click()"')
+        ->and($html)->toContain('x-on:keydown.space.prevent="$el.click()"')
         ->and($html)->toContain('v1.2.3')
         ->and($html)->toContain('2 endpoints');
 });
