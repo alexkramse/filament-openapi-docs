@@ -1,8 +1,8 @@
 <template x-if="hasHeaderParameters">
     <div class="foad-stack foad-stack-sm">
         <div class="foad-send-controls foad-justify-content-space-between">
-            <h4 class="fi-section-header-heading">Headers</h4>
-            <x-filament::link size="xs" type="button" x-show="developerMode" x-on:click="addHeader()">Add header</x-filament::link>
+            <h4 class="fi-section-header-heading">{{ __('filament-openapi-docs::ui.labels.headers') }}</h4>
+            <x-filament::link size="xs" type="button" x-show="developerMode" x-on:click="addHeader()">{{ __('filament-openapi-docs::ui.actions.add_header') }}</x-filament::link>
         </div>
 
         <div class="foad-send-controls foad-send-controls-grid">
@@ -20,19 +20,19 @@
                         <div class="foad-header-row">
                             <x-filament::input.wrapper>
                                 <x-filament::input type="text" x-bind:id="`header-name-${index}`"
-                                                   x-model="parameter.name" placeholder="Name"/>
+                                                   x-model="parameter.name" placeholder="{{ __('filament-openapi-docs::ui.placeholders.name') }}"/>
                             </x-filament::input.wrapper>
 
                             <x-filament::input.wrapper>
                                 <x-filament::input
                                     type="text" x-bind:id="`header-value-${index}`"
-                                    x-model="parameter.value" placeholder="Value"/>
+                                    x-model="parameter.value" placeholder="{{ __('filament-openapi-docs::ui.placeholders.value') }}"/>
                             </x-filament::input.wrapper>
 
                             <x-filament::icon-button
                                 color="danger"
                                 icon="heroicon-m-trash"
-                                label="Remove"
+                                label="{{ __('filament-openapi-docs::ui.actions.remove') }}"
                                 type="button"
                                 class="foad-header-remove"
                                 x-show="developerMode && parameter.removable"

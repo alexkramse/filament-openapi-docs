@@ -21,7 +21,7 @@
                 <div class="foad-property-main">
                     @if ($endpoint->deprecated)
                         <x-filament::badge color="danger">
-                            Deprecated
+                            {{ __('filament-openapi-docs::ui.badges.deprecated') }}
                         </x-filament::badge>
                     @endif
 
@@ -42,7 +42,7 @@
         </x-slot>
     </x-filament::section>
 
-    <x-filament::section heading="Request" collapsible>
+    <x-filament::section class="foad-request-section" :heading="__('filament-openapi-docs::ui.labels.request')" collapsible>
         @if ($requestData['hasRequestSamples'])
             <x-slot name="afterHeader">
                 <div class="foad-request-mode-controls">
@@ -51,7 +51,7 @@
                         <span class="foad-developer-mode-switch" aria-hidden="true">
                                     <span class="foad-developer-mode-knob"></span>
                                 </span>
-                        <span class="fi-fo-field-label-content">Send mode</span>
+                        <span class="fi-fo-field-label-content">{{ __('filament-openapi-docs::ui.labels.send_mode') }}</span>
                     </label>
 
                     <label class="foad-developer-mode fi-fo-toggle" x-show="sendMode" x-cloak>
@@ -59,7 +59,7 @@
                         <span class="foad-developer-mode-switch" aria-hidden="true">
                                     <span class="foad-developer-mode-knob"></span>
                                 </span>
-                        <span class="fi-fo-field-label-content">Developer mode</span>
+                        <span class="fi-fo-field-label-content">{{ __('filament-openapi-docs::ui.labels.developer_mode') }}</span>
                     </label>
                 </div>
             </x-slot>
@@ -83,7 +83,7 @@
         @endif
     </x-filament::section>
 
-    <x-filament::section heading="Request sample" collapsible collapsed>
+    <x-filament::section :heading="__('filament-openapi-docs::ui.labels.request_sample')" collapsible collapsed>
         @include('filament-openapi-docs::components.request-snippet', [
             'requestData' => $requestData,
         ])

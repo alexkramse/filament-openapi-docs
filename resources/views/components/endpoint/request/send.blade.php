@@ -7,14 +7,14 @@
     @include('filament-openapi-docs::components.request-snippet.body')
 
     <template x-if="! hasRequestControls">
-        <p class="fi-section-header-description">No request data documented.</p>
+        <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.request_data') }}</p>
     </template>
 
     <x-filament::button
         type="button"
         x-on:click="sendRequest()"
         x-bind:disabled="sending"
-        x-text="sending ? 'Sending' : 'Send API request'"
+        x-text="sending ? @js(__('filament-openapi-docs::ui.actions.sending')) : @js(__('filament-openapi-docs::ui.actions.send_api_request'))"
     />
 
     <template x-if="sendError">
@@ -24,7 +24,7 @@
     <template x-if="response">
         <div class="foad-response-preview">
             <div class="foad-inline-list foad-inline-list-sm">
-                <span class="foad-property-meta-label">Response</span>
+                <span class="foad-property-meta-label">{{ __('filament-openapi-docs::ui.labels.response') }}</span>
                 <span
                     class="foad-response-status"
                     x-bind:data-success="response.ok"

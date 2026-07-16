@@ -1,10 +1,8 @@
 <template x-if="hasQueryParameters">
     <div class="foad-stack foad-stack-sm">
         <div class="foad-send-controls foad-justify-content-space-between">
-            <h4 class="fi-section-header-heading">Query parameters</h4>
-            <x-filament::button size="xs" type="button" x-show="developerMode" x-on:click="addQueryParameter()">Add
-                parameter
-            </x-filament::button>
+            <h4 class="fi-section-header-heading">{{ __('filament-openapi-docs::ui.labels.query_parameters') }}</h4>
+            <x-filament::button size="xs" type="button" x-show="developerMode" x-on:click="addQueryParameter()">{{ __('filament-openapi-docs::ui.actions.add_parameter') }}</x-filament::button>
         </div>
 
         <div class="foad-send-controls foad-send-controls-grid">
@@ -21,16 +19,16 @@
                     <template x-if="parameter.removable">
                         <div class="foad-header-row">
                             <x-filament::input.wrapper>
-                                <x-filament::input type="text" x-bind:id="`parameter-name-${index}`" x-model="parameter.name" placeholder="Name"/>
+                                <x-filament::input type="text" x-bind:id="`parameter-name-${index}`" x-model="parameter.name" placeholder="{{ __('filament-openapi-docs::ui.placeholders.name') }}"/>
                             </x-filament::input.wrapper>
                             <x-filament::input.wrapper>
-                                <x-filament::input type="text" x-bind:id="`parameter-value-${index}`" x-model="parameter.value" placeholder="Value"/>
+                                <x-filament::input type="text" x-bind:id="`parameter-value-${index}`" x-model="parameter.value" placeholder="{{ __('filament-openapi-docs::ui.placeholders.value') }}"/>
                             </x-filament::input.wrapper>
 
                             <x-filament::icon-button
                                 color="danger"
                                 icon="heroicon-m-trash"
-                                label="Remove"
+                                label="{{ __('filament-openapi-docs::ui.actions.remove') }}"
                                 type="button"
                                 class="foad-header-remove"
                                 x-show="developerMode && parameter.removable"

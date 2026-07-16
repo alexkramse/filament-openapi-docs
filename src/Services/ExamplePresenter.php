@@ -17,7 +17,7 @@ class ExamplePresenter
 
         if (array_key_exists('example', $mediaType)) {
             $samples[] = [
-                'label' => 'Example',
+                'label' => __('filament-openapi-docs::ui.labels.example'),
                 'value' => $this->format($mediaType['example'], $mediaType['contentType']),
             ];
         }
@@ -176,7 +176,7 @@ class ExamplePresenter
             return (string) $example['summary'];
         }
 
-        return is_string($key) ? Str::headline($key) : 'Example '.($key + 1);
+        return is_string($key) ? Str::headline($key) : __('filament-openapi-docs::ui.labels.example').' '.($key + 1);
     }
 
     private function exampleValue(mixed $example): mixed

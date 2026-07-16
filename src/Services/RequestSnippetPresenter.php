@@ -32,6 +32,7 @@ class RequestSnippetPresenter
      *     pathParameters: array<int, array<string, mixed>>,
      *     queryParameters: array<int, array<string, mixed>>,
      *     requests: array<int, array<string, mixed>>,
+     *     messages: array<string, string>,
      *     hasRequestSamples: bool,
      * }
      */
@@ -87,6 +88,7 @@ class RequestSnippetPresenter
             'pathParameters' => $pathParameters,
             'queryParameters' => $queryParameters,
             'requests' => $requests,
+            'messages' => $this->messages(),
             'hasRequestSamples' => $this->hasRequestSamples() && $requests !== [],
         ];
     }
@@ -132,12 +134,12 @@ class RequestSnippetPresenter
         if ($type === 'http' && $schemeValue === 'bearer') {
             return [
                 'name' => 'Authorization',
-                'label' => 'Bearer token',
+                'label' => __('filament-openapi-docs::ui.auth.bearer'),
                 'location' => 'header',
                 'value' => 'Bearer <token>',
                 'prefix' => 'Bearer ',
                 'placeholder' => '<token>',
-                'description' => $description ?? 'Provide your bearer token in the Authorization header when making requests to protected resources.',
+                'description' => $description ?? __('filament-openapi-docs::ui.auth.bearer_description'),
                 'schemeType' => 'http',
                 'scheme' => 'bearer',
                 'documentationExample' => 'Bearer 123',
@@ -148,7 +150,7 @@ class RequestSnippetPresenter
         if ($type === 'http' && $schemeValue === 'basic') {
             return [
                 'name' => 'Authorization',
-                'label' => 'Basic auth',
+                'label' => __('filament-openapi-docs::ui.auth.basic'),
                 'location' => 'header',
                 'value' => 'Basic <credentials>',
                 'prefix' => 'Basic ',
@@ -196,7 +198,7 @@ class RequestSnippetPresenter
         if ($type === 'mutualtls') {
             return [
                 'name' => $schemeName,
-                'label' => 'Mutual TLS',
+                'label' => __('filament-openapi-docs::ui.auth.mutual_tls'),
                 'location' => 'security',
                 'value' => '<client-certificate>',
                 'prefix' => '',
@@ -212,7 +214,7 @@ class RequestSnippetPresenter
         if ($type === 'oauth2') {
             return [
                 'name' => $schemeName,
-                'label' => 'OAuth 2',
+                'label' => __('filament-openapi-docs::ui.auth.oauth2'),
                 'location' => 'security',
                 'value' => '<credentials>',
                 'prefix' => '',
@@ -228,7 +230,7 @@ class RequestSnippetPresenter
         if ($type === 'openidconnect') {
             return [
                 'name' => $schemeName,
-                'label' => 'OpenID Connect',
+                'label' => __('filament-openapi-docs::ui.auth.openid_connect'),
                 'location' => 'security',
                 'value' => '<credentials>',
                 'prefix' => '',
@@ -285,7 +287,7 @@ class RequestSnippetPresenter
             $headers[] = [
                 'name' => 'Content-Type',
                 'value' => $contentTypes->first(),
-                'description' => 'Request body media type',
+                'description' => __('filament-openapi-docs::ui.meta.request_body_media_type'),
             ];
         }
 
@@ -293,7 +295,7 @@ class RequestSnippetPresenter
             $headers[] = [
                 'name' => 'Accept',
                 'value' => $accept,
-                'description' => 'Preferred response media type',
+                'description' => __('filament-openapi-docs::ui.meta.preferred_response_media_type'),
             ];
         }
 
@@ -502,6 +504,20 @@ class RequestSnippetPresenter
             ?? (bool) config('filament-openapi-docs.request_samples.enabled', true);
     }
 
+    /**
+     * @return array<string, string>
+     */
+    private function messages(): array
+    {
+        return [
+            'invalidHeaderName' => __('filament-openapi-docs::ui.messages.invalid_header_name'),
+            'jsonBeforeFormatting' => __('filament-openapi-docs::ui.messages.json_before_formatting'),
+            'jsonBeforeSending' => __('filament-openapi-docs::ui.messages.json_before_sending'),
+            'unableToGenerateRequestSample' => __('filament-openapi-docs::ui.messages.unable_to_generate_request_sample'),
+            'unableToSendRequest' => __('filament-openapi-docs::ui.messages.unable_to_send_request'),
+        ];
+    }
+
     private function responseContentType(Endpoint $endpoint): ?string
     {
         $contentTypes = collect($endpoint->responses)
@@ -566,7 +582,7 @@ class RequestSnippetPresenter
             return 'Request';
         }
 
-        $sampleLabel = $sample['label'] ?? 'Example';
+        $sampleLabel = $sample['label'] ?? __('filament-openapi-docs::ui.labels.example');
 
         return "{$body['contentType']} - {$sampleLabel}";
     }

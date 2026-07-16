@@ -1,12 +1,12 @@
 <x-filament::section
-    heading="Responses"
-    :description="count($endpoint->responses).' documented responses'"
+    :heading="__('filament-openapi-docs::ui.labels.responses')"
+    :description="__('filament-openapi-docs::ui.meta.documented_responses', ['count' => count($endpoint->responses)])"
     collapsible
     collapsed
 >
     <x-slot name="heading">
         <div class="foad-justify-content-space-between">
-            <span>Responses</span>
+            <span>{{ __('filament-openapi-docs::ui.labels.responses') }}</span>
             <div>
                 @foreach ($endpoint->responses as $status => $response)
                     @php
@@ -25,7 +25,7 @@
     </x-slot>
     <x-slot name="description">
         <div class="fi-section-header-description fi-flex">
-            <span>{{count($endpoint->responses).' documented responses'}}</span>
+            <span>{{ __('filament-openapi-docs::ui.meta.documented_responses', ['count' => count($endpoint->responses)]) }}</span>
         </div>
     </x-slot>
 
@@ -45,7 +45,7 @@
                     {{ $status }}
                 </x-filament::badge>
                 <h3 class="fi-section-header-heading">
-                    {{ $response['description'] ?: 'Response' }}
+                    {{ $response['description'] ?: __('filament-openapi-docs::ui.labels.response') }}
                 </h3>
             </div>
 
@@ -55,24 +55,24 @@
                         <div class="foad-stack foad-stack-sm">
                             <div class="foad-inline-list foad-inline-list-sm">
                                 <x-filament::badge color="gray" size="md">
-                                    Type: {{ $contentType }}</x-filament::badge>
+                                    {{ __('filament-openapi-docs::ui.badges.type', ['type' => $contentType]) }}</x-filament::badge>
                             </div>
                             <div class="fi-sc-component">
                                 <div x-data="{ tab: 'tab2' }" class="fi-sc-tabs fi-contained">
-                                    <x-filament::tabs label="Content Tabs" class="fi-contained">
+                                    <x-filament::tabs :label="__('filament-openapi-docs::ui.labels.responses')" class="fi-contained">
                                         <x-filament::tabs.item
                                             @click="tab = 'tab2'"
                                             :alpine-active="'tab === \'tab2\''"
                                             active
                                         >
-                                            Tree view
+                                            {{ __('filament-openapi-docs::ui.labels.tree_view') }}
                                         </x-filament::tabs.item>
                                         <x-filament::tabs.item
                                             @click="tab = 'tab1'"
                                             :alpine-active="'tab === \'tab1\''"
 
                                         >
-                                            JSON
+                                            {{ __('filament-openapi-docs::ui.labels.json') }}
                                         </x-filament::tabs.item>
 
                                     </x-filament::tabs>
@@ -84,7 +84,7 @@
                                         </div>
                                         <div x-show="tab === 'tab1'" x-cloak>
                                             @include('filament-openapi-docs::components.sample', [
-                                    'label' => 'Response Example',
+                                    'label' => __('filament-openapi-docs::ui.labels.response_example'),
                                     'contentType' => $contentType,
                                     'samples' => $examplePresenter->samples($mediaType, $schemaComponents),
                                 ])
@@ -97,9 +97,8 @@
                     @endforeach
                 </div>
             @else
-                <p class="fi-section-header-description">No response body documented.</p>
+                <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.response_body') }}</p>
             @endif
         </div>
     @endforeach
 </x-filament::section>
-

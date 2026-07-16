@@ -1,5 +1,5 @@
 @if (! $requestData['hasRequestSamples'])
-    <p class="fi-section-header-description">No request sample available.</p>
+    <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.request_sample') }}</p>
 @else
     <div class="fi-sc-component">
         <div class="fi-sc-tabs fi-contained">
@@ -7,7 +7,7 @@
                 <div class="foad-inline-list foad-inline-list-sm">
                     @if (count($requestData['requests']) > 1)
                         <x-filament::input.wrapper>
-                            <x-filament::input.select x-model="activeRequest" aria-label="Request example">
+                            <x-filament::input.select x-model="activeRequest" aria-label="{{ __('filament-openapi-docs::ui.aria.request_example') }}">
                                 @foreach ($requestData['requests'] as $request)
                                     <option value="{{ $request['key'] }}">{{ $request['label'] }}</option>
                                 @endforeach
@@ -19,7 +19,7 @@
                         <x-filament::input.select
                             x-model="activeTarget"
                             x-on:change="selectTarget()"
-                            aria-label="Request sample language"
+                            aria-label="{{ __('filament-openapi-docs::ui.aria.request_sample_language') }}"
                         >
                             <template x-for="target in targets" x-bind:key="target.key">
                                 <option
@@ -32,7 +32,7 @@
                     </x-filament::input.wrapper>
 
                     <x-filament::input.wrapper>
-                        <x-filament::input.select x-model="activeClient" aria-label="Request sample client">
+                        <x-filament::input.select x-model="activeClient" aria-label="{{ __('filament-openapi-docs::ui.aria.request_sample_client') }}">
                             <template x-for="client in selectedClients" x-bind:key="client.key">
                                 <option
                                     x-bind:value="client.key"
@@ -47,7 +47,7 @@
                 <x-filament::button
                     type="button"
                     x-on:click="copy()"
-                    x-text="copied ? 'Copied' : 'Copy'"
+                    x-text="copied ? @js(__('filament-openapi-docs::ui.actions.copied')) : @js(__('filament-openapi-docs::ui.actions.copy'))"
                 />
             </nav>
             <div class="fi-sc-tabs-tab fi-active">

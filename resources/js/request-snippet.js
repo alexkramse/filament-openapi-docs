@@ -84,6 +84,7 @@ export default function requestSnippet(config) {
         response: null,
         sendError: null,
         sending: false,
+        messages: config.messages ?? {},
         requests: config.requests ?? [],
         targets: targetOptions,
 
@@ -167,7 +168,7 @@ export default function requestSnippet(config) {
 
                 return Array.isArray(generated) ? generated.join('\n\n') : generated;
             } catch (error) {
-                this.error = error instanceof Error ? error.message : 'Unable to generate this request sample.';
+                this.error = error instanceof Error ? error.message : this.message('unableToGenerateRequestSample', 'Unable to generate this request sample.');
 
                 return '';
             }
@@ -340,7 +341,7 @@ export default function requestSnippet(config) {
                 try {
                     JSON.parse(this.bodyText);
                 } catch (error) {
-                    this.bodyJsonError = 'Body must be valid JSON before sending.';
+                    this.bodyJsonError = this.message('jsonBeforeSending', 'Body must be valid JSON before sending.');
 
                     return;
                 }
@@ -350,7 +351,9 @@ export default function requestSnippet(config) {
                 .find((header) => header.name && ! isValidHeaderName(header.name));
 
             if (invalidHeader) {
-                this.sendError = `Invalid header name: ${invalidHeader.name}`;
+                this.sendError = this.message('invalidHeaderName', 'Invalid header name: :name', {
+                    name: invalidHeader.name,
+                });
 
                 return;
             }
@@ -383,7 +386,7 @@ export default function requestSnippet(config) {
                     body: formatResponseBody(body, contentType),
                 };
             } catch (error) {
-                this.sendError = error instanceof Error ? error.message : 'Unable to send this request.';
+                this.sendError = error instanceof Error ? error.message : this.message('unableToSendRequest', 'Unable to send this request.');
             } finally {
                 this.sending = false;
             }
@@ -399,7 +402,7 @@ export default function requestSnippet(config) {
             try {
                 this.bodyText = JSON.stringify(JSON.parse(this.bodyText), null, 2);
             } catch (error) {
-                this.bodyJsonError = 'Body must be valid JSON before formatting.';
+                this.bodyJsonError = this.message('jsonBeforeFormatting', 'Body must be valid JSON before formatting.');
             }
         },
 
@@ -415,6 +418,16 @@ export default function requestSnippet(config) {
             window.setTimeout(() => {
                 this.copied = false;
             }, 2000);
+        },
+
+        message(key, fallback, replacements = {}) {
+            let message = this.messages[key] ?? fallback;
+
+            for (const [name, value] of Object.entries(replacements)) {
+                message = message.replaceAll(`:${name}`, String(value));
+            }
+
+            return message;
         },
     };
 };

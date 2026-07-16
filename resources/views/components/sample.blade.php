@@ -11,7 +11,7 @@
 @if ($sampleOptions !== [])
     <div x-data="{ activeSample: @js($sampleOptions[0]['key']) }">
         @if (count($sampleOptions) > 1)
-            <select class="foad-sample-select" x-model="activeSample" aria-label="{{ $label ?? 'Example' }}">
+            <select class="foad-sample-select" x-model="activeSample" aria-label="{{ $label ?? __('filament-openapi-docs::ui.labels.example') }}">
                 @foreach ($sampleOptions as $sample)
                     <option value="{{ $sample['key'] }}">{{ $sample['label'] }}</option>
                 @endforeach

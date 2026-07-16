@@ -29,7 +29,7 @@
             @endforeach
 
             <x-filament::badge :color="$row['required'] ? 'danger' : 'gray'" size="xs">
-                {{ $row['required'] ? 'Required' : 'Optional' }}
+                {{ $row['required'] ? __('filament-openapi-docs::ui.badges.required') : __('filament-openapi-docs::ui.badges.optional') }}
             </x-filament::badge>
         </div>
     </div>
@@ -40,7 +40,7 @@
 
     @if ($row['enum'] !== [])
         <div class="foad-property-meta">
-            <span class="foad-property-meta-label">Allowed</span>
+            <span class="foad-property-meta-label">{{ __('filament-openapi-docs::ui.labels.allowed') }}</span>
             <div class="foad-inline-list foad-inline-list-sm">
                 @foreach ($row['enum'] as $enum)
                     <x-filament::badge color="gray" size="xs">{{ $enum }}</x-filament::badge>
@@ -51,7 +51,7 @@
 
     @if ($row['examples'] !== [])
         <div class="foad-property-meta">
-            <span class="foad-property-meta-label">Example</span>
+            <span class="foad-property-meta-label">{{ __('filament-openapi-docs::ui.labels.example') }}</span>
             <div class="foad-inline-list foad-inline-list-sm">
                 @foreach ($row['examples'] as $example)
                     <x-filament::badge color="gray" size="xs">{{ $example }}</x-filament::badge>

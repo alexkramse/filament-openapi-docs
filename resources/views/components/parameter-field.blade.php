@@ -8,7 +8,7 @@
 
         @if ($parameter['required'])
             <x-filament::badge color="danger" size="xs">
-                Required
+                {{ __('filament-openapi-docs::ui.badges.required') }}
             </x-filament::badge>
         @endif
     </span>

@@ -25,7 +25,8 @@ class FilamentOpenApiDocsServiceProvider extends PackageServiceProvider
         $package
             ->name(static::$name)
             ->hasConfigFile()
-            ->hasViews();
+            ->hasViews()
+            ->hasTranslations();
     }
 
     public function packageRegistered(): void

@@ -5,7 +5,7 @@
                 <div class="foad-openapi-summary-server">
                     <x-filament::badge
                         color="info"
-                        tooltip="Click to copy"
+                        tooltip="{{ __('filament-openapi-docs::ui.tooltips.click_to_copy') }}"
                         tabindex="0"
                         x-data="{ copied: false }"
                         x-on:click="
@@ -31,7 +31,7 @@
         @endif
 
         <x-filament::badge color="gray">
-            {{ $endpointCount }} endpoints
+            {{ __('filament-openapi-docs::ui.meta.endpoints', ['count' => $endpointCount]) }}
         </x-filament::badge>
     </div>
 </div>

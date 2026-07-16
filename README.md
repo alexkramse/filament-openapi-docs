@@ -1,7 +1,7 @@
 # Filament OpenAPI Docs
 
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-![Stable Version](https://img.shields.io/badge/stable-v0.5.1-blue)
+![Stable Version](https://img.shields.io/badge/stable-v0.5.2-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Native OpenAPI documentation for Filament panels, powered by Scramble.
@@ -147,6 +147,35 @@ FilamentOpenApiDocsPlugin::make()
 | `scrambleGenerator()`     | `scramble.generator`             | Selects the Scramble generator name.              |
 
 Supported navigation badge modes are `version`, `count`, and `null`.
+
+## Translations
+
+The package ships with UI translations for English (`en`), Ukrainian (`uk`), German (`de`), Spanish (`es`), and French (`fr`). It uses Laravel's current locale and fallback locale, so you may switch languages with your normal application configuration:
+
+```env
+APP_LOCALE=uk
+APP_FALLBACK_LOCALE=en
+```
+
+OpenAPI content from your specification, such as endpoint summaries, descriptions, schemas, examples, and server URLs, is rendered as provided by the specification.
+
+### Customize Package Translations
+
+Publish the translation files when you want to customize labels or add your own locale:
+
+```bash
+php artisan vendor:publish --tag=filament-openapi-docs-translations
+```
+
+Published files are placed in:
+
+```text
+lang/vendor/filament-openapi-docs/{locale}/ui.php
+```
+
+To add a new translation, create a new locale directory such as `lang/vendor/filament-openapi-docs/pl/ui.php`, copy the structure from `resources/lang/en/ui.php`, and translate only the values. Keep the array keys unchanged.
+
+To update local overrides after a package upgrade, compare the newest package `resources/lang/en/ui.php` file with your files in `lang/vendor/filament-openapi-docs/{locale}/ui.php` and copy any missing keys. Use `vendor:publish --tag=filament-openapi-docs-translations --force` only when you intentionally want to replace local customizations.
 
 ## Custom Spec Providers
 

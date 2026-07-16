@@ -1,7 +1,7 @@
 <template x-if="hasAuthParameters">
     <div class="foad-stack foad-stack-sm">
         <div class="foad-inline-list foad-inline-list-sm">
-            <h4 class="fi-section-header-heading">Auth</h4>
+            <h4 class="fi-section-header-heading">{{ __('filament-openapi-docs::ui.labels.auth') }}</h4>
         </div>
         <div class="foad-send-controls foad-send-controls-grid">
             <template x-for="parameter in authParameters" x-bind:key="`${parameter.location}-${parameter.name}`">

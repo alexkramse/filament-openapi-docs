@@ -1,7 +1,7 @@
 <template x-if="hasMediaHeaderParameters">
     <div class="foad-stack foad-stack-sm">
         <div class="foad-inline-list foad-inline-list-sm">
-            <h4 class="fi-section-header-heading">Media headers</h4>
+            <h4 class="fi-section-header-heading">{{ __('filament-openapi-docs::ui.labels.media_headers') }}</h4>
         </div>
 
         <div class="foad-send-controls foad-send-controls-grid">

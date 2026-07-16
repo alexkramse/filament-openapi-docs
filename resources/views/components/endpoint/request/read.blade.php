@@ -1,7 +1,7 @@
 <div class="foad-stack foad-stack-md">
     @if ($requestData['securityItems'] !== [])
         <div class="foad-stack foad-stack-sm">
-            <h4 class="fi-section-header-heading">Security</h4>
+            <h4 class="fi-section-header-heading">{{ __('filament-openapi-docs::ui.labels.security') }}</h4>
             <div class="">
                 @foreach ($requestData['securityItems'] as $securityItem)
                     @include('filament-openapi-docs::components.request-doc-item', [
@@ -9,7 +9,7 @@
                         'description' => $securityItem['description'],
                         'badges' => [],
                         'metadata' => [
-                            'Example' => $securityItem['documentationExample'] ?? $securityItem['value'] ?? null,
+                            __('filament-openapi-docs::ui.labels.example') => $securityItem['documentationExample'] ?? $securityItem['value'] ?? null,
                         ],
                     ])
                 @endforeach
@@ -19,7 +19,7 @@
 
     @if ($requestData['mediaHeaders'] !== [])
         <div class="foad-stack foad-stack-sm">
-            <h4 class="fi-section-header-heading">Media headers</h4>
+            <h4 class="fi-section-header-heading">{{ __('filament-openapi-docs::ui.labels.media_headers') }}</h4>
             <div class="">
                 @foreach ($requestData['mediaHeaders'] as $mediaHeader)
                     @include('filament-openapi-docs::components.request-doc-item', [
@@ -34,9 +34,9 @@
     @endif
 
     @foreach ([
-        'Headers' => $requestData['headerParameters'],
-        'Path parameters' => $requestData['pathParameters'],
-        'Query parameters' => $requestData['queryParameters'],
+        __('filament-openapi-docs::ui.labels.headers') => $requestData['headerParameters'],
+        __('filament-openapi-docs::ui.labels.path_parameters') => $requestData['pathParameters'],
+        __('filament-openapi-docs::ui.labels.query_parameters') => $requestData['queryParameters'],
     ] as $heading => $parameters)
         @if ($parameters !== [])
             <div class="foad-stack foad-stack-sm">
@@ -48,11 +48,11 @@
                             'description' => $parameter['description'],
                             'badges' => [
                                 ['label' => $parameter['type'], 'color' => 'info'],
-                                ...(filled($parameter['value'] ?? null) ? [['label' => 'example: '.$parameter['value'], 'color' => 'primary']] : []),
-                                ['label' => $parameter['required'] ? 'Required' : 'Optional', 'color' => $parameter['required'] ? 'danger' : 'gray'],
+                                ...(filled($parameter['value'] ?? null) ? [['label' => \Illuminate\Support\Str::lower(__('filament-openapi-docs::ui.labels.example')).': '.$parameter['value'], 'color' => 'primary']] : []),
+                                ['label' => $parameter['required'] ? __('filament-openapi-docs::ui.badges.required') : __('filament-openapi-docs::ui.badges.optional'), 'color' => $parameter['required'] ? 'danger' : 'gray'],
                             ],
                             'metadata' => [
-                                'Example' => $parameter['example'] ?? null,
+                                __('filament-openapi-docs::ui.labels.example') => $parameter['example'] ?? null,
                             ],
                         ])
                     @endforeach
@@ -63,32 +63,32 @@
 
     @if ($endpoint->hasRequestBody())
         <div class="foad-stack foad-stack-md">
-            <h4 class="fi-section-header-heading">Body</h4>
+            <h4 class="fi-section-header-heading">{{ __('filament-openapi-docs::ui.labels.body') }}</h4>
 
             @foreach ($endpoint->requestBodies as $body)
                 <div class="foad-stack foad-stack-sm">
                     <div class="foad-inline-list foad-inline-list-sm">
                         <x-filament::badge color="gray" size="md">
-                            Type: {{ $body['contentType'] }}
+                            {{ __('filament-openapi-docs::ui.badges.type', ['type' => $body['contentType']]) }}
                         </x-filament::badge>
                     </div>
 
                     <div class="fi-sc-component">
                         <div x-data="{ tab: 'tab2' }" class="fi-sc-tabs fi-contained">
-                            <x-filament::tabs label="Content Tabs" class="fi-contained">
+                            <x-filament::tabs :label="__('filament-openapi-docs::ui.labels.body')" class="fi-contained">
                                 <x-filament::tabs.item
                                     @click="tab = 'tab2'"
                                     :alpine-active="'tab === \'tab2\''"
                                     active
                                 >
-                                    Tree view
+                                    {{ __('filament-openapi-docs::ui.labels.tree_view') }}
                                 </x-filament::tabs.item>
 
                                 <x-filament::tabs.item
                                     @click="tab = 'tab1'"
                                     :alpine-active="'tab === \'tab1\''"
                                 >
-                                    JSON
+                                    {{ __('filament-openapi-docs::ui.labels.json') }}
                                 </x-filament::tabs.item>
                             </x-filament::tabs>
 
@@ -99,7 +99,7 @@
 
                                 <div x-show="tab === 'tab1'" x-cloak>
                                     @include('filament-openapi-docs::components.sample', [
-                                        'label' => 'Request Sample',
+                                        'label' => __('filament-openapi-docs::ui.labels.request_sample_label'),
                                         'contentType' => $body['contentType'],
                                         'samples' => $examplePresenter->samples($body, $components),
                                     ])
@@ -113,6 +113,6 @@
     @endif
 
     @if ($requestData['securityItems'] === [] && $requestData['mediaHeaders'] === [] && $requestData['headerParameters'] === [] && $requestData['pathParameters'] === [] && $requestData['queryParameters'] === [] && ! $endpoint->hasRequestBody())
-        <p class="fi-section-header-description">No request data documented.</p>
+        <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.request_data') }}</p>
     @endif
 </div>

@@ -2,9 +2,12 @@
 
 use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
+use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsServiceProvider;
 use Alexkramse\FilamentOpenapiDocs\Pages\OpenApiDocsPage;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiDataResolver;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
+use Alexkramse\FilamentOpenapiDocs\Services\OpenApiParser;
+use Alexkramse\FilamentOpenapiDocs\Services\RequestSnippetPresenter;
 use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
 use Filament\Facades\Filament;
 use Filament\Pages\Enums\SubNavigationPosition;
@@ -12,6 +15,7 @@ use Filament\Panel;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\ServiceProvider;
 use Livewire\Attributes\Url;
 use Mockery as m;
 
@@ -315,7 +319,7 @@ it('moves openapi summary from the page content to the sub navigation partial', 
 
     expect($pageView)->not->toContain(':heading="$info[\'title\'] ?? \'API Documentation\'"')
         ->and($summaryView)->not->toContain('<x-filament::section')
-        ->and($summaryView)->toContain('{{ $endpointCount }} endpoints');
+        ->and($summaryView)->toContain("__('filament-openapi-docs::ui.meta.endpoints'");
 });
 
 it('registers openapi summary at the top of the endpoint sub navigation sidebar', function () {
@@ -360,6 +364,141 @@ it('renders openapi summary data above endpoint sub navigation', function () {
         ->and($html)->toContain('x-on:keydown.space.prevent="$el.click()"')
         ->and($html)->toContain('v1.2.3')
         ->and($html)->toContain('2 endpoints');
+});
+
+it('registers package translations for publishing', function () {
+    $paths = ServiceProvider::pathsToPublish(
+        FilamentOpenApiDocsServiceProvider::class,
+        'filament-openapi-docs-translations',
+    );
+
+    expect($paths)->toHaveCount(1)
+        ->and(array_key_first($paths))->toEndWith('resources/lang')
+        ->and(reset($paths))->toEndWith('lang/vendor/filament-openapi-docs');
+});
+
+it('renders package ui strings in the active locale', function () {
+    app()->setLocale('uk');
+
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.1.0',
+        'info' => [
+            'title' => 'Game API',
+            'version' => '1.0.0',
+        ],
+        'servers' => [
+            ['url' => 'https://api.example.test'],
+        ],
+        'components' => [
+            'securitySchemes' => [
+                'bearerAuth' => [
+                    'type' => 'http',
+                    'scheme' => 'bearer',
+                ],
+            ],
+        ],
+        'security' => [
+            ['bearerAuth' => []],
+        ],
+        'paths' => [
+            '/users/{user}' => [
+                'post' => [
+                    'tags' => ['Users'],
+                    'summary' => 'Create user',
+                    'parameters' => [
+                        [
+                            'name' => 'user',
+                            'in' => 'path',
+                            'required' => true,
+                            'schema' => ['type' => 'integer'],
+                        ],
+                    ],
+                    'requestBody' => [
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'name' => ['type' => 'string'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'responses' => [
+                        '200' => [
+                            'description' => '',
+                            'content' => [],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $endpoint = $parsed['endpoints']['Users'][0];
+    $html = html_entity_decode(view('filament-openapi-docs::components.endpoint', [
+        'endpoint' => $endpoint,
+        'servers' => $parsed['servers'],
+        'components' => $parsed['components'],
+    ])->render());
+
+    expect($html)->toContain('Запит')
+        ->and($html)->toContain('Режим надсилання')
+        ->and($html)->toContain('Режим розробника')
+        ->and($html)->toContain('Безпека')
+        ->and($html)->toContain('Тіло')
+        ->and($html)->toContain('Форматувати JSON')
+        ->and($html)->toContain('Відповіді');
+});
+
+it('includes localized request snippet runtime messages', function () {
+    app()->setLocale('uk');
+
+    $endpoint = new Endpoint(
+        id: 'create-user',
+        method: 'POST',
+        path: '/users',
+        summary: 'Create user',
+        description: null,
+        tags: ['Users'],
+        parameters: [],
+        requestBodies: [
+            [
+                'contentType' => 'application/json',
+                'schema' => ['type' => 'object'],
+                'examples' => [],
+            ],
+        ],
+        responses: [],
+        security: [],
+        deprecated: false,
+    );
+
+    $requestData = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test']);
+
+    expect($requestData['messages']['jsonBeforeSending'])->toBe('Перед надсиланням тіло має бути коректним JSON.')
+        ->and($requestData['messages']['jsonBeforeFormatting'])->toBe('Перед форматуванням тіло має бути коректним JSON.')
+        ->and($requestData['messages']['unableToSendRequest'])->toBe('Не вдалося надіслати цей запит.')
+        ->and($requestData['messages']['invalidHeaderName'])->toBe('Некоректна назва заголовка: :name');
+});
+
+it('falls back to the configured fallback locale for package translations', function () {
+    app()->setLocale('pl');
+    app('translator')->setFallback('de');
+
+    expect(__('filament-openapi-docs::ui.actions.send_api_request'))->toBe('API-Anfrage senden');
+});
+
+it('documents translation publishing and updates', function () {
+    $readme = file_get_contents(__DIR__.'/../../README.md');
+
+    expect($readme)->toContain('## Translations')
+        ->and($readme)->toContain('English (`en`), Ukrainian (`uk`), German (`de`), Spanish (`es`), and French (`fr`)')
+        ->and($readme)->toContain('php artisan vendor:publish --tag=filament-openapi-docs-translations')
+        ->and($readme)->toContain('lang/vendor/filament-openapi-docs/{locale}/ui.php')
+        ->and($readme)->toContain('copy the structure from `resources/lang/en/ui.php`')
+        ->and($readme)->toContain('compare the newest package `resources/lang/en/ui.php`');
 });
 
 it('adds spacing between openapi summary server urls and meta badges', function () {

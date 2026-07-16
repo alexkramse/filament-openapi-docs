@@ -15,10 +15,10 @@
         <div class="foad-property-row">
             <div class="foad-property-main">
                 <span class="foad-property-name">{{ $presenter->label($schema, $schemaComponents) }}</span>
-                <x-filament::badge color="gray" size="xs">reference</x-filament::badge>
+                <x-filament::badge color="gray" size="xs">{{ __('filament-openapi-docs::ui.labels.reference') }}</x-filament::badge>
             </div>
         </div>
     @else
-        <p class="fi-section-header-description">No structured fields documented.</p>
+        <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.structured_fields') }}</p>
     @endif
 </div>
