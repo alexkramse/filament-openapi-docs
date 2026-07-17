@@ -230,6 +230,8 @@ it('renders request read and send modes', function () {
         ->and($html)->toContain('foad-request-mode-controls')
         ->and($html)->toContain('copyToClipboard')
         ->and($html)->toContain('foad-copyable-badge')
+        ->and($html)->toContain('Click to copy: \\/users\\/{user}')
+        ->and($html)->not->toContain('textcommit')
         ->and($html)->toContain('await navigator.clipboard.writeText(text)')
         ->and($html)->toContain('https:\\/\\/api.example.test\\/users')
         ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(5)

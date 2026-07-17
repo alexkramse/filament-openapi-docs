@@ -38,7 +38,7 @@
     :component="'filament::badge'"
     :attributes="$attributes->merge([
         'class' => 'foad-copyable-badge',
-        'tooltip' => __('filament-openapi-docs::ui.tooltips.click_to_copy').': '.$textcommit ,
+        'tooltip' => __('filament-openapi-docs::ui.tooltips.click_to_copy').': '.$text,
         'tabindex' => '0',
         'x-data' => $xData,
         'x-on:click' => $xClick,
