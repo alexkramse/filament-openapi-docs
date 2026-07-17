@@ -1,6 +1,11 @@
 @if (! $requestData['hasRequestSamples'])
     <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.request_sample') }}</p>
 @else
+    @php
+        $copiedLabel = \Illuminate\Support\Js::from(__('filament-openapi-docs::ui.actions.copied'));
+        $copyLabel = \Illuminate\Support\Js::from(__('filament-openapi-docs::ui.actions.copy'));
+    @endphp
+
     <div class="fi-sc-component">
         <div class="fi-sc-tabs fi-contained">
             <nav class="fi-tabs fi-contained foad-sample-toolbar">
@@ -47,7 +52,7 @@
                 <x-filament::button
                     type="button"
                     x-on:click="copy()"
-                    x-text="copied ? @js(__('filament-openapi-docs::ui.actions.copied')) : @js(__('filament-openapi-docs::ui.actions.copy'))"
+                    x-text="copied ? {{ $copiedLabel }} : {{ $copyLabel }}"
                 />
             </nav>
             <div class="fi-sc-tabs-tab fi-active">

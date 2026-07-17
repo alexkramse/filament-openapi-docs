@@ -13,6 +13,11 @@
     padding-inline: .25rem;
 }
 
+.foad-copyable-badge {
+    cursor: pointer;
+    user-select: none;
+}
+
 .foad-openapi-docs-page .foad-endpoint-navigation-item {
     .fi-sidebar-item-btn {
         align-items: flex-start;

@@ -61,6 +61,8 @@ return [
         'value' => 'Wert',
     ],
     'messages' => [
+        'copied_to_clipboard' => 'In die Zwischenablage kopiert.',
+        'copy_failed' => 'Kopieren fehlgeschlagen.',
         'invalid_header_name' => 'Ungültiger Header-Name: :name',
         'json_before_formatting' => 'Der Body muss vor dem Formatieren gültiges JSON sein.',
         'json_before_sending' => 'Der Body muss vor dem Senden gültiges JSON sein.',

@@ -3,21 +3,13 @@
         <div class="foad-openapi-summary-servers">
             @foreach ($servers as $server)
                 <div class="foad-openapi-summary-server">
-                    <x-filament::badge
+                    <x-filament-openapi-docs::copyable-badge
                         color="info"
-                        tooltip="{{ __('filament-openapi-docs::ui.tooltips.click_to_copy') }}"
-                        tabindex="0"
-                        x-data="{ copied: false }"
-                        x-on:click="
-                            navigator.clipboard?.writeText(@js($server));
-                            copied = true;
-                            window.setTimeout(() => copied = false, 2000);
-                        "
-                        x-on:keydown.enter.prevent="$el.click()"
-                        x-on:keydown.space.prevent="$el.click()"
-                    >
+                        :text="$server"
+                        icon="heroicon-m-document-duplicate"
+                        icon-position="after">
                         {{ $server }}
-                    </x-filament::badge>
+                    </x-filament-openapi-docs::copyable-badge>
                 </div>
             @endforeach
         </div>

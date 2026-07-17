@@ -359,9 +359,19 @@ it('renders openapi summary data above endpoint sub navigation', function () {
 
     expect($html)->toContain('https://api.example.test')
         ->and($html)->toContain('Click to copy')
-        ->and($html)->toContain('navigator.clipboard?.writeText')
+        ->and($html)->toContain('async copyToClipboard(text)')
+        ->and($html)->toContain('await navigator.clipboard.writeText(text)')
+        ->and($html)->toContain('window.clearTimeout(this.copyTimeout)')
+        ->and($html)->toContain('new FilamentNotification()')
+        ->and($html)->toContain('Copied to clipboard.')
+        ->and($html)->toContain('Copy failed.')
+        ->and($html)->toContain('.success()')
+        ->and($html)->toContain('.danger()')
         ->and($html)->toContain('x-on:keydown.enter.prevent="$el.click()"')
         ->and($html)->toContain('x-on:keydown.space.prevent="$el.click()"')
+        ->and($html)->not->toContain('async copy(server)')
+        ->and($html)->not->toContain('&#039;')
+        ->and($html)->not->toContain('=&gt;')
         ->and($html)->toContain('v1.2.3')
         ->and($html)->toContain('2 endpoints');
 });
@@ -506,7 +516,10 @@ it('adds spacing between openapi summary server urls and meta badges', function 
 
     expect($styles)->toContain('.foad-openapi-summary-servers')
         ->and($styles)->toContain('gap: .375rem;')
-        ->and($styles)->toContain('.foad-openapi-summary-meta');
+        ->and($styles)->toContain('.foad-openapi-summary-meta')
+        ->and($styles)->toContain('.foad-copyable-badge')
+        ->and($styles)->toContain('cursor: pointer;')
+        ->and($styles)->toContain('user-select: none;');
 });
 
 it('exposes endpoints through native filament sub navigation', function () {

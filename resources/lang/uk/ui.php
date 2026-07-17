@@ -61,6 +61,8 @@ return [
         'value' => 'Значення',
     ],
     'messages' => [
+        'copied_to_clipboard' => 'Скопійовано в буфер обміну.',
+        'copy_failed' => 'Не вдалося скопіювати.',
         'invalid_header_name' => 'Некоректна назва заголовка: :name',
         'json_before_formatting' => 'Перед форматуванням тіло має бути коректним JSON.',
         'json_before_sending' => 'Перед надсиланням тіло має бути коректним JSON.',

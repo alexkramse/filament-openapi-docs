@@ -61,6 +61,8 @@ return [
         'value' => 'Valeur',
     ],
     'messages' => [
+        'copied_to_clipboard' => 'Copié dans le presse-papiers.',
+        'copy_failed' => 'La copie a échoué.',
         'invalid_header_name' => 'Nom d’en-tête invalide : :name',
         'json_before_formatting' => 'Le corps doit être un JSON valide avant le formatage.',
         'json_before_sending' => 'Le corps doit être un JSON valide avant l’envoi.',

@@ -61,6 +61,8 @@ return [
         'value' => 'Valor',
     ],
     'messages' => [
+        'copied_to_clipboard' => 'Copiado al portapapeles.',
+        'copy_failed' => 'No se pudo copiar.',
         'invalid_header_name' => 'Nombre de encabezado no válido: :name',
         'json_before_formatting' => 'El cuerpo debe ser JSON válido antes de formatear.',
         'json_before_sending' => 'El cuerpo debe ser JSON válido antes de enviar.',

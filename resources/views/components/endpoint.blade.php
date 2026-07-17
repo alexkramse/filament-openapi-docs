@@ -15,34 +15,50 @@
      @else
          x-data="{ sendMode: false, developerMode: false }"
     @endif>
-    <x-filament::section :heading="$endpoint->title()">
+    <x-filament::section :heading="$endpoint->title()" :description="$endpoint->description">
         <x-slot name="heading">
-            <div class="foad-justify-content-space-between">
-                <div class="foad-property-main">
-                    @if ($endpoint->deprecated)
-                        <x-filament::badge color="danger">
-                            {{ __('filament-openapi-docs::ui.badges.deprecated') }}
+            <div class="foad-property-main">
+                @if ($endpoint->deprecated)
+                    <x-filament::badge color="danger">
+                        {{ __('filament-openapi-docs::ui.badges.deprecated') }}
+                    </x-filament::badge>
+                @endif
+                {{ $endpoint->title() }}
+            </div>
+        </x-slot>
+        <x-slot name="description">
+            {{$endpoint->description}}
+            <div>
+                <x-filament::badge :color="$methodColor">
+                    {{ $endpoint->method }}
+                </x-filament::badge>
+                <x-filament-openapi-docs::copyable-badge color="gray"
+                                                         icon="heroicon-m-document-duplicate"
+                                                         icon-position="after"
+                                                         :text="$endpoint->path"
+                                                         :tabindex="count($documentedServers)+1">
+                    <strong>{{ $endpoint->path }}</strong>
+                </x-filament-openapi-docs::copyable-badge>
+                @foreach ($documentedServers as $server)
+                    <x-filament-openapi-docs::copyable-badge color="gray"
+                                                             icon="heroicon-m-document-duplicate"
+                                                             icon-position="after"
+                                                             :text="$server.$endpoint->path"
+                                                             :tabindex="$loop->index">
+                        {{ $server }}
+                        <x-filament::badge size="xs">
+                            <strong>{{ $endpoint->path }}</strong>
                         </x-filament::badge>
-                    @endif
-
-                    <x-filament::badge :color="$methodColor">
-                        {{ $endpoint->method }}
-                    </x-filament::badge>
-                    <x-filament::badge color="gray">
-                        {{ $endpoint->path }}
-                    </x-filament::badge>
-                    <h2 class="fi-section-header-heading">{{ $endpoint->title() }}</h2>
-                </div>
-
+                    </x-filament-openapi-docs::copyable-badge>
+                @endforeach
             </div>
         </x-slot>
 
-        <x-slot name="description">
-            <p class="fi-section-header-description">{{ $endpoint->description }}</p>
-        </x-slot>
     </x-filament::section>
 
-    <x-filament::section class="foad-request-section" :heading="__('filament-openapi-docs::ui.labels.request')" collapsible>
+    <x-filament::section class="foad-request-section"
+                         :heading="__('filament-openapi-docs::ui.labels.request')"
+                         collapsible>
         @if ($requestData['hasRequestSamples'])
             <x-slot name="afterHeader">
                 <div class="foad-request-mode-controls">
@@ -51,15 +67,17 @@
                         <span class="foad-developer-mode-switch" aria-hidden="true">
                                     <span class="foad-developer-mode-knob"></span>
                                 </span>
-                        <span class="fi-fo-field-label-content">{{ __('filament-openapi-docs::ui.labels.send_mode') }}</span>
+                        <span
+                            class="fi-fo-field-label-content">{{ __('filament-openapi-docs::ui.labels.send_mode') }}</span>
                     </label>
 
                     <label class="foad-developer-mode fi-fo-toggle" x-show="sendMode" x-cloak>
                         <x-filament::input.checkbox class="foad-developer-mode-input" x-model="developerMode"/>
                         <span class="foad-developer-mode-switch" aria-hidden="true">
-                                    <span class="foad-developer-mode-knob"></span>
-                                </span>
-                        <span class="fi-fo-field-label-content">{{ __('filament-openapi-docs::ui.labels.developer_mode') }}</span>
+                            <span class="foad-developer-mode-knob"></span>
+                        </span>
+                        <span
+                            class="fi-fo-field-label-content">{{ __('filament-openapi-docs::ui.labels.developer_mode') }}</span>
                     </label>
                 </div>
             </x-slot>

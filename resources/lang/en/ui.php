@@ -61,6 +61,8 @@ return [
         'value' => 'Value',
     ],
     'messages' => [
+        'copied_to_clipboard' => 'Copied to clipboard.',
+        'copy_failed' => 'Copy failed.',
         'invalid_header_name' => 'Invalid header name: :name',
         'json_before_formatting' => 'Body must be valid JSON before formatting.',
         'json_before_sending' => 'Body must be valid JSON before sending.',

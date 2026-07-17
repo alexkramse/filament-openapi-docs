@@ -1,3 +1,8 @@
+@php
+    $sendingLabel = \Illuminate\Support\Js::from(__('filament-openapi-docs::ui.actions.sending'));
+    $sendApiRequestLabel = \Illuminate\Support\Js::from(__('filament-openapi-docs::ui.actions.send_api_request'));
+@endphp
+
 <div class="foad-stack foad-stack-md">
     @include('filament-openapi-docs::components.request-snippet.auth')
     @include('filament-openapi-docs::components.request-snippet.media-headers')
@@ -14,7 +19,7 @@
         type="button"
         x-on:click="sendRequest()"
         x-bind:disabled="sending"
-        x-text="sending ? @js(__('filament-openapi-docs::ui.actions.sending')) : @js(__('filament-openapi-docs::ui.actions.send_api_request'))"
+        x-text="sending ? {{ $sendingLabel }} : {{ $sendApiRequestLabel }}"
     />
 
     <template x-if="sendError">
