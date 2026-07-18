@@ -331,9 +331,9 @@ it('registers openapi summary at the top of the endpoint sub navigation sidebar'
 it('renders openapi summary data above endpoint sub navigation', function () {
     bindOpenApiSpec([
         'info' => [
-            'title' => 'Game API',
+            'title'       => 'Game API',
             'description' => 'Developer documentation.',
-            'version' => '1.2.3',
+            'version'     => '1.2.3',
         ],
         'servers' => [
             ['url' => 'https://api.example.test'],
@@ -393,8 +393,8 @@ it('renders package ui strings in the active locale', function () {
 
     $parsed = app(OpenApiParser::class)->parse([
         'openapi' => '3.1.0',
-        'info' => [
-            'title' => 'Game API',
+        'info'    => [
+            'title'   => 'Game API',
             'version' => '1.0.0',
         ],
         'servers' => [
@@ -403,7 +403,7 @@ it('renders package ui strings in the active locale', function () {
         'components' => [
             'securitySchemes' => [
                 'bearerAuth' => [
-                    'type' => 'http',
+                    'type'   => 'http',
                     'scheme' => 'bearer',
                 ],
             ],
@@ -414,21 +414,21 @@ it('renders package ui strings in the active locale', function () {
         'paths' => [
             '/users/{user}' => [
                 'post' => [
-                    'tags' => ['Users'],
-                    'summary' => 'Create user',
+                    'tags'       => ['Users'],
+                    'summary'    => 'Create user',
                     'parameters' => [
                         [
-                            'name' => 'user',
-                            'in' => 'path',
+                            'name'     => 'user',
+                            'in'       => 'path',
                             'required' => true,
-                            'schema' => ['type' => 'integer'],
+                            'schema'   => ['type' => 'integer'],
                         ],
                     ],
                     'requestBody' => [
                         'content' => [
                             'application/json' => [
                                 'schema' => [
-                                    'type' => 'object',
+                                    'type'       => 'object',
                                     'properties' => [
                                         'name' => ['type' => 'string'],
                                     ],
@@ -439,7 +439,7 @@ it('renders package ui strings in the active locale', function () {
                     'responses' => [
                         '200' => [
                             'description' => '',
-                            'content' => [],
+                            'content'     => [],
                         ],
                     ],
                 ],
@@ -449,8 +449,8 @@ it('renders package ui strings in the active locale', function () {
 
     $endpoint = $parsed['endpoints']['Users'][0];
     $html = html_entity_decode(view('filament-openapi-docs::components.endpoint', [
-        'endpoint' => $endpoint,
-        'servers' => $parsed['servers'],
+        'endpoint'   => $endpoint,
+        'servers'    => $parsed['servers'],
         'components' => $parsed['components'],
     ])->render());
 
@@ -477,8 +477,8 @@ it('includes localized request snippet runtime messages', function () {
         requestBodies: [
             [
                 'contentType' => 'application/json',
-                'schema' => ['type' => 'object'],
-                'examples' => [],
+                'schema'      => ['type' => 'object'],
+                'examples'    => [],
             ],
         ],
         responses: [],
@@ -532,16 +532,16 @@ it('exposes endpoints through native filament sub navigation', function () {
             'paths' => [
                 '/users' => [
                     'get' => [
-                        'tags' => ['Users'],
+                        'tags'        => ['Users'],
                         'operationId' => 'listUsers',
-                        'summary' => 'List users',
+                        'summary'     => 'List users',
                     ],
                 ],
                 '/users/{user}' => [
                     'get' => [
-                        'tags' => ['Users'],
+                        'tags'        => ['Users'],
                         'operationId' => 'showUser',
-                        'summary' => 'Show user',
+                        'summary'     => 'Show user',
                     ],
                 ],
                 '/health' => [
@@ -602,16 +602,16 @@ it('uses a valid url endpoint selection when building sub navigation', function 
             'paths' => [
                 '/users' => [
                     'get' => [
-                        'tags' => ['Users'],
+                        'tags'        => ['Users'],
                         'operationId' => 'listUsers',
-                        'summary' => 'List users',
+                        'summary'     => 'List users',
                     ],
                 ],
                 '/users/{user}' => [
                     'get' => [
-                        'tags' => ['Users'],
+                        'tags'        => ['Users'],
                         'operationId' => 'showUser',
-                        'summary' => 'Show user',
+                        'summary'     => 'Show user',
                     ],
                 ],
             ],
@@ -692,7 +692,7 @@ function bindOpenApiSpec(array $spec): void
 function openApiSpecWithEndpoints(array $info = []): array
 {
     return [
-        'info' => $info,
+        'info'  => $info,
         'paths' => [
             '/users' => [
                 'get' => [

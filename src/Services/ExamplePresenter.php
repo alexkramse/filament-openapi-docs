@@ -119,10 +119,10 @@ class ExamplePresenter
 
         return match ($type) {
             'integer' => 1,
-            'number' => 1.0,
+            'number'  => 1.0,
             'boolean' => true,
-            'string' => $this->stringSample($schema),
-            default => null,
+            'string'  => $this->stringSample($schema),
+            default   => null,
         };
     }
 
@@ -145,11 +145,11 @@ class ExamplePresenter
     private function stringSample(array $schema): string
     {
         return match ($schema['format'] ?? null) {
-            'date' => '2026-07-06',
+            'date'      => '2026-07-06',
             'date-time' => '2026-07-06T12:00:00Z',
-            'email' => 'user@example.com',
-            'uuid' => '00000000-0000-0000-0000-000000000000',
-            default => 'string',
+            'email'     => 'user@example.com',
+            'uuid'      => '00000000-0000-0000-0000-000000000000',
+            default     => 'string',
         };
     }
 

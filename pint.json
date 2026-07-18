@@ -1,0 +1,56 @@
+{
+    "preset": "laravel",
+    "rules": {
+        "global_namespace_import": {
+            "import_classes": false,
+            "import_functions": true,
+            "import_constants": true
+        },
+        "fully_qualified_strict_types": false,
+        "no_unused_imports": true,
+        "ordered_imports": false,
+        "blank_line_before_statement": {
+            "statements": [
+                "break",
+                "continue",
+                "declare",
+                "do",
+                "exit",
+                "goto",
+                "include",
+                "include_once",
+                "require",
+                "require_once",
+                "throw",
+                "try"
+            ]
+        },
+        "binary_operator_spaces": {
+            "default": "single_space",
+            "operators": {
+                "=>": "align_single_space_minimal"
+            }
+        },
+        "no_extra_blank_lines": true,
+        "array_syntax": {
+            "syntax": "short"
+        },
+        "trailing_comma_in_multiline": true,
+        "whitespace_after_comma_in_array": true,
+        "single_quote": true,
+        "escape_implicit_backslashes": false,
+        "function_declaration": {
+            "closure_fn_spacing": "one"
+        },
+        "method_argument_space": {
+            "on_multiline": "ensure_fully_multiline"
+        },
+        "no_superfluous_elseif": true,
+        "no_useless_else": true,
+        "simplified_if_return": true,
+        "simplified_null_return": false,
+        "nullable_type_declaration_for_default_null_value": true,
+        "single_blank_line_at_eof": true,
+        "no_whitespace_in_blank_line": true
+    }
+}

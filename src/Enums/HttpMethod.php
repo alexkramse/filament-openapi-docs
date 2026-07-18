@@ -21,10 +21,10 @@ enum HttpMethod: string
     public function badgeColor(): string
     {
         return match ($this) {
-            self::Get => 'success',
-            self::Post => 'info',
-            self::Put, self::Patch => 'warning',
-            self::Delete => 'danger',
+            self::Get                              => 'success',
+            self::Post                             => 'info',
+            self::Put, self::Patch                 => 'warning',
+            self::Delete                           => 'danger',
             self::Options, self::Head, self::Trace => 'gray',
         };
     }

@@ -6,6 +6,7 @@ use Alexkramse\FilamentOpenapiDocs\Services\ExamplePresenter;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiParser;
 use Alexkramse\FilamentOpenapiDocs\Services\RequestSnippetPresenter;
+use Alexkramse\FilamentOpenapiDocs\Support\HttpStatus;
 
 it('parses openapi paths into grouped endpoints', function () {
     $parsed = app(OpenApiParser::class)->parse(openApiSpec());
@@ -44,16 +45,16 @@ it('normalizes swagger 2 request metadata into the same endpoint shape', functio
 it('falls back to method and path slug when operation id is missing', function () {
     $parsed = app(OpenApiParser::class)->parse([
         'openapi' => '3.1.0',
-        'info' => [
-            'title' => 'Laravel',
+        'info'    => [
+            'title'   => 'Laravel',
             'version' => '0.0.1',
         ],
         'paths' => [
             '/health-check' => [
                 'get' => [
-                    'tags' => ['System'],
+                    'tags'        => ['System'],
                     'operationId' => '   ',
-                    'responses' => [
+                    'responses'   => [
                         '200' => ['description' => 'OK'],
                     ],
                 ],
@@ -90,8 +91,8 @@ it('provides request docs editable controls and baseline har from one presenter 
 it('detects bearer security from the referenced scheme definition', function () {
     $parsed = app(OpenApiParser::class)->parse([
         'openapi' => '3.1.0',
-        'info' => [
-            'title' => 'Laravel',
+        'info'    => [
+            'title'   => 'Laravel',
             'version' => '0.0.1',
         ],
         'servers' => [
@@ -103,7 +104,7 @@ it('detects bearer security from the referenced scheme definition', function () 
         'components' => [
             'securitySchemes' => [
                 'http' => [
-                    'type' => 'http',
+                    'type'   => 'http',
                     'scheme' => 'bearer',
                 ],
             ],
@@ -111,7 +112,7 @@ it('detects bearer security from the referenced scheme definition', function () 
         'paths' => [
             '/profile' => [
                 'get' => [
-                    'summary' => 'Profile',
+                    'summary'   => 'Profile',
                     'responses' => [
                         '200' => ['description' => 'OK'],
                     ],
@@ -122,10 +123,10 @@ it('detects bearer security from the referenced scheme definition', function () 
     $endpoint = $parsed['endpoints']['API'][0];
     $requestData = app(RequestSnippetPresenter::class)->present($endpoint, $parsed['servers'], $parsed['components']);
     $html = html_entity_decode(view('filament-openapi-docs::components.endpoint.request.read', [
-        'endpoint' => $endpoint,
-        'components' => $parsed['components'],
+        'endpoint'         => $endpoint,
+        'components'       => $parsed['components'],
         'examplePresenter' => app(ExamplePresenter::class),
-        'requestData' => $requestData,
+        'requestData'      => $requestData,
     ])->render());
 
     expect($requestData['securityItems'][0]['label'])->toBe('Bearer token')
@@ -152,33 +153,33 @@ it('renders non bearer security schemes without bearer documentation', function 
         responses: [],
         security: [
             ['basicAuth' => []],
-            ['apiKeyHeader' => []],
+            ['apiKeyHeader'      => []],
             ['clientCertificate' => []],
-            ['oauth' => []],
-            ['oidc' => []],
+            ['oauth'             => []],
+            ['oidc'              => []],
         ],
         deprecated: false,
     );
     $components = [
         'securitySchemes' => [
             'basicAuth' => [
-                'type' => 'http',
+                'type'   => 'http',
                 'scheme' => 'basic',
             ],
             'apiKeyHeader' => [
                 'type' => 'apiKey',
-                'in' => 'header',
+                'in'   => 'header',
                 'name' => 'X-Api-Key',
             ],
             'clientCertificate' => [
                 'type' => 'mutualTLS',
             ],
             'oauth' => [
-                'type' => 'oauth2',
+                'type'  => 'oauth2',
                 'flows' => [],
             ],
             'oidc' => [
-                'type' => 'openIdConnect',
+                'type'             => 'openIdConnect',
                 'openIdConnectUrl' => 'https://example.test/.well-known/openid-configuration',
             ],
         ],
@@ -199,8 +200,8 @@ it('renders non bearer security schemes without bearer documentation', function 
 
 it('renders request read and send modes', function () {
     $html = html_entity_decode(view('filament-openapi-docs::components.endpoint', [
-        'endpoint' => endpointWithRequestData(),
-        'servers' => ['https://api.example.test'],
+        'endpoint'   => endpointWithRequestData(),
+        'servers'    => ['https://api.example.test'],
         'components' => securityComponents(),
     ])->render());
 
@@ -257,10 +258,10 @@ it('renders request read mode as static documentation rows', function () {
     $endpoint = endpointWithRequestData();
     $requestData = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test'], securityComponents());
     $html = html_entity_decode(view('filament-openapi-docs::components.endpoint.request.read', [
-        'endpoint' => $endpoint,
-        'components' => securityComponents(),
+        'endpoint'         => $endpoint,
+        'components'       => securityComponents(),
         'examplePresenter' => app(ExamplePresenter::class),
-        'requestData' => $requestData,
+        'requestData'      => $requestData,
     ])->render());
 
     expect($html)->toContain('foad-property-row')
@@ -284,8 +285,8 @@ it('does not render request send mode when request samples are disabled', functi
     config()->set('filament-openapi-docs.request_samples.enabled', false);
 
     $html = view('filament-openapi-docs::components.endpoint', [
-        'endpoint' => endpointWithRequestData(),
-        'servers' => ['https://api.example.test'],
+        'endpoint'   => endpointWithRequestData(),
+        'servers'    => ['https://api.example.test'],
         'components' => securityComponents(),
     ])->render();
 
@@ -317,6 +318,20 @@ it('uses shared method color logic for endpoint and navigation badges', function
     expect(HttpMethod::color('DELETE'))->toBe('danger')
         ->and($navigation[0]->getItems()[0]->getBadgeColor())->toBe('danger')
         ->and($html)->toContain('DELETE');
+});
+
+it('uses shared response status color logic for response badges', function () {
+    $responseMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/responses.blade.php');
+
+    expect(HttpStatus::color('200'))->toBe('success')
+        ->and(HttpStatus::color(201))->toBe('success')
+        ->and(HttpStatus::color('302'))->toBe('warning')
+        ->and(HttpStatus::color('404'))->toBe('warning')
+        ->and(HttpStatus::color('500'))->toBe('danger')
+        ->and(HttpStatus::color('100'))->toBe('gray')
+        ->and(HttpStatus::color('default'))->toBe('gray')
+        ->and($responseMarkup)->toContain('HttpStatus::color($status)')
+        ->and($responseMarkup)->not->toContain('str_starts_with((string) $status');
 });
 
 it('keeps request snippet javascript inside runtime boundaries', function () {
@@ -372,8 +387,8 @@ function endpointWithRequestData(): Endpoint
         requestBodies: [
             [
                 'contentType' => 'application/json',
-                'schema' => [
-                    'type' => 'object',
+                'schema'      => [
+                    'type'       => 'object',
                     'properties' => [
                         'name' => ['type' => 'string', 'example' => 'Jane Doe'],
                     ],
@@ -384,11 +399,11 @@ function endpointWithRequestData(): Endpoint
         responses: [
             '200' => [
                 'description' => 'OK',
-                'content' => [
+                'content'     => [
                     'application/json' => [
                         'contentType' => 'application/json',
-                        'schema' => ['type' => 'object'],
-                        'examples' => [],
+                        'schema'      => ['type' => 'object'],
+                        'examples'    => [],
                     ],
                 ],
             ],
@@ -407,12 +422,12 @@ function endpointWithRequestData(): Endpoint
 function parameter(string $name, string $in, string $type, bool $required, array $schema, mixed $example = null): array
 {
     return [
-        'name' => $name,
-        'in' => $in,
-        'type' => $type,
-        'required' => $required,
+        'name'        => $name,
+        'in'          => $in,
+        'type'        => $type,
+        'required'    => $required,
         'description' => null,
-        'schema' => $schema,
+        'schema'      => $schema,
         ...(func_num_args() === 6 ? ['example' => $example] : []),
         'examples' => [],
         ...(array_key_exists('default', $schema) ? ['default' => $schema['default']] : []),
@@ -427,12 +442,12 @@ function securityComponents(): array
     return [
         'securitySchemes' => [
             'bearerAuth' => [
-                'type' => 'http',
+                'type'   => 'http',
                 'scheme' => 'bearer',
             ],
             'apiKey' => [
                 'type' => 'apiKey',
-                'in' => 'header',
+                'in'   => 'header',
                 'name' => 'X-Api-Key',
             ],
         ],
@@ -446,43 +461,43 @@ function openApiSpec(): array
 {
     return [
         'openapi' => '3.1.0',
-        'info' => [
-            'title' => 'Game API',
+        'info'    => [
+            'title'   => 'Game API',
             'version' => '1.0.0',
         ],
         'servers' => [
             ['url' => 'https://example.test/api'],
         ],
         'components' => securityComponents(),
-        'paths' => [
+        'paths'      => [
             '/users/{user}' => [
                 'parameters' => [
                     [
-                        'name' => 'user',
-                        'in' => 'path',
+                        'name'     => 'user',
+                        'in'       => 'path',
                         'required' => true,
-                        'schema' => ['type' => 'integer'],
+                        'schema'   => ['type' => 'integer'],
                     ],
                 ],
                 'get' => [
-                    'tags' => ['Users'],
+                    'tags'        => ['Users'],
                     'operationId' => 'showUser',
-                    'summary' => 'Show user',
-                    'parameters' => [
+                    'summary'     => 'Show user',
+                    'parameters'  => [
                         [
-                            'name' => 'include',
-                            'in' => 'query',
-                            'schema' => ['type' => ['string', 'null'], 'example' => 'profile'],
+                            'name'        => 'include',
+                            'in'          => 'query',
+                            'schema'      => ['type' => ['string', 'null'], 'example' => 'profile'],
                             'description' => 'Relations to include',
                         ],
                     ],
                     'responses' => [
                         '200' => [
                             'description' => 'OK',
-                            'content' => [
+                            'content'     => [
                                 'application/json' => [
                                     'schema' => [
-                                        'type' => 'object',
+                                        'type'       => 'object',
                                         'properties' => [
                                             'id' => ['type' => 'integer'],
                                         ],
@@ -493,9 +508,9 @@ function openApiSpec(): array
                     ],
                 ],
                 'post' => [
-                    'tags' => ['Users'],
+                    'tags'        => ['Users'],
                     'operationId' => 'createUser',
-                    'summary' => 'Create user',
+                    'summary'     => 'Create user',
                     'requestBody' => [
                         'content' => [
                             'application/json' => [
@@ -519,15 +534,15 @@ function swaggerSpec(): array
 {
     return [
         'swagger' => '2.0',
-        'info' => [
-            'title' => 'Game API',
+        'info'    => [
+            'title'   => 'Game API',
             'version' => '1.0.0',
         ],
-        'host' => 'api.example.test',
-        'basePath' => '/v1',
-        'schemes' => ['https'],
-        'consumes' => ['application/x-www-form-urlencoded'],
-        'produces' => ['application/json'],
+        'host'                => 'api.example.test',
+        'basePath'            => '/v1',
+        'schemes'             => ['https'],
+        'consumes'            => ['application/x-www-form-urlencoded'],
+        'produces'            => ['application/json'],
         'securityDefinitions' => [
             'basicAuth' => [
                 'type' => 'basic',
@@ -539,27 +554,27 @@ function swaggerSpec(): array
         'paths' => [
             '/users' => [
                 'post' => [
-                    'tags' => ['Users'],
+                    'tags'        => ['Users'],
                     'operationId' => 'createSwaggerUser',
-                    'summary' => 'Create user',
-                    'parameters' => [
+                    'summary'     => 'Create user',
+                    'parameters'  => [
                         [
-                            'name' => 'name',
-                            'in' => 'formData',
-                            'required' => true,
-                            'type' => 'string',
+                            'name'        => 'name',
+                            'in'          => 'formData',
+                            'required'    => true,
+                            'type'        => 'string',
                             'description' => 'Display name',
                         ],
                         [
                             'name' => 'avatar',
-                            'in' => 'formData',
+                            'in'   => 'formData',
                             'type' => 'file',
                         ],
                     ],
                     'responses' => [
                         '201' => [
                             'description' => 'Created',
-                            'schema' => ['type' => 'object'],
+                            'schema'      => ['type' => 'object'],
                         ],
                     ],
                 ],

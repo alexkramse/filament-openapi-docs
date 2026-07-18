@@ -56,17 +56,17 @@ class RequestSnippetPresenter
             foreach ($samples as $sampleIndex => $sample) {
                 $bodyText = is_string($sample['value'] ?? null) ? $sample['value'] : '';
                 $requests[] = [
-                    'key' => "request-{$bodyIndex}-{$sampleIndex}",
-                    'label' => $this->label($body, $sample),
-                    'urlTemplate' => $this->urlTemplate($endpoint, $servers),
-                    'authParameters' => $this->authParameters($securityItems),
+                    'key'                   => "request-{$bodyIndex}-{$sampleIndex}",
+                    'label'                 => $this->label($body, $sample),
+                    'urlTemplate'           => $this->urlTemplate($endpoint, $servers),
+                    'authParameters'        => $this->authParameters($securityItems),
                     'mediaHeaderParameters' => $this->editableMediaHeaders($mediaHeaders),
-                    'headerParameters' => $this->editableParameters($headerParameters),
-                    'pathParameters' => $this->editableParameters($pathParameters),
-                    'queryParameters' => $this->editableParameters($queryParameters),
-                    'bodyText' => $bodyText,
-                    'bodyMimeType' => is_array($body) ? $body['contentType'] : null,
-                    'har' => $this->har(
+                    'headerParameters'      => $this->editableParameters($headerParameters),
+                    'pathParameters'        => $this->editableParameters($pathParameters),
+                    'queryParameters'       => $this->editableParameters($queryParameters),
+                    'bodyText'              => $bodyText,
+                    'bodyMimeType'          => is_array($body) ? $body['contentType'] : null,
+                    'har'                   => $this->har(
                         endpoint: $endpoint,
                         servers: $servers,
                         pathParameters: $pathParameters,
@@ -82,13 +82,13 @@ class RequestSnippetPresenter
         }
 
         return [
-            'securityItems' => $securityItems,
-            'mediaHeaders' => $mediaHeaders,
-            'headerParameters' => $headerParameters,
-            'pathParameters' => $pathParameters,
-            'queryParameters' => $queryParameters,
-            'requests' => $requests,
-            'messages' => $this->messages(),
+            'securityItems'     => $securityItems,
+            'mediaHeaders'      => $mediaHeaders,
+            'headerParameters'  => $headerParameters,
+            'pathParameters'    => $pathParameters,
+            'queryParameters'   => $queryParameters,
+            'requests'          => $requests,
+            'messages'          => $this->messages(),
             'hasRequestSamples' => $this->hasRequestSamples() && $requests !== [],
         ];
     }
@@ -133,113 +133,113 @@ class RequestSnippetPresenter
 
         if ($type === 'http' && $schemeValue === 'bearer') {
             return [
-                'name' => 'Authorization',
-                'label' => __('filament-openapi-docs::ui.auth.bearer'),
-                'location' => 'header',
-                'value' => 'Bearer <token>',
-                'prefix' => 'Bearer ',
-                'placeholder' => '<token>',
-                'description' => $description ?? __('filament-openapi-docs::ui.auth.bearer_description'),
-                'schemeType' => 'http',
-                'scheme' => 'bearer',
+                'name'                 => 'Authorization',
+                'label'                => __('filament-openapi-docs::ui.auth.bearer'),
+                'location'             => 'header',
+                'value'                => 'Bearer <token>',
+                'prefix'               => 'Bearer ',
+                'placeholder'          => '<token>',
+                'description'          => $description ?? __('filament-openapi-docs::ui.auth.bearer_description'),
+                'schemeType'           => 'http',
+                'scheme'               => 'bearer',
                 'documentationExample' => 'Bearer 123',
-                'sendable' => true,
+                'sendable'             => true,
             ];
         }
 
         if ($type === 'http' && $schemeValue === 'basic') {
             return [
-                'name' => 'Authorization',
-                'label' => __('filament-openapi-docs::ui.auth.basic'),
-                'location' => 'header',
-                'value' => 'Basic <credentials>',
-                'prefix' => 'Basic ',
-                'placeholder' => '<credentials>',
-                'description' => $description,
-                'schemeType' => 'http',
-                'scheme' => 'basic',
+                'name'                 => 'Authorization',
+                'label'                => __('filament-openapi-docs::ui.auth.basic'),
+                'location'             => 'header',
+                'value'                => 'Basic <credentials>',
+                'prefix'               => 'Basic ',
+                'placeholder'          => '<credentials>',
+                'description'          => $description,
+                'schemeType'           => 'http',
+                'scheme'               => 'basic',
                 'documentationExample' => 'Authorization: Basic <credentials>',
-                'sendable' => true,
+                'sendable'             => true,
             ];
         }
 
         if ($type === 'http' && is_string($scheme['scheme'] ?? null)) {
             return [
-                'name' => 'Authorization',
-                'label' => Str::headline($scheme['scheme']),
-                'location' => 'header',
-                'value' => Str::headline($scheme['scheme']).' <credentials>',
-                'prefix' => Str::headline($scheme['scheme']).' ',
-                'placeholder' => '<credentials>',
-                'description' => $description,
-                'schemeType' => 'http',
-                'scheme' => $schemeValue,
+                'name'                 => 'Authorization',
+                'label'                => Str::headline($scheme['scheme']),
+                'location'             => 'header',
+                'value'                => Str::headline($scheme['scheme']).' <credentials>',
+                'prefix'               => Str::headline($scheme['scheme']).' ',
+                'placeholder'          => '<credentials>',
+                'description'          => $description,
+                'schemeType'           => 'http',
+                'scheme'               => $schemeValue,
                 'documentationExample' => 'Authorization: '.Str::headline($scheme['scheme']).' <credentials>',
-                'sendable' => true,
+                'sendable'             => true,
             ];
         }
 
         if ($type === 'apikey' && is_string($scheme['name'] ?? null)) {
             return [
-                'name' => $scheme['name'],
-                'label' => $schemeName,
-                'location' => is_string($scheme['in'] ?? null) ? $scheme['in'] : 'header',
-                'value' => '<api-key>',
-                'prefix' => '',
-                'placeholder' => '<api-key>',
-                'description' => $description,
-                'schemeType' => 'apiKey',
-                'scheme' => null,
+                'name'                 => $scheme['name'],
+                'label'                => $schemeName,
+                'location'             => is_string($scheme['in'] ?? null) ? $scheme['in'] : 'header',
+                'value'                => '<api-key>',
+                'prefix'               => '',
+                'placeholder'          => '<api-key>',
+                'description'          => $description,
+                'schemeType'           => 'apiKey',
+                'scheme'               => null,
                 'documentationExample' => $scheme['name'].': <api-key>',
-                'sendable' => true,
+                'sendable'             => true,
             ];
         }
 
         if ($type === 'mutualtls') {
             return [
-                'name' => $schemeName,
-                'label' => __('filament-openapi-docs::ui.auth.mutual_tls'),
-                'location' => 'security',
-                'value' => '<client-certificate>',
-                'prefix' => '',
-                'placeholder' => '<client-certificate>',
-                'description' => $description,
-                'schemeType' => 'mutualTLS',
-                'scheme' => null,
+                'name'                 => $schemeName,
+                'label'                => __('filament-openapi-docs::ui.auth.mutual_tls'),
+                'location'             => 'security',
+                'value'                => '<client-certificate>',
+                'prefix'               => '',
+                'placeholder'          => '<client-certificate>',
+                'description'          => $description,
+                'schemeType'           => 'mutualTLS',
+                'scheme'               => null,
                 'documentationExample' => null,
-                'sendable' => false,
+                'sendable'             => false,
             ];
         }
 
         if ($type === 'oauth2') {
             return [
-                'name' => $schemeName,
-                'label' => __('filament-openapi-docs::ui.auth.oauth2'),
-                'location' => 'security',
-                'value' => '<credentials>',
-                'prefix' => '',
-                'placeholder' => '<credentials>',
-                'description' => $description,
-                'schemeType' => 'oauth2',
-                'scheme' => null,
+                'name'                 => $schemeName,
+                'label'                => __('filament-openapi-docs::ui.auth.oauth2'),
+                'location'             => 'security',
+                'value'                => '<credentials>',
+                'prefix'               => '',
+                'placeholder'          => '<credentials>',
+                'description'          => $description,
+                'schemeType'           => 'oauth2',
+                'scheme'               => null,
                 'documentationExample' => null,
-                'sendable' => false,
+                'sendable'             => false,
             ];
         }
 
         if ($type === 'openidconnect') {
             return [
-                'name' => $schemeName,
-                'label' => __('filament-openapi-docs::ui.auth.openid_connect'),
-                'location' => 'security',
-                'value' => '<credentials>',
-                'prefix' => '',
-                'placeholder' => '<credentials>',
-                'description' => $description,
-                'schemeType' => 'openIdConnect',
-                'scheme' => null,
+                'name'                 => $schemeName,
+                'label'                => __('filament-openapi-docs::ui.auth.openid_connect'),
+                'location'             => 'security',
+                'value'                => '<credentials>',
+                'prefix'               => '',
+                'placeholder'          => '<credentials>',
+                'description'          => $description,
+                'schemeType'           => 'openIdConnect',
+                'scheme'               => null,
                 'documentationExample' => is_string($scheme['openIdConnectUrl'] ?? null) ? $scheme['openIdConnectUrl'] : null,
-                'sendable' => false,
+                'sendable'             => false,
             ];
         }
 
@@ -285,16 +285,16 @@ class RequestSnippetPresenter
 
         if ($contentTypes->isNotEmpty()) {
             $headers[] = [
-                'name' => 'Content-Type',
-                'value' => $contentTypes->first(),
+                'name'        => 'Content-Type',
+                'value'       => $contentTypes->first(),
                 'description' => __('filament-openapi-docs::ui.meta.request_body_media_type'),
             ];
         }
 
         if ($accept = $this->responseContentType($endpoint)) {
             $headers[] = [
-                'name' => 'Accept',
-                'value' => $accept,
+                'name'        => 'Accept',
+                'value'       => $accept,
                 'description' => __('filament-openapi-docs::ui.meta.preferred_response_media_type'),
             ];
         }
@@ -309,10 +309,10 @@ class RequestSnippetPresenter
     {
         return collect($parameters)
             ->map(fn (array $parameter): array => [
-                'name' => $parameter['name'],
-                'value' => $parameter['value'] ?? '',
+                'name'          => $parameter['name'],
+                'value'         => $parameter['value'] ?? '',
                 'developerOnly' => false,
-                'removable' => false,
+                'removable'     => false,
             ])
             ->values()
             ->all();
@@ -325,11 +325,11 @@ class RequestSnippetPresenter
     {
         return collect($mediaHeaders)
             ->map(fn (array $header): array => [
-                'name' => $header['name'],
-                'value' => $header['value'],
-                'description' => $header['description'],
+                'name'          => $header['name'],
+                'value'         => $header['value'],
+                'description'   => $header['description'],
                 'developerOnly' => false,
-                'removable' => false,
+                'removable'     => false,
             ])
             ->values()
             ->all();
@@ -343,12 +343,12 @@ class RequestSnippetPresenter
         return collect($securityItems)
             ->reject(fn (array $securityItem): bool => ! ($securityItem['sendable'] ?? false))
             ->map(fn (array $securityItem): array => [
-                'location' => $securityItem['location'],
-                'name' => $securityItem['name'],
-                'label' => $securityItem['label'],
-                'prefix' => $securityItem['prefix'],
+                'location'    => $securityItem['location'],
+                'name'        => $securityItem['name'],
+                'label'       => $securityItem['label'],
+                'prefix'      => $securityItem['prefix'],
                 'placeholder' => $securityItem['placeholder'],
-                'value' => '',
+                'value'       => '',
             ])
             ->values()
             ->all();
@@ -387,18 +387,18 @@ class RequestSnippetPresenter
         $this->applySecurity($securityItems, $headers, $queryString, $cookies);
 
         $har = [
-            'method' => $endpoint->method,
-            'url' => $this->url($endpoint, $servers, $pathParameters, $queryString),
+            'method'      => $endpoint->method,
+            'url'         => $this->url($endpoint, $servers, $pathParameters, $queryString),
             'httpVersion' => 'HTTP/1.1',
-            'headers' => array_values($headers),
+            'headers'     => array_values($headers),
             'queryString' => array_values($queryString),
-            'cookies' => array_values($cookies),
+            'cookies'     => array_values($cookies),
         ];
 
         if (is_array($body) && filled($bodyText)) {
             $har['postData'] = [
                 'mimeType' => $body['contentType'],
-                'text' => $bodyText,
+                'text'     => $bodyText,
             ];
         }
 
@@ -416,15 +416,15 @@ class RequestSnippetPresenter
         foreach ($securityItems as $securityItem) {
             $value = $securityItem['value'] ?? '';
             $parameter = [
-                'name' => $securityItem['name'],
+                'name'  => $securityItem['name'],
                 'value' => is_string($value) ? $value : '',
             ];
 
             match ($securityItem['location'] ?? null) {
-                'query' => $queryString[] = $parameter,
+                'query'  => $queryString[] = $parameter,
                 'cookie' => $cookies[] = $parameter,
                 'header' => $headers = $this->replaceHeader($headers, $parameter['name'], $parameter['value']),
-                default => null,
+                default  => null,
             };
         }
     }
@@ -441,7 +441,7 @@ class RequestSnippetPresenter
             ->all();
 
         $headers[] = [
-            'name' => $name,
+            'name'  => $name,
             'value' => $value,
         ];
 
@@ -510,11 +510,11 @@ class RequestSnippetPresenter
     private function messages(): array
     {
         return [
-            'invalidHeaderName' => __('filament-openapi-docs::ui.messages.invalid_header_name'),
-            'jsonBeforeFormatting' => __('filament-openapi-docs::ui.messages.json_before_formatting'),
-            'jsonBeforeSending' => __('filament-openapi-docs::ui.messages.json_before_sending'),
+            'invalidHeaderName'             => __('filament-openapi-docs::ui.messages.invalid_header_name'),
+            'jsonBeforeFormatting'          => __('filament-openapi-docs::ui.messages.json_before_formatting'),
+            'jsonBeforeSending'             => __('filament-openapi-docs::ui.messages.json_before_sending'),
             'unableToGenerateRequestSample' => __('filament-openapi-docs::ui.messages.unable_to_generate_request_sample'),
-            'unableToSendRequest' => __('filament-openapi-docs::ui.messages.unable_to_send_request'),
+            'unableToSendRequest'           => __('filament-openapi-docs::ui.messages.unable_to_send_request'),
         ];
     }
 
@@ -566,9 +566,9 @@ class RequestSnippetPresenter
 
         return match ($this->schemaType($schema)) {
             'integer' => 1,
-            'number' => 1.0,
+            'number'  => 1.0,
             'boolean' => true,
-            default => $parameter['name'] ?? 'value',
+            default   => $parameter['name'] ?? 'value',
         };
     }
 

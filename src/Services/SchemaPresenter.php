@@ -89,13 +89,13 @@ class SchemaPresenter
             $items = $this->resolveReference($schema['items'], $components);
 
             return [[
-                'name' => 'items',
-                'types' => $this->types($items, $components),
-                'required' => false,
+                'name'        => 'items',
+                'types'       => $this->types($items, $components),
+                'required'    => false,
                 'description' => isset($items['description']) ? (string) $items['description'] : null,
-                'enum' => $this->enum($items),
-                'examples' => $this->examples($items),
-                'children' => $this->properties($items, $items['required'] ?? [], $components),
+                'enum'        => $this->enum($items),
+                'examples'    => $this->examples($items),
+                'children'    => $this->properties($items, $items['required'] ?? [], $components),
             ]];
         }
 
@@ -111,13 +111,13 @@ class SchemaPresenter
                 $resolvedProperty = $this->resolveReference($property, $components);
 
                 return [
-                    'name' => $name,
-                    'types' => $this->types($resolvedProperty, $components),
-                    'required' => in_array($name, $required, true),
+                    'name'        => $name,
+                    'types'       => $this->types($resolvedProperty, $components),
+                    'required'    => in_array($name, $required, true),
                     'description' => isset($resolvedProperty['description']) ? (string) $resolvedProperty['description'] : null,
-                    'enum' => $this->enum($resolvedProperty),
-                    'examples' => $this->examples($resolvedProperty),
-                    'children' => $this->properties($resolvedProperty, $resolvedProperty['required'] ?? [], $components),
+                    'enum'        => $this->enum($resolvedProperty),
+                    'examples'    => $this->examples($resolvedProperty),
+                    'children'    => $this->properties($resolvedProperty, $resolvedProperty['required'] ?? [], $components),
                 ];
             })
             ->values()

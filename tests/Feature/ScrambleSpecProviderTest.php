@@ -10,8 +10,8 @@ it('returns scramble renderer view and generated spec', function () {
     $generatorConfig = Scramble::getGeneratorConfig('default');
     $expectedSpec = [
         'openapi' => '3.1.0',
-        'info' => [
-            'title' => 'Test API',
+        'info'    => [
+            'title'   => 'Test API',
             'version' => '1.0.0',
         ],
     ];

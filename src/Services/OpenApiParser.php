@@ -54,11 +54,11 @@ class OpenApiParser
         ksort($endpoints);
 
         return [
-            'info' => is_array($spec['info'] ?? null) ? $spec['info'] : [],
-            'servers' => $this->servers($spec),
-            'endpoints' => $endpoints,
+            'info'          => is_array($spec['info'] ?? null) ? $spec['info'] : [],
+            'servers'       => $this->servers($spec),
+            'endpoints'     => $endpoints,
             'endpointCount' => collect($endpoints)->flatten(1)->count(),
-            'components' => $components,
+            'components'    => $components,
         ];
     }
 
@@ -112,12 +112,12 @@ class OpenApiParser
                 $schema = is_array($parameter['schema'] ?? null) ? $parameter['schema'] : [];
 
                 return [
-                    'name' => (string) ($parameter['name'] ?? ''),
-                    'in' => (string) ($parameter['in'] ?? ''),
-                    'type' => $this->schemaLabel($schema),
-                    'required' => (bool) ($parameter['required'] ?? false),
+                    'name'        => (string) ($parameter['name'] ?? ''),
+                    'in'          => (string) ($parameter['in'] ?? ''),
+                    'type'        => $this->schemaLabel($schema),
+                    'required'    => (bool) ($parameter['required'] ?? false),
                     'description' => isset($parameter['description']) ? (string) $parameter['description'] : null,
-                    'schema' => $schema,
+                    'schema'      => $schema,
                     ...(array_key_exists('example', $parameter) ? ['example' => $parameter['example']] : []),
                     'examples' => is_array($parameter['examples'] ?? null) ? $parameter['examples'] : [],
                     ...(array_key_exists('default', $schema) ? ['default' => $schema['default']] : []),
@@ -143,7 +143,7 @@ class OpenApiParser
             ->filter(fn (mixed $content): bool => is_array($content))
             ->map(fn (array $content, string $contentType): array => [
                 'contentType' => $contentType,
-                'schema' => is_array($content['schema'] ?? null) ? $content['schema'] : [],
+                'schema'      => is_array($content['schema'] ?? null) ? $content['schema'] : [],
                 ...(array_key_exists('example', $content) ? ['example' => $content['example']] : []),
                 'examples' => is_array($content['examples'] ?? null) ? $content['examples'] : [],
             ])
@@ -163,7 +163,7 @@ class OpenApiParser
         if (is_array($bodyParameter)) {
             return [[
                 'contentType' => $this->consumes($operation, $spec)[0] ?? 'application/json',
-                'schema' => is_array($bodyParameter['schema'] ?? null) ? $bodyParameter['schema'] : [],
+                'schema'      => is_array($bodyParameter['schema'] ?? null) ? $bodyParameter['schema'] : [],
                 ...(array_key_exists('example', $bodyParameter) ? ['example' => $bodyParameter['example']] : []),
                 'examples' => [],
             ]];
@@ -200,9 +200,9 @@ class OpenApiParser
 
         return [[
             'contentType' => $this->formDataContentType($operation, $spec, $formParameters->all()),
-            'schema' => array_filter([
-                'type' => 'object',
-                'required' => $required,
+            'schema'      => array_filter([
+                'type'       => 'object',
+                'required'   => $required,
                 'properties' => $properties,
             ]),
             'examples' => [],
@@ -223,7 +223,7 @@ class OpenApiParser
             ->mapWithKeys(fn (array $response, string|int $status): array => [
                 (string) $status => [
                     'description' => isset($response['description']) ? (string) $response['description'] : null,
-                    'content' => $this->responseContent($response['content'] ?? []),
+                    'content'     => $this->responseContent($response['content'] ?? []),
                 ],
             ])
             ->all();
@@ -243,7 +243,7 @@ class OpenApiParser
             ->mapWithKeys(fn (array $mediaType, string $contentType): array => [
                 $contentType => [
                     'contentType' => $contentType,
-                    'schema' => is_array($mediaType['schema'] ?? null) ? $mediaType['schema'] : [],
+                    'schema'      => is_array($mediaType['schema'] ?? null) ? $mediaType['schema'] : [],
                     ...(array_key_exists('example', $mediaType) ? ['example' => $mediaType['example']] : []),
                     'examples' => is_array($mediaType['examples'] ?? null) ? $mediaType['examples'] : [],
                 ],
@@ -320,7 +320,7 @@ class OpenApiParser
         if (($scheme['type'] ?? null) === 'basic') {
             return [
                 ...$scheme,
-                'type' => 'http',
+                'type'   => 'http',
                 'scheme' => 'basic',
             ];
         }

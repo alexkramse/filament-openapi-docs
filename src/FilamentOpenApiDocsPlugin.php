@@ -3,13 +3,10 @@
 namespace Alexkramse\FilamentOpenapiDocs;
 
 use Alexkramse\FilamentOpenapiDocs\Pages\OpenApiDocsPage;
-use BackedEnum;
 use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
 use Filament\Panel;
 use Illuminate\Contracts\Support\Htmlable;
-use Throwable;
-use UnitEnum;
 
 class FilamentOpenApiDocsPlugin implements Plugin
 {
@@ -29,7 +26,7 @@ class FilamentOpenApiDocsPlugin implements Plugin
     {
         try {
             $plugin = Filament::getPlugin(self::ID);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             return null;
         }
 
@@ -70,14 +67,14 @@ class FilamentOpenApiDocsPlugin implements Plugin
         return $this;
     }
 
-    public function navigationIcon(string|BackedEnum|Htmlable|null $icon): static
+    public function navigationIcon(string|\BackedEnum|Htmlable|null $icon): static
     {
         $this->options['navigation.icon'] = $icon;
 
         return $this;
     }
 
-    public function navigationGroup(string|UnitEnum|null $group): static
+    public function navigationGroup(string|\UnitEnum|null $group): static
     {
         $this->options['navigation.group'] = $group;
 
@@ -171,12 +168,12 @@ class FilamentOpenApiDocsPlugin implements Plugin
         return $this->option('navigation.label', 'navigation.label', 'API Docs');
     }
 
-    public function getNavigationIcon(): string|BackedEnum|Htmlable|null
+    public function getNavigationIcon(): string|\BackedEnum|Htmlable|null
     {
         return $this->option('navigation.icon', 'navigation.icon', 'heroicon-o-document-text');
     }
 
-    public function getNavigationGroup(): string|UnitEnum|null
+    public function getNavigationGroup(): string|\UnitEnum|null
     {
         return $this->option('navigation.group', 'navigation.group');
     }

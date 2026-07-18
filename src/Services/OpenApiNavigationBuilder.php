@@ -43,13 +43,14 @@ class OpenApiNavigationBuilder
     private function items(array $endpoints, ?string $selectedEndpointId): array
     {
         return collect($endpoints)
-            ->map(fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($endpoint->title())
-                ->url($this->url($endpoint))
-                ->isActiveWhen(fn (): bool => $endpoint->id === $selectedEndpointId)
-                ->badge($endpoint->method, HttpMethod::color($endpoint->method))
-                ->extraAttributes([
-                    'wire:click.prevent' => 'selectEndpoint('.Js::from($endpoint->id).')',
-                ])
+            ->map(
+                fn (Endpoint $endpoint): NavigationItem => NavigationItem::make($endpoint->title())
+                    ->url($this->url($endpoint))
+                    ->isActiveWhen(fn (): bool => $endpoint->id === $selectedEndpointId)
+                    ->badge($endpoint->method, HttpMethod::color($endpoint->method))
+                    ->extraAttributes([
+                        'wire:click.prevent' => 'selectEndpoint('.Js::from($endpoint->id).')',
+                    ])
             )
             ->values()
             ->all();

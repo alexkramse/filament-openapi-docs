@@ -1,4 +1,4 @@
-@props([
+@props ([
     'text',
 ])
 
@@ -35,8 +35,8 @@
 @endphp
 
 <x-dynamic-component
-    :component="'filament::badge'"
-    :attributes="$attributes->merge([
+  :component="'filament::badge'"
+  :attributes="$attributes->merge([
         'class' => 'foad-copyable-badge',
         'tooltip' => __('filament-openapi-docs::ui.tooltips.click_to_copy').': '.$text,
         'tabindex' => '0',
@@ -46,5 +46,5 @@
         'x-on:keydown.space.prevent' => '$el.click()',
     ])"
 >
-    {{ $slot }}
+  {{ $slot }}
 </x-dynamic-component>

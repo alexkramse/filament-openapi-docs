@@ -1,14 +1,17 @@
 {
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "build": "node bin/build.js",
-        "dev": "node bin/build.js --watch --publish"
-    },
-    "devDependencies": {
-        "@readme/httpsnippet": "^11.3.2",
-        "esbuild": "^0.25.0",
-        "prismjs": "^1.30.0",
-        "url": "^0.11.4"
-    }
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node bin/build.js",
+    "dev": "node bin/build.js --watch --publish",
+    "format": "npx prettier --write resources/"
+  },
+  "devDependencies": {
+    "@readme/httpsnippet": "^11.3.2",
+    "esbuild": "^0.25.0",
+    "prettier": "^3.9.5",
+    "prettier-plugin-blade": "^3.2.2",
+    "prismjs": "^1.30.0",
+    "url": "^0.11.4"
+  }
 }

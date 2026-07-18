@@ -6,7 +6,6 @@ use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiDataResolver;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
-use BackedEnum;
 use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Pages\Page;
@@ -15,7 +14,6 @@ use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
-use UnitEnum;
 
 class OpenApiDocsPage extends Page
 {
@@ -63,7 +61,7 @@ class OpenApiDocsPage extends Page
             ?? config('filament-openapi-docs.navigation.label', 'API Docs');
     }
 
-    public static function getNavigationIcon(): string|BackedEnum|Htmlable|null
+    public static function getNavigationIcon(): string|\BackedEnum|Htmlable|null
     {
         if ($plugin = static::plugin()) {
             return $plugin->getNavigationIcon();
@@ -72,7 +70,7 @@ class OpenApiDocsPage extends Page
         return config('filament-openapi-docs.navigation.icon', 'heroicon-o-document-text');
     }
 
-    public static function getNavigationGroup(): string|UnitEnum|null
+    public static function getNavigationGroup(): string|\UnitEnum|null
     {
         if ($plugin = static::plugin()) {
             return $plugin->getNavigationGroup();
@@ -100,8 +98,8 @@ class OpenApiDocsPage extends Page
         $openApiData = static::staticOpenApiData();
         $badge = match ($mode) {
             'version' => static::staticStringValue($openApiData['info']['version'] ?? null),
-            'count' => (string) $openApiData['endpointCount'],
-            default => null,
+            'count'   => (string) $openApiData['endpointCount'],
+            default   => null,
         };
 
         if ($badge === null) {
@@ -176,7 +174,7 @@ class OpenApiDocsPage extends Page
 
         return [
             ...$this->openApiData(),
-            'selectedEndpoint' => $selectedEndpoint,
+            'selectedEndpoint'      => $selectedEndpoint,
             'selectedEndpointGroup' => $selectedEndpoint?->group(),
         ];
     }
