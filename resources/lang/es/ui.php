@@ -28,6 +28,7 @@ return [
         'deprecated' => 'Obsoleto',
         'optional'   => 'Opcional',
         'required'   => 'Obligatorio',
+        'status'     => 'Estado: :status',
         'type'       => 'Tipo: :type',
     ],
     'empty' => [

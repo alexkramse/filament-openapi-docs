@@ -1,54 +1,61 @@
 @php
-    $sendingLabel = \Illuminate\Support\Js::from(__('filament-openapi-docs::ui.actions.sending'));
-    $sendApiRequestLabel = \Illuminate\Support\Js::from(__('filament-openapi-docs::ui.actions.send_api_request'));
+  $sendingLabel = \Illuminate\Support\Js::from(__('filament-openapi-docs::ui.actions.sending'));
+  $sendApiRequestLabel = \Illuminate\Support\Js::from(__('filament-openapi-docs::ui.actions.send_api_request'));
 @endphp
 
 <div class="foad-stack foad-stack-md">
-  @include ('filament-openapi-docs::components.request-snippet.auth')
-  @include ('filament-openapi-docs::components.request-snippet.media-headers')
-  @include ('filament-openapi-docs::components.request-snippet.headers')
-  @include ('filament-openapi-docs::components.request-snippet.path-parameters')
-  @include ('filament-openapi-docs::components.request-snippet.query-parameters')
-  @include ('filament-openapi-docs::components.request-snippet.body')
-
-  <template x-if="!hasRequestControls">
-    <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.request_data') }}</p>
-  </template>
-
-  <x-filament::button
-    type="button"
-    x-on:click="sendRequest()"
-    x-bind:disabled="sending"
-    x-text="sending ? {{ $sendingLabel }} : {{ $sendApiRequestLabel }}"
-  />
-
-  <template x-if="sendError">
-    <p class="foad-sample-error foad-try-message" x-text="sendError"></p>
-  </template>
-
-  <template x-if="response">
-    <div class="foad-response-preview">
-      <div class="foad-inline-list foad-inline-list-sm">
-        <span
-          class="foad-property-meta-label"
-          >{{ __('filament-openapi-docs::ui.labels.response') }}</span
-        >
-        <span
-          class="foad-response-status"
-          x-bind:data-success="response.ok"
-          x-text="response.status + ' ' + response.statusText"
-        ></span>
-        <template x-if="response.contentType">
-          <span
-            class="foad-property-meta-label"
-            x-text="response.contentType"
-          ></span>
-        </template>
-      </div>
-
-      <div class="foad-sample-scroll foad-response-code">
-        <pre class="foad-sample-code"><code x-text="response.body"></code></pre>
-      </div>
+  <div
+    class="fi-grid foad-send-layout md:fi-grid-cols"
+    style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-md: repeat(2, minmax(0, 1fr));"
+  >
+    <div class="foad-stack foad-stack-sm">
+      @include ('filament-openapi-docs::components.request-snippet.auth')
+      @include ('filament-openapi-docs::components.request-snippet.media-headers')
+      @include ('filament-openapi-docs::components.request-snippet.headers')
+      @include ('filament-openapi-docs::components.request-snippet.path-parameters')
+      @include ('filament-openapi-docs::components.request-snippet.query-parameters')
     </div>
-  </template>
+
+    <div class="foad-stack foad-stack-sm">
+      @include ('filament-openapi-docs::components.request-snippet.body')
+      <template x-if="!hasRequestControls">
+        <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.request_data') }}</p>
+      </template>
+    </div>
+  </div>
+
+  <div class="foad-send-actions">
+    <x-filament::button
+      type="button"
+      x-on:click="sendRequest()"
+      x-bind:disabled="sending"
+      x-text="sending ? {{ $sendingLabel }} : {{ $sendApiRequestLabel }}"
+    />
+
+    <template x-if="sendError">
+      <p class="foad-sample-error foad-try-message" x-text="sendError"></p>
+    </template>
+
+    <template x-if="response">
+      <div class="foad-response-preview">
+        <div class="foad-inline-list foad-inline-list-sm">
+          <x-filament::badge
+            class="foad-response-status-badge"
+            x-bind:data-color="responseStatusColor(response.status)"
+            x-text="responseStatusLabel(response.status)"
+          ></x-filament::badge>
+          <template x-if="response.contentType">
+            <x-filament::badge color="gray" x-text="responseTypeLabel(response.contentType)"></x-filament::badge>
+          </template>
+          <template x-if="response.statusText">
+            <x-filament::badge color="gray" x-text="response.statusText"></x-filament::badge>
+          </template>
+        </div>
+
+        <div class="foad-sample-scroll foad-response-code">
+          <pre class="foad-sample-code"><code x-text="response.body"></code></pre>
+        </div>
+      </div>
+    </template>
+  </div>
 </div>

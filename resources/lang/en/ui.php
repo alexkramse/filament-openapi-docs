@@ -28,6 +28,7 @@ return [
         'deprecated' => 'Deprecated',
         'optional'   => 'Optional',
         'required'   => 'Required',
+        'status'     => 'Status: :status',
         'type'       => 'Type: :type',
     ],
     'empty' => [
@@ -56,7 +57,7 @@ return [
         'response_example'     => 'Response Example',
         'responses'            => 'Responses',
         'security'             => 'Security',
-        'send_mode'            => 'Send mode',
+        'send_mode'            => 'View/Send mode',
         'tree_view'            => 'Tree view',
         'value'                => 'Value',
     ],

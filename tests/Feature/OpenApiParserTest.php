@@ -207,6 +207,7 @@ it('renders request read and send modes', function () {
 
     $removableParameterMarkup = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/headers.blade.php')
         .file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/query-parameters.blade.php');
+    $requestSnippetMarkup = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
     $endpointMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
     $sendModeMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/send.blade.php');
 
@@ -222,16 +223,19 @@ it('renders request read and send modes', function () {
         ->and($html)->toContain('Request sample')
         ->and($html)->toContain('Developer mode')
         ->and($html)->toContain("x-text=\"sending ? 'Sending' : 'Send API request'\"")
-        ->and($html)->toContain("x-text=\"copied ? 'Copied' : 'Copy'\"")
+        ->and($html)->toContain('x-on:click="copy()"')
         ->and($html)->not->toContain('@js(')
         ->and($html)->toContain('Add header')
         ->and($html)->toContain('Add')
-        ->and($html)->toContain('fi-tabs fi-contained foad-sample-toolbar')
-        ->and($html)->toContain('foad-request-section')
+        ->and($html)->toContain('foad-inline-list foad-inline-list-end foad-inline-list-md')
         ->and($html)->toContain('foad-request-mode-controls')
         ->and($html)->toContain('copyToClipboard')
         ->and($html)->toContain('foad-copyable-badge')
         ->and($html)->toContain('Click to copy: \\/users\\/{user}')
+        ->and($html)->toContain('fi-grid foad-send-layout md:fi-grid-cols')
+        ->and($html)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
+        ->and($html)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
+        ->and($html)->toContain('foad-send-actions')
         ->and($html)->not->toContain('textcommit')
         ->and($html)->toContain('await navigator.clipboard.writeText(text)')
         ->and($html)->toContain('https:\\/\\/api.example.test\\/users')
@@ -240,15 +244,17 @@ it('renders request read and send modes', function () {
         ->and(substr_count($html, 'class="foad-header-row"'))->toBe(2)
         ->and(substr_count($html, 'x-data="requestSnippet'))->toBe(1)
         ->and(substr_count($removableParameterMarkup, '<x-filament::icon-button'))->toBe(2)
-        ->and(substr_count($removableParameterMarkup, 'icon="heroicon-m-trash"'))->toBe(2)
+        ->and(substr_count($removableParameterMarkup, 'icon="heroicon-m-x-mark"'))->toBe(2)
         ->and(substr_count($removableParameterMarkup, "label=\"{{ __('filament-openapi-docs::ui.actions.remove') }}\""))->toBe(2)
         ->and($removableParameterMarkup)->not->toContain('>Remove')
+        ->and($requestSnippetMarkup)->toContain('icon="heroicon-m-document-duplicate"')
         ->and($endpointMarkup)->toContain('x-model="sendMode"')
         ->and($endpointMarkup)->toContain('x-show="sendMode" x-cloak')
         ->and($endpointMarkup)->toContain('x-model="developerMode"')
         ->and($endpointMarkup)->toContain('<x-filament-openapi-docs::copyable-badge')
         ->and($endpointMarkup)->not->toContain('async copy(server)')
         ->and($endpointMarkup)->not->toContain('<div'.PHP_EOL.'                @if ($requestData[\'hasRequestSamples\'])')
+        ->and($sendModeMarkup)->not->toContain('TODO')
         ->and($sendModeMarkup)->not->toContain('Developer mode');
 });
 
@@ -343,6 +349,14 @@ it('keeps request snippet javascript inside runtime boundaries', function () {
         ->and($script)->toContain('const defaultClientKey = "curl"')
         ->and($script)->toContain('defaultClientForSelectedTarget')
         ->and($script)->toContain('applyRuntimeEditsToHar')
+        ->and($script)->toContain('responseStatusColor(status)')
+        ->and($script)->toContain('value.startsWith("2")')
+        ->and($script)->toContain('value.startsWith("3") || value.startsWith("4")')
+        ->and($script)->toContain('value.startsWith("5")')
+        ->and($script)->toContain('responseStatusLabel(status)')
+        ->and($script)->toContain('this.message("responseStatusBadge", "Status: :status"')
+        ->and($script)->toContain('responseTypeLabel(type)')
+        ->and($script)->toContain('this.message("responseTypeBadge", "Type: :type"')
         ->and($script)->toContain('new HTTPSnippet')
         ->and($script)->toContain('navigator.clipboard?.writeText')
         ->and($script)->toContain('window.clearTimeout(this.copyTimeout)')

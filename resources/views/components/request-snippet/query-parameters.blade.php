@@ -4,12 +4,13 @@
       <h4 class="fi-section-header-heading">
         {{ __('filament-openapi-docs::ui.labels.query_parameters') }}
       </h4>
-      <x-filament::button
+
+      <x-filament::link
         size="xs"
-        type="button"
-        x-show="developerMode"
+        icon="heroicon-m-plus"
+        tag="button"
         x-on:click="addQueryParameter()"
-        >{{ __('filament-openapi-docs::ui.actions.add_parameter') }}</x-filament::button
+      >{{ __('filament-openapi-docs::ui.actions.add_parameter') }}</x-filament::link
       >
     </div>
 
@@ -45,10 +46,9 @@
                   placeholder="{{ __('filament-openapi-docs::ui.placeholders.value') }}"
                 />
               </x-filament::input.wrapper>
-
               <x-filament::icon-button
-                color="danger"
-                icon="heroicon-m-trash"
+                color="gray"
+                icon="heroicon-m-x-mark"
                 label="{{ __('filament-openapi-docs::ui.actions.remove') }}"
                 type="button"
                 class="foad-header-remove"

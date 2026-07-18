@@ -28,6 +28,7 @@ return [
         'deprecated' => 'Застаріло',
         'optional'   => 'Необов’язково',
         'required'   => 'Обов’язково',
+        'status'     => 'Статус: :status',
         'type'       => 'Тип: :type',
     ],
     'empty' => [

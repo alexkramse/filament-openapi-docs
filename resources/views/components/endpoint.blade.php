@@ -1,10 +1,10 @@
 @php
-    $methodColor = \Alexkramse\FilamentOpenapiDocs\Enums\HttpMethod::color($endpoint->method);
-    $examplePresenter = app(\Alexkramse\FilamentOpenapiDocs\Services\ExamplePresenter::class);
-    $schemaComponents = $components ?? [];
-    $documentedServers = $servers ?? [];
-    $requestData = app(\Alexkramse\FilamentOpenapiDocs\Services\RequestSnippetPresenter::class)
-        ->present($endpoint, $documentedServers, $schemaComponents);
+  $methodColor = \Alexkramse\FilamentOpenapiDocs\Enums\HttpMethod::color($endpoint->method);
+  $examplePresenter = app(\Alexkramse\FilamentOpenapiDocs\Services\ExamplePresenter::class);
+  $schemaComponents = $components ?? [];
+  $documentedServers = $servers ?? [];
+  $requestData = app(\Alexkramse\FilamentOpenapiDocs\Services\RequestSnippetPresenter::class)
+      ->present($endpoint, $documentedServers, $schemaComponents);
 @endphp
 
 <div
@@ -12,8 +12,8 @@
   class="foad-stack"
   @if ($requestData['hasRequestSamples'])
     x-load
-    x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
-    x-data="requestSnippet(@js($requestData))"
+  x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
+  x-data="requestSnippet(@js($requestData))"
   @else
     x-data="{ sendMode: false, developerMode: false }"
   @endif
@@ -66,9 +66,10 @@
   </x-filament::section>
 
   <x-filament::section
-    class="foad-request-section"
+    divided
     :heading="__('filament-openapi-docs::ui.labels.request')"
-    collapsible
+    compact
+    :contained="false"
   >
     @if ($requestData['hasRequestSamples'])
       <x-slot name="afterHeader">
@@ -83,10 +84,21 @@
             </span>
             <span
               class="fi-fo-field-label-content"
-              >{{ __('filament-openapi-docs::ui.labels.send_mode') }}</span
+            >{{ __('filament-openapi-docs::ui.labels.send_mode') }}</span
             >
           </label>
+        </div>
+      </x-slot>
+    @endif
+  </x-filament::section>
 
+  <x-filament::section
+    :heading="__('filament-openapi-docs::ui.labels.request')"
+    collapsible
+  >
+    @if ($requestData['hasRequestSamples'])
+      <x-slot name="afterHeader">
+        <div class="foad-request-mode-controls">
           <label
             class="foad-developer-mode fi-fo-toggle"
             x-show="sendMode"
@@ -101,7 +113,7 @@
             </span>
             <span
               class="fi-fo-field-label-content"
-              >{{ __('filament-openapi-docs::ui.labels.developer_mode') }}</span
+            >{{ __('filament-openapi-docs::ui.labels.developer_mode') }}</span
             >
           </label>
         </div>

@@ -1,36 +1,36 @@
 <x-filament::section
+  compact
+  :contained="false"
   :heading="__('filament-openapi-docs::ui.labels.responses')"
   :description="__('filament-openapi-docs::ui.meta.documented_responses', ['count' => count($endpoint->responses)])"
-  collapsible
-  collapsed
 >
   <x-slot name="heading">
     {{ __('filament-openapi-docs::ui.labels.responses') }}
   </x-slot>
   <x-slot name="description">
     {{ __('filament-openapi-docs::ui.meta.documented_responses', ['count' => count($endpoint->responses)]) }}
-    <div>
-      @foreach ($endpoint->responses as $status => $response)
-        <x-filament::badge
-          :color="\Alexkramse\FilamentOpenapiDocs\Support\HttpStatus::color($status)"
-        >
-          {{ $status }}
-        </x-filament::badge>
-      @endforeach
-    </div>
   </x-slot>
-  @foreach ($endpoint->responses as $status => $response)
-    <div class="foad-response-block">
+</x-filament::section>
+
+@foreach ($endpoint->responses as $status => $response)
+  <x-filament::section
+    :heading="__('filament-openapi-docs::ui.labels.responses')"
+    collapsible
+    collapsed
+  >
+
+    <x-slot name="heading">
       <div class="foad-property-main">
         <x-filament::badge
           :color="\Alexkramse\FilamentOpenapiDocs\Support\HttpStatus::color($status)"
         >
           {{ $status }}
         </x-filament::badge>
-        <h3 class="fi-section-header-heading">
-          {{ $response['description'] ?: __('filament-openapi-docs::ui.labels.response') }}
-        </h3>
+        {{ $response['description'] ?: __('filament-openapi-docs::ui.labels.response') }}
       </div>
+    </x-slot>
+
+    <div class="foad-response-block">
       @if ($response['content'] !== [])
         <div class="foad-stack foad-stack-sm">
           @foreach ($response['content'] as $contentType => $mediaType)
@@ -82,5 +82,5 @@
         <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.response_body') }}</p>
       @endif
     </div>
-  @endforeach
-</x-filament::section>
+  </x-filament::section>
+@endforeach

@@ -515,6 +515,8 @@ class RequestSnippetPresenter
             'invalidHeaderName'             => __('filament-openapi-docs::ui.messages.invalid_header_name'),
             'jsonBeforeFormatting'          => __('filament-openapi-docs::ui.messages.json_before_formatting'),
             'jsonBeforeSending'             => __('filament-openapi-docs::ui.messages.json_before_sending'),
+            'responseStatusBadge'           => __('filament-openapi-docs::ui.badges.status', ['status' => ':status']),
+            'responseTypeBadge'             => __('filament-openapi-docs::ui.badges.type', ['type' => ':type']),
             'unableToGenerateRequestSample' => __('filament-openapi-docs::ui.messages.unable_to_generate_request_sample'),
             'unableToSendRequest'           => __('filament-openapi-docs::ui.messages.unable_to_send_request'),
         ];

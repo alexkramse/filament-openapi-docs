@@ -531,6 +531,36 @@ export default function requestSnippet(config) {
       }
     },
 
+    responseStatusColor(status) {
+      const value = String(status ?? "");
+
+      if (value.startsWith("2")) {
+        return "success";
+      }
+
+      if (value.startsWith("3") || value.startsWith("4")) {
+        return "warning";
+      }
+
+      if (value.startsWith("5")) {
+        return "danger";
+      }
+
+      return "gray";
+    },
+
+    responseStatusLabel(status) {
+      return this.message("responseStatusBadge", "Status: :status", {
+        status,
+      });
+    },
+
+    responseTypeLabel(type) {
+      return this.message("responseTypeBadge", "Type: :type", {
+        type,
+      });
+    },
+
     message(key, fallback, replacements = {}) {
       let message = this.messages[key] ?? fallback;
 

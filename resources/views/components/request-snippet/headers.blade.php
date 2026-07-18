@@ -6,13 +6,11 @@
       </h4>
       <x-filament::link
         size="xs"
-        type="button"
-        x-show="developerMode"
+        icon="heroicon-m-plus"
+        tag="button"
         x-on:click="addHeader()"
-        >{{ __('filament-openapi-docs::ui.actions.add_header') }}</x-filament::link
-      >
+      >{{ __('filament-openapi-docs::ui.actions.add_header') }}</x-filament::link>
     </div>
-
     <div class="foad-send-controls foad-send-controls-grid">
       <template
         x-for="(parameter, index) in headerParameters"
@@ -48,8 +46,8 @@
               </x-filament::input.wrapper>
 
               <x-filament::icon-button
-                color="danger"
-                icon="heroicon-m-trash"
+                color="gray"
+                icon="heroicon-m-x-mark"
                 label="{{ __('filament-openapi-docs::ui.actions.remove') }}"
                 type="button"
                 class="foad-header-remove"
@@ -58,24 +56,6 @@
               />
             </div>
           </template>
-
-          {{--                <label class="foad-try-field">--}}
-          {{--                    <x-filament::input.wrapper>--}}
-          {{--                        <x-filament::input--}}
-          {{--                            type="text"--}}
-          {{--                            x-model="parameter.name"--}}
-          {{--                            x-bind:disabled="parameter.disabled && ! developerMode"/>--}}
-          {{--                    </x-filament::input.wrapper>--}}
-          {{--                </label>--}}
-
-          {{--                <label class="foad-try-field">--}}
-          {{--                    <x-filament::input.wrapper>--}}
-          {{--                        <x-filament::input--}}
-          {{--                            type="text"--}}
-          {{--                            x-model="parameter.value"--}}
-          {{--                            x-bind:disabled="parameter.disabled && ! developerMode"/>--}}
-          {{--                    </x-filament::input.wrapper>--}}
-          {{--                </label>--}}
         </div>
       </template>
     </div>

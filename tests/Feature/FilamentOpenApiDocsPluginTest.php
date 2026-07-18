@@ -490,6 +490,8 @@ it('includes localized request snippet runtime messages', function () {
 
     expect($requestData['messages']['copiedToClipboard'])->toBe('Скопійовано в буфер обміну.')
         ->and($requestData['messages']['copyFailed'])->toBe('Не вдалося скопіювати.')
+        ->and($requestData['messages']['responseStatusBadge'])->toBe('Статус: :status')
+        ->and($requestData['messages']['responseTypeBadge'])->toBe('Тип: :type')
         ->and($requestData['messages']['jsonBeforeSending'])->toBe('Перед надсиланням тіло має бути коректним JSON.')
         ->and($requestData['messages']['jsonBeforeFormatting'])->toBe('Перед форматуванням тіло має бути коректним JSON.')
         ->and($requestData['messages']['unableToSendRequest'])->toBe('Не вдалося надіслати цей запит.')
@@ -528,7 +530,15 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($styles)->toContain('cursor: pointer;')
         ->and($styles)->toContain('user-select: none;')
         ->and($styles)->toContain('.foad-openapi-docs-page .fi-section-content')
+        ->and($styles)->toContain('.foad-response-status-badge')
+        ->and($styles)->toContain('.foad-response-status-badge[data-color="success"]')
+        ->and($styles)->toContain('.foad-response-status-badge[data-color="warning"]')
+        ->and($styles)->toContain('.foad-response-status-badge[data-color="danger"]')
         ->and($styles)->toContain('.foad-stack')
+        ->and($styles)->toContain('.foad-send-layout')
+        ->and($styles)->toContain('.foad-send-layout > .foad-stack')
+        ->and($styles)->toContain('align-content: start;')
+        ->and($styles)->toContain('.foad-send-actions')
         ->and($styles)->toContain('.foad-sample')
         ->and($styles)->toContain('.foad-sample-section')
         ->and($styles)->toContain('.foad-sample-section > .fi-section-content-ctn > .fi-section-content')
@@ -543,7 +553,19 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($endpointView)->toContain('class="foad-sample-section"')
         ->and($requestSnippetView)->toContain('class="foad-sample-scroll"')
         ->and($sampleView)->toContain('class="foad-sample-scroll"')
-        ->and($sendRequestView)->toContain('class="foad-sample-scroll foad-response-code"');
+        ->and($sendRequestView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
+        ->and($sendRequestView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
+        ->and($sendRequestView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
+        ->and($sendRequestView)->toContain('class="foad-send-actions"')
+        ->and($sendRequestView)->toContain('class="foad-sample-scroll foad-response-code"')
+        ->and($sendRequestView)->toContain('class="foad-response-status-badge"')
+        ->and($sendRequestView)->toContain('x-bind:data-color="responseStatusColor(response.status)"')
+        ->and($sendRequestView)->toContain('x-text="responseStatusLabel(response.status)"')
+        ->and($sendRequestView)->toContain('x-text="responseTypeLabel(response.contentType)"')
+        ->and($styles)->not->toContain('width: 50%;')
+        ->and($sendRequestView)->not->toContain('TODO')
+        ->and($sendRequestView)->not->toContain('HttpStatus::color($status)')
+        ->and($sendRequestView)->not->toContain('{{ response.status }}');
 });
 
 it('exposes endpoints through native filament sub navigation', function () {
@@ -679,7 +701,8 @@ it('normalizes persisted collapsed state for endpoint sub navigation groups', fu
     $view = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
 
     expect($view)->toContain('collapsedGroups')
-        ->and($view)->toContain("document.querySelectorAll('.fi-page-sub-navigation-sidebar [data-group-label]')")
+        ->and($view)->toContain('document.querySelectorAll')
+        ->and($view)->toContain("'.fi-page-sub-navigation-sidebar [data-group-label]'")
         ->and($view)->toContain('labels.slice(1)');
 });
 
