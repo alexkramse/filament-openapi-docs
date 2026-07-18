@@ -339,11 +339,18 @@ it('keeps request snippet javascript inside runtime boundaries', function () {
 
     expect($script)->not->toContain('collectAuthParameters')
         ->and($script)->not->toContain('collectHeaderParameters')
-        ->and($script)->toContain("const defaultTargetKey = 'shell'")
-        ->and($script)->toContain("const defaultClientKey = 'curl'")
+        ->and($script)->toContain('const defaultTargetKey = "shell"')
+        ->and($script)->toContain('const defaultClientKey = "curl"')
         ->and($script)->toContain('defaultClientForSelectedTarget')
         ->and($script)->toContain('applyRuntimeEditsToHar')
         ->and($script)->toContain('new HTTPSnippet')
+        ->and($script)->toContain('navigator.clipboard?.writeText')
+        ->and($script)->toContain('window.clearTimeout(this.copyTimeout)')
+        ->and($script)->toContain('new FilamentNotification()')
+        ->and($script)->toContain('.title(this.message("copiedToClipboard", "Copied to clipboard."))')
+        ->and($script)->toContain('.title(this.message("copyFailed", "Copy failed."))')
+        ->and($script)->toContain('.success()')
+        ->and($script)->toContain('.danger()')
         ->and($script)->toContain('fetch(')
         ->and($script)->toContain('isValidHeaderName');
 });

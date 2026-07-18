@@ -127,6 +127,7 @@
   </x-filament::section>
 
   <x-filament::section
+    class="foad-sample-section"
     :heading="__('filament-openapi-docs::ui.labels.request_sample')"
     collapsible
     collapsed

@@ -76,6 +76,7 @@ export default function requestSnippet(config) {
     sendMode: false,
     developerMode: false,
     copied: false,
+    copyTimeout: null,
     error: null,
     bodyText: "",
     bodyJsonError: null,
@@ -506,15 +507,28 @@ export default function requestSnippet(config) {
     async copy() {
       const code = this.code;
 
-      if (!code || !navigator.clipboard) {
-        return;
-      }
+      try {
+        if (!code || !navigator.clipboard?.writeText) {
+          throw new Error("Clipboard unavailable");
+        }
 
-      await navigator.clipboard.writeText(code);
-      this.copied = true;
-      window.setTimeout(() => {
-        this.copied = false;
-      }, 2000);
+        await navigator.clipboard.writeText(code);
+        this.copied = true;
+        window.clearTimeout(this.copyTimeout);
+        this.copyTimeout = window.setTimeout(() => {
+          this.copied = false;
+        }, 1000);
+
+        new FilamentNotification()
+          .title(this.message("copiedToClipboard", "Copied to clipboard."))
+          .success()
+          .send();
+      } catch (error) {
+        new FilamentNotification()
+          .title(this.message("copyFailed", "Copy failed."))
+          .danger()
+          .send();
+      }
     },
 
     message(key, fallback, replacements = {}) {

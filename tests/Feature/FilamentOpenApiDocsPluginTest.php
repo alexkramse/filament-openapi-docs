@@ -488,7 +488,9 @@ it('includes localized request snippet runtime messages', function () {
 
     $requestData = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test']);
 
-    expect($requestData['messages']['jsonBeforeSending'])->toBe('Перед надсиланням тіло має бути коректним JSON.')
+    expect($requestData['messages']['copiedToClipboard'])->toBe('Скопійовано в буфер обміну.')
+        ->and($requestData['messages']['copyFailed'])->toBe('Не вдалося скопіювати.')
+        ->and($requestData['messages']['jsonBeforeSending'])->toBe('Перед надсиланням тіло має бути коректним JSON.')
         ->and($requestData['messages']['jsonBeforeFormatting'])->toBe('Перед форматуванням тіло має бути коректним JSON.')
         ->and($requestData['messages']['unableToSendRequest'])->toBe('Не вдалося надіслати цей запит.')
         ->and($requestData['messages']['invalidHeaderName'])->toBe('Некоректна назва заголовка: :name');
@@ -514,13 +516,34 @@ it('documents translation publishing and updates', function () {
 
 it('adds spacing between openapi summary server urls and meta badges', function () {
     $styles = file_get_contents(__DIR__.'/../../resources/css/openapi-docs.css');
+    $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
+    $sampleView = file_get_contents(__DIR__.'/../../resources/views/components/sample.blade.php');
+    $endpointView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
+    $sendRequestView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/send.blade.php');
 
     expect($styles)->toContain('.foad-openapi-summary-servers')
-        ->and($styles)->toContain('gap: .375rem;')
+        ->and($styles)->toContain('gap: 0.375rem;')
         ->and($styles)->toContain('.foad-openapi-summary-meta')
         ->and($styles)->toContain('.foad-copyable-badge')
         ->and($styles)->toContain('cursor: pointer;')
-        ->and($styles)->toContain('user-select: none;');
+        ->and($styles)->toContain('user-select: none;')
+        ->and($styles)->toContain('.foad-openapi-docs-page .fi-section-content')
+        ->and($styles)->toContain('.foad-stack')
+        ->and($styles)->toContain('.foad-sample')
+        ->and($styles)->toContain('.foad-sample-section')
+        ->and($styles)->toContain('.foad-sample-section > .fi-section-content-ctn > .fi-section-content')
+        ->and($styles)->toContain('.foad-sample-scroll')
+        ->and($styles)->toContain('inline-size: 100%;')
+        ->and($styles)->toContain('width: 100%;')
+        ->and($styles)->toContain('.foad-sample-code')
+        ->and($styles)->toContain('min-width: 0;')
+        ->and($styles)->toContain('min-width: max-content;')
+        ->and($styles)->toContain('overflow-x: auto;')
+        ->and($styles)->toContain('overflow-y: hidden;')
+        ->and($endpointView)->toContain('class="foad-sample-section"')
+        ->and($requestSnippetView)->toContain('class="foad-sample-scroll"')
+        ->and($sampleView)->toContain('class="foad-sample-scroll"')
+        ->and($sendRequestView)->toContain('class="foad-sample-scroll foad-response-code"');
 });
 
 it('exposes endpoints through native filament sub navigation', function () {

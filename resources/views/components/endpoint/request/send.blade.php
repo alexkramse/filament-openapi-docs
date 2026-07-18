@@ -46,9 +46,9 @@
         </template>
       </div>
 
-      <pre
-        class="foad-sample-code foad-response-code"
-      ><code x-text="response.body"></code></pre>
+      <div class="foad-sample-scroll foad-response-code">
+        <pre class="foad-sample-code"><code x-text="response.body"></code></pre>
+      </div>
     </div>
   </template>
 </div>

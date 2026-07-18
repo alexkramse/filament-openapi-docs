@@ -23,10 +23,12 @@
     @endif
 
     @foreach ($sampleOptions as $sample)
-      <pre
-        class="foad-sample-code"
+      <div
+        class="foad-sample-scroll"
         x-show="activeSample === @js($sample['key'])"
-      ><code>{{ $sample['value'] }}</code></pre>
+      >
+        <pre class="foad-sample-code"><code>{{ $sample['value'] }}</code></pre>
+      </div>
     @endforeach
   </div>
 @endif

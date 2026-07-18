@@ -13,6 +13,14 @@
   padding-inline: 0.25rem;
 }
 
+.foad-openapi-docs-page,
+.foad-openapi-docs-page .fi-section,
+.foad-openapi-docs-page .fi-section-content-ctn,
+.foad-openapi-docs-page .fi-section-content {
+  max-width: 100%;
+  min-width: 0;
+}
+
 .foad-copyable-badge {
   cursor: pointer;
   user-select: none;
@@ -109,6 +117,7 @@
 .foad-stack {
   display: grid;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .foad-stack-md {
@@ -144,6 +153,10 @@
   gap: 0.25rem;
 }
 
+.foad-inline-list-md {
+  gap: 0.5rem;
+}
+
 .foad-inline-list-end {
   align-items: flex-end;
 }
@@ -162,6 +175,16 @@
 
 .foad-request-section > .fi-section-header > .fi-section-header-after-ctn {
   flex: 1 1 auto;
+  min-width: 0;
+}
+
+.foad-request-section,
+.foad-sample-section,
+.foad-request-section > .fi-section-content-ctn,
+.foad-sample-section > .fi-section-content-ctn,
+.foad-request-section > .fi-section-content-ctn > .fi-section-content,
+.foad-sample-section > .fi-section-content-ctn > .fi-section-content {
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -329,6 +352,8 @@
 .foad-sample {
   border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
   border-radius: 0.5rem;
+  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -574,7 +599,19 @@
   max-height: 22rem;
 }
 
+.foad-sample-scroll {
+  box-sizing: border-box;
+  display: block;
+  inline-size: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+}
+
 .foad-sample-code {
+  box-sizing: border-box;
   color: var(--gray-950);
   font-family:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -582,9 +619,11 @@
   font-size: 0.8125rem;
   line-height: 1.5;
   margin: 0;
-  overflow-x: auto;
+  min-width: max-content;
+  overflow: visible;
   padding: 0.75rem;
   white-space: pre;
+  width: 100%;
 }
 
 .dark .foad-sample-code {

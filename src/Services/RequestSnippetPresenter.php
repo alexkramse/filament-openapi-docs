@@ -510,6 +510,8 @@ class RequestSnippetPresenter
     private function messages(): array
     {
         return [
+            'copiedToClipboard'             => __('filament-openapi-docs::ui.messages.copied_to_clipboard'),
+            'copyFailed'                    => __('filament-openapi-docs::ui.messages.copy_failed'),
             'invalidHeaderName'             => __('filament-openapi-docs::ui.messages.invalid_header_name'),
             'jsonBeforeFormatting'          => __('filament-openapi-docs::ui.messages.json_before_formatting'),
             'jsonBeforeSending'             => __('filament-openapi-docs::ui.messages.json_before_sending'),
