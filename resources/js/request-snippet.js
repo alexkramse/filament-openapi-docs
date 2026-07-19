@@ -75,6 +75,7 @@ export default function requestSnippet(config) {
     activeClient: null,
     sendMode: false,
     developerMode: false,
+    hasDeveloperOptions: Boolean(config.hasDeveloperOptions ?? false),
     copied: false,
     copyTimeout: null,
     error: null,
@@ -131,8 +132,12 @@ export default function requestSnippet(config) {
       return this.applyRuntimeEditsToHar(true);
     },
 
+    get canUseDeveloperOptions() {
+      return this.hasDeveloperOptions && this.developerMode;
+    },
+
     get hasQueryParameters() {
-      return this.developerMode || this.queryParameters.length > 0;
+      return this.canUseDeveloperOptions || this.queryParameters.length > 0;
     },
 
     get hasPathParameters() {
@@ -149,7 +154,7 @@ export default function requestSnippet(config) {
 
     get hasHeaderParameters() {
       return (
-        this.developerMode ||
+        this.canUseDeveloperOptions ||
         this.headerParameters.length > 0 ||
         this.mediaHeaderParameters.length > 0
       );
@@ -167,7 +172,7 @@ export default function requestSnippet(config) {
 
     get hasRequestControls() {
       return (
-        this.developerMode ||
+        this.canUseDeveloperOptions ||
         this.hasPathParameters ||
         this.hasQueryParameters ||
         this.hasHeaderParameters ||
@@ -326,6 +331,10 @@ export default function requestSnippet(config) {
     },
 
     addHeader() {
+      if (!this.canUseDeveloperOptions) {
+        return;
+      }
+
       this.headerParameters.push({
         name: "",
         value: "",
@@ -339,6 +348,10 @@ export default function requestSnippet(config) {
     },
 
     addQueryParameter() {
+      if (!this.canUseDeveloperOptions) {
+        return;
+      }
+
       this.queryParameters.push({
         name: "",
         value: "",
@@ -404,7 +417,9 @@ export default function requestSnippet(config) {
     applyRuntimeEditsToHar(includePlaceholders = true) {
       const har = structuredCloneSafe(this.selectedRequest?.har ?? {});
       const queryString = this.queryParameters
-        .filter((parameter) => this.developerMode || !parameter.developerOnly)
+        .filter(
+          (parameter) => this.canUseDeveloperOptions || !parameter.developerOnly,
+        )
         .filter(
           (parameter) => parameter.name && String(parameter.value).length > 0,
         )

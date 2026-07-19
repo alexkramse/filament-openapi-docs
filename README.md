@@ -122,6 +122,7 @@ FilamentOpenApiDocsPlugin::make()
     ->description('Browse and test available API endpoints.')
     ->fullWidth()
     ->requestSamples()
+    ->developerOptions()
     ->defaultServer('https://api.example.com')
     ->scrambleGenerator('default');
 ```
@@ -143,10 +144,13 @@ FilamentOpenApiDocsPlugin::make()
 | `description()`           | `page.description`               | Overrides the page description.                   |
 | `fullWidth()`             | `layout.full_width`              | Uses Filament's full-width page layout.           |
 | `requestSamples()`        | `request_samples.enabled`        | Enables or disables snippets and request testing. |
+| `developerOptions()`      | `request_samples.developer_options` | Enables the developer mode toggle for advanced request editing. |
 | `defaultServer()`         | `request_samples.default_server` | Sets the default server for generated requests.   |
 | `scrambleGenerator()`     | `scramble.generator`             | Selects the Scramble generator name.              |
 
 Supported navigation badge modes are `version`, `count`, and `null`.
+
+Developer options are disabled by default. Enable them when dashboard users should be able to toggle developer mode and edit advanced request values such as custom headers, custom query parameters, and media headers.
 
 ## Translations
 

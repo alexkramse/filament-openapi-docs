@@ -179,6 +179,17 @@ return [
 
         /*
         |--------------------------------------------------------------------------
+        | Developer Options
+        |--------------------------------------------------------------------------
+        |
+        | Enables the developer mode toggle for advanced request editing, such
+        | as custom headers, custom query parameters, and media headers.
+        |
+        */
+        'developer_options' => false,
+
+        /*
+        |--------------------------------------------------------------------------
         | Default Server
         |--------------------------------------------------------------------------
         |

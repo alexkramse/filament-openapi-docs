@@ -34,6 +34,7 @@ class RequestSnippetPresenter
      *     requests: array<int, array<string, mixed>>,
      *     messages: array<string, string>,
      *     hasRequestSamples: bool,
+     *     hasDeveloperOptions: bool,
      * }
      */
     public function present(Endpoint $endpoint, array $servers = [], array $components = []): array
@@ -82,14 +83,15 @@ class RequestSnippetPresenter
         }
 
         return [
-            'securityItems'     => $securityItems,
-            'mediaHeaders'      => $mediaHeaders,
-            'headerParameters'  => $headerParameters,
-            'pathParameters'    => $pathParameters,
-            'queryParameters'   => $queryParameters,
-            'requests'          => $requests,
-            'messages'          => $this->messages(),
-            'hasRequestSamples' => $this->hasRequestSamples() && $requests !== [],
+            'securityItems'       => $securityItems,
+            'mediaHeaders'        => $mediaHeaders,
+            'headerParameters'    => $headerParameters,
+            'pathParameters'      => $pathParameters,
+            'queryParameters'     => $queryParameters,
+            'requests'            => $requests,
+            'messages'            => $this->messages(),
+            'hasRequestSamples'   => $this->hasRequestSamples() && $requests !== [],
+            'hasDeveloperOptions' => $this->hasDeveloperOptions(),
         ];
     }
 
@@ -502,6 +504,12 @@ class RequestSnippetPresenter
     {
         return FilamentOpenApiDocsPlugin::current()?->hasRequestSamples()
             ?? (bool) config('filament-openapi-docs.request_samples.enabled', true);
+    }
+
+    private function hasDeveloperOptions(): bool
+    {
+        return FilamentOpenApiDocsPlugin::current()?->hasDeveloperOptions()
+            ?? (bool) config('filament-openapi-docs.request_samples.developer_options', false);
     }
 
     /**

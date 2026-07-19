@@ -8,6 +8,7 @@
         size="xs"
         icon="heroicon-m-plus"
         tag="button"
+        x-show="canUseDeveloperOptions"
         x-on:click="addHeader()"
       >{{ __('filament-openapi-docs::ui.actions.add_header') }}</x-filament::link>
     </div>
@@ -24,7 +25,7 @@
           <x-filament::input
             type="text"
             x-model="parameter.value"
-            x-bind:disabled="!developerMode"
+            x-bind:disabled="!canUseDeveloperOptions"
           />
         </x-filament::input.wrapper>
       </template>
@@ -39,7 +40,11 @@
               <x-slot name="prefix">
                 <span x-text="parameter.name"></span>
               </x-slot>
-              <x-filament::input type="text" x-model="parameter.value" />
+              <x-filament::input
+                type="text"
+                x-model="parameter.value"
+                x-bind:disabled="!canUseDeveloperOptions"
+              />
             </x-filament::input.wrapper>
           </template>
           <template x-if="parameter.removable">
@@ -49,6 +54,7 @@
                   type="text"
                   x-bind:id="`header-name-${index}`"
                   x-model="parameter.name"
+                  x-bind:disabled="!canUseDeveloperOptions"
                   placeholder="{{ __('filament-openapi-docs::ui.placeholders.name') }}"
                 />
               </x-filament::input.wrapper>
@@ -58,6 +64,7 @@
                   type="text"
                   x-bind:id="`header-value-${index}`"
                   x-model="parameter.value"
+                  x-bind:disabled="!canUseDeveloperOptions"
                   placeholder="{{ __('filament-openapi-docs::ui.placeholders.value') }}"
                 />
               </x-filament::input.wrapper>
@@ -68,7 +75,7 @@
                 label="{{ __('filament-openapi-docs::ui.actions.remove') }}"
                 type="button"
                 class="foad-header-remove"
-                x-show="developerMode && parameter.removable"
+                x-show="canUseDeveloperOptions && parameter.removable"
                 x-on:click="removeHeader(index)"
               />
             </div>

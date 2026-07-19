@@ -144,6 +144,13 @@ class FilamentOpenApiDocsPlugin implements Plugin
         return $this;
     }
 
+    public function developerOptions(bool $condition = true): static
+    {
+        $this->options['request_samples.developer_options'] = $condition;
+
+        return $this;
+    }
+
     public function defaultServer(?string $server): static
     {
         $this->options['request_samples.default_server'] = $server;
@@ -223,6 +230,11 @@ class FilamentOpenApiDocsPlugin implements Plugin
     public function hasRequestSamples(): bool
     {
         return (bool) $this->option('request_samples.enabled', 'request_samples.enabled', true);
+    }
+
+    public function hasDeveloperOptions(): bool
+    {
+        return (bool) $this->option('request_samples.developer_options', 'request_samples.developer_options', false);
     }
 
     public function getDefaultServer(): ?string

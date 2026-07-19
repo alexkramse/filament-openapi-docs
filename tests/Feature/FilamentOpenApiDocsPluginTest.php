@@ -147,6 +147,7 @@ it('uses fluent plugin configuration before package config', function () {
     config()->set('filament-openapi-docs.navigation.badge_suffix', '');
     config()->set('filament-openapi-docs.sub_navigation.position', 'right');
     config()->set('filament-openapi-docs.layout.full_width', true);
+    config()->set('filament-openapi-docs.request_samples.developer_options', false);
 
     bindOpenApiSpec(openApiSpecWithEndpoints([
         'version' => '1.2.3',
@@ -164,10 +165,12 @@ it('uses fluent plugin configuration before package config', function () {
                 ->navigationBadgePrefix('')
                 ->navigationBadgeSuffix(' endpoints')
                 ->subNavigationPosition('left')
-                ->fullWidth(false),
+                ->fullWidth(false)
+                ->developerOptions(),
         );
 
     Filament::setCurrentPanel($panel);
+    $requestData = app(RequestSnippetPresenter::class)->present(endpointForNavigation('get-users', 'GET', '/users', 'List users', ['Users']));
 
     expect(OpenApiDocsPage::getNavigationLabel())->toBe('OpenAPI')
         ->and(OpenApiDocsPage::getNavigationIcon())->toBe('heroicon-o-code-bracket-square')
@@ -175,7 +178,18 @@ it('uses fluent plugin configuration before package config', function () {
         ->and(OpenApiDocsPage::getNavigationSort())->toBe(42)
         ->and(OpenApiDocsPage::getNavigationBadge())->toBe('2 endpoints')
         ->and(OpenApiDocsPage::getSubNavigationPosition())->toBe(SubNavigationPosition::Start)
-        ->and(app(OpenApiDocsPage::class)->getMaxContentWidth())->toBeNull();
+        ->and(app(OpenApiDocsPage::class)->getMaxContentWidth())->toBeNull()
+        ->and($requestData['hasDeveloperOptions'])->toBeTrue();
+});
+
+it('controls developer options from config', function () {
+    $endpoint = endpointForNavigation('get-users', 'GET', '/users', 'List users', ['Users']);
+
+    expect(app(RequestSnippetPresenter::class)->present($endpoint)['hasDeveloperOptions'])->toBeFalse();
+
+    config()->set('filament-openapi-docs.request_samples.developer_options', true);
+
+    expect(app(RequestSnippetPresenter::class)->present($endpoint)['hasDeveloperOptions'])->toBeTrue();
 });
 
 it('can disable the navigation badge from fluent plugin configuration', function () {
@@ -606,7 +620,8 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($bodyView)->toContain('class="foad-try-textarea foad-json-editor-textarea"')
         ->and($headersView)->toContain('x-for="parameter in mediaHeaderParameters"')
         ->and($headersView)->toContain('x-bind:key="`media-header-${parameter.name}`"')
-        ->and($headersView)->toContain('x-bind:disabled="!developerMode"')
+        ->and($headersView)->toContain('x-bind:disabled="!canUseDeveloperOptions"')
+        ->and($headersView)->toContain('x-show="canUseDeveloperOptions"')
         ->and($requestSnippetView)->toContain('class="foad-sample-scroll"')
         ->and($sampleView)->toContain('class="foad-response-block"')
         ->and($sampleView)->toContain('class="foad-sample-scroll foad-response-code"')

@@ -103,7 +103,7 @@
         <div class="foad-request-mode-controls">
           <label
             class="foad-developer-mode fi-fo-toggle"
-            x-show="sendMode"
+            x-show="sendMode && hasDeveloperOptions"
             x-cloak
           >
             <x-filament::input.checkbox
