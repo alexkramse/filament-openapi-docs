@@ -20,14 +20,21 @@ Filament OpenAPI Docs adds a dashboard page to your Filament panel where authent
 - Supports panel-level fluent configuration and a publishable config file.
 - Registers package CSS and JavaScript through Filament's asset manager.
 
+## Screenshots
+
+Filament-native OpenAPI docs page with endpoint navigation, request documentation, request samples, and responses.
+
+![Filament OpenAPI docs page](docs/images/filament-openapi-docs-page.png)
+More screenshots are available in [docs/screenshots.md](docs/screenshots.md).
+
 ## Requirements
 
 - PHP `^8.3`
 - Laravel `^13.0`
 - Filament `^5.0`
-- Scramble `^0.13.30`
+- `dedoc/scramble` `^0.13.30`
 
-Scramble is installed as a package dependency, but your Laravel application still needs a working Scramble configuration so the OpenAPI document can be generated correctly.
+This package currently requires [`dedoc/scramble`](https://scramble.dedoc.co/) and is tested only with Scramble-generated OpenAPI documents. Scramble is installed as a package dependency, but your Laravel application still needs a working Scramble configuration so the OpenAPI document can be generated correctly.
 
 ## Installation
 
@@ -84,9 +91,9 @@ The page displays your OpenAPI document as a Filament-native interface:
 - selecting an endpoint updates the URL query string so links can be shared inside the team;
 - request parameters, body examples, response schemas, and examples are rendered from the OpenAPI specification.
 
-When request samples are enabled, each endpoint includes generated request snippets and a request tester. The tester sends requests from the browser, so the selected server URL, CORS rules, cookies, and API authentication must allow the request.
+When request samples are enabled, each endpoint includes generated request snippets and a request sender. The request sender sends requests from the browser, so the selected server URL, CORS rules, cookies, and API authentication must allow the request.
 
-Developer mode is available inside the request tester when developer options are enabled. It allows trusted dashboard users to add custom headers and query parameters before sending a request.
+Developer mode is available inside the request sender when developer options are enabled. It allows trusted dashboard users to add custom headers and query parameters before sending a request.
 
 Security, headers, query parameters, body, and path parameters remain visible as request sections regardless of developer mode. Developer mode only controls the advanced add/edit controls for custom headers and query parameters.
 
@@ -178,7 +185,7 @@ To update local overrides after a package upgrade, compare the newest package `r
 
 ## Custom Spec Providers
 
-Scramble is the default OpenAPI source. If you need to load a specification from another source, bind a custom provider through the config file.
+Scramble is the supported and tested OpenAPI source. If you need to load a specification from another source, you may bind a custom provider through the config file, but non-Scramble providers are not tested by this package yet.
 
 Your provider must implement `Alexkramse\FilamentOpenapiDocs\Support\SpecProvider`:
 
@@ -216,7 +223,7 @@ Then update `config/filament-openapi-docs.php`:
 The package follows Filament's asset manager conventions:
 
 - CSS is registered with `loadedOnRequest()` and is only loaded when requested by the OpenAPI docs page.
-- The request tester is registered as an asynchronous Alpine component.
+- The request sender is registered as an asynchronous Alpine component.
 - Assets are registered under the package name `alexkramse/filament-openapi-docs`.
 
 For application installation and deployment, run:
@@ -236,7 +243,7 @@ You do not need to run `npm run build` in a consuming Laravel application unless
 
 ## Security Notes
 
-This package is intended for trusted dashboard users. The request tester can send custom headers, parameters, auth values, and request bodies from the browser.
+This package is intended for trusted dashboard users. The request sender can send custom headers, parameters, auth values, and request bodies from the browser.
 
 Before enabling request testing in production, confirm that:
 
@@ -250,33 +257,6 @@ You can disable request samples and request testing while keeping the documentat
 ```php
 FilamentOpenApiDocsPlugin::make()
     ->requestSamples(false);
-```
-
-## Development
-
-Install PHP and JavaScript dependencies:
-
-```bash
-composer install
-npm install
-```
-
-Build frontend assets:
-
-```bash
-npm run build
-```
-
-Run the test suite:
-
-```bash
-vendor/bin/pest --compact
-```
-
-Format PHP files:
-
-```bash
-vendor/bin/pint --dirty --format agent
 ```
 
 ## License
