@@ -182,8 +182,8 @@ return [
         | Developer Options
         |--------------------------------------------------------------------------
         |
-        | Enables the developer mode toggle for advanced request editing, such
-        | as custom headers, custom query parameters, and media headers.
+        | Enables the developer mode toggle for adding or editing custom
+        | headers and query parameters in the request sender.
         |
         */
         'developer_options' => false,

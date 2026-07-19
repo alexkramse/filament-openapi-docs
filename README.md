@@ -1,7 +1,7 @@
 # Filament OpenAPI Docs
 
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-![Stable Version](https://img.shields.io/badge/stable-v0.5.4-blue)
+![Stable Version](https://img.shields.io/badge/stable-v0.6.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Native OpenAPI documentation for Filament panels, powered by Scramble.
@@ -16,7 +16,7 @@ Filament OpenAPI Docs adds a dashboard page to your Filament panel where authent
 - Shows endpoint methods, paths, parameters, request bodies, responses, schemas, and examples.
 - Generates request samples for multiple languages and clients.
 - Lets users test API endpoints directly from the dashboard.
-- Provides developer mode for custom request headers, query parameters, path parameters, auth values, media headers, and request bodies.
+- Provides configurable developer mode for custom request headers and query parameters.
 - Supports panel-level fluent configuration and a publishable config file.
 - Registers package CSS and JavaScript through Filament's asset manager.
 
@@ -86,14 +86,9 @@ The page displays your OpenAPI document as a Filament-native interface:
 
 When request samples are enabled, each endpoint includes generated request snippets and a request tester. The tester sends requests from the browser, so the selected server URL, CORS rules, cookies, and API authentication must allow the request.
 
-Developer mode is available inside the request tester. It allows trusted dashboard users to add or edit runtime request values before sending:
+Developer mode is available inside the request tester when developer options are enabled. It allows trusted dashboard users to add custom headers and query parameters before sending a request.
 
-- custom headers;
-- path parameter values;
-- query parameters;
-- auth header or query values;
-- content negotiation headers;
-- JSON or raw request body content.
+Security, headers, query parameters, body, and path parameters remain visible as request sections regardless of developer mode. Developer mode only controls the advanced add/edit controls for custom headers and query parameters.
 
 ## Configuration
 
@@ -144,13 +139,13 @@ FilamentOpenApiDocsPlugin::make()
 | `description()`           | `page.description`               | Overrides the page description.                   |
 | `fullWidth()`             | `layout.full_width`              | Uses Filament's full-width page layout.           |
 | `requestSamples()`        | `request_samples.enabled`        | Enables or disables snippets and request testing. |
-| `developerOptions()`      | `request_samples.developer_options` | Enables the developer mode toggle for advanced request editing. |
+| `developerOptions()`      | `request_samples.developer_options` | Enables developer mode for custom headers and query parameters. |
 | `defaultServer()`         | `request_samples.default_server` | Sets the default server for generated requests.   |
 | `scrambleGenerator()`     | `scramble.generator`             | Selects the Scramble generator name.              |
 
 Supported navigation badge modes are `version`, `count`, and `null`.
 
-Developer options are disabled by default. Enable them when dashboard users should be able to toggle developer mode and edit advanced request values such as custom headers, custom query parameters, and media headers.
+Developer options are disabled by default. Enable them when dashboard users should be able to toggle developer mode and add or edit custom request headers and query parameters.
 
 ## Translations
 
