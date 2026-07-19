@@ -134,11 +134,29 @@
 }
 
 .foad-send-layout {
+  align-items: stretch;
   gap: 1rem;
 }
 
 .foad-send-layout > .foad-stack {
   align-content: start;
+}
+
+.foad-send-layout > .foad-stack:has(.foad-try-textarea),
+.foad-send-layout > .foad-stack:has(.foad-try-textarea) > .foad-stack {
+  align-content: stretch;
+}
+
+.foad-send-layout > .foad-stack:has(.foad-try-textarea) {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.foad-send-layout > .foad-stack:has(.foad-try-textarea) > .foad-stack {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.foad-send-layout > .foad-stack:has(.foad-try-textarea) .foad-try-textarea {
+  height: 100%;
 }
 
 .foad-send-layout,
@@ -230,10 +248,10 @@
 
 .foad-property-row {
   --foad-tree-indent: 2rem;
-  border-inline-start: 2px solid
-    color-mix(in oklab, currentColor 16%, transparent);
+  border-inline-start: 1px solid
+    color-mix(in oklab, currentColor 12%, transparent);
   display: grid;
-  gap: 0.375rem;
+  gap: 0.2rem;
   margin-inline-start: calc(var(--foad-depth, 0) * var(--foad-tree-indent));
   padding: 0.5rem 0 0.5rem calc(var(--foad-tree-indent));
 }
@@ -273,10 +291,10 @@
 }
 
 .foad-property-connector {
-  background: color-mix(in oklab, currentColor 28%, transparent);
+  background: color-mix(in oklab, currentColor 12%, transparent);
   display: inline-block;
   height: 1px;
-  margin-inline-start: calc((var(--foad-tree-indent) * -1) - 2px);
+  margin-inline-start: calc((var(--foad-tree-indent) * -1) - 1px);
   width: calc(var(--foad-tree-indent) - 0.2rem);
 }
 
@@ -405,7 +423,7 @@
   color: var(--primary-600);
   cursor: pointer;
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 600
   padding: 0.125rem 0.25rem;
 }
 
@@ -523,6 +541,11 @@
   align-items: center;
   display: grid;
   gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+.foad-header-row > * {
+  min-width: 0;
 }
 
 .foad-header-remove {
@@ -551,10 +574,11 @@
 }
 
 .foad-try-textarea {
+  field-sizing: content;
   font-family:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
-  min-height: 10rem;
+  min-height: 3rem;
   padding: 0.5rem;
   resize: vertical;
 }
@@ -817,9 +841,5 @@
 
   .foad-inline-list-end {
     justify-content: flex-end;
-  }
-
-  .foad-header-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   }
 }
