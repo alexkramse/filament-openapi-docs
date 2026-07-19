@@ -210,11 +210,13 @@ it('renders request read and send modes', function () {
     $requestSnippetMarkup = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
     $endpointMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
     $sendModeMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/send.blade.php');
+    $requestSnippetRuntime = file_get_contents(__DIR__.'/../../resources/js/request-snippet.js');
 
     expect($html)->toContain('Send mode')
         ->and($html)->toContain('Security')
-        ->and($html)->toContain('Media headers')
+        ->and($html)->not->toContain('Media headers')
         ->and($html)->toContain('Headers')
+        ->and($html)->toContain('Content-Type: application/json')
         ->and($html)->toContain('Path parameters')
         ->and($html)->toContain('Query parameters')
         ->and($html)->toContain('Body')
@@ -239,7 +241,7 @@ it('renders request read and send modes', function () {
         ->and($html)->not->toContain('textcommit')
         ->and($html)->toContain('await navigator.clipboard.writeText(text)')
         ->and($html)->toContain('https:\\/\\/api.example.test\\/users')
-        ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(5)
+        ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(4)
         ->and(substr_count($html, 'foad-send-controls foad-justify-content-space-between'))->toBe(2)
         ->and(substr_count($html, 'class="foad-header-row"'))->toBe(2)
         ->and(substr_count($html, 'x-data="requestSnippet'))->toBe(1)
@@ -247,6 +249,9 @@ it('renders request read and send modes', function () {
         ->and(substr_count($removableParameterMarkup, 'icon="heroicon-m-x-mark"'))->toBe(2)
         ->and(substr_count($removableParameterMarkup, "label=\"{{ __('filament-openapi-docs::ui.actions.remove') }}\""))->toBe(2)
         ->and($removableParameterMarkup)->not->toContain('>Remove')
+        ->and($removableParameterMarkup)->toContain('x-for="parameter in mediaHeaderParameters"')
+        ->and($removableParameterMarkup)->toContain('x-bind:key="`media-header-${parameter.name}`"')
+        ->and($removableParameterMarkup)->toContain('x-bind:disabled="!developerMode"')
         ->and($requestSnippetMarkup)->toContain('icon="heroicon-m-document-duplicate"')
         ->and($endpointMarkup)->toContain('x-model="sendMode"')
         ->and($endpointMarkup)->toContain('x-show="sendMode" x-cloak')
@@ -254,6 +259,8 @@ it('renders request read and send modes', function () {
         ->and($endpointMarkup)->toContain('<x-filament-openapi-docs::copyable-badge')
         ->and($endpointMarkup)->not->toContain('async copy(server)')
         ->and($endpointMarkup)->not->toContain('<div'.PHP_EOL.'                @if ($requestData[\'hasRequestSamples\'])')
+        ->and($requestSnippetRuntime)->toContain('this.mediaHeaderParameters.length > 0')
+        ->and($sendModeMarkup)->not->toContain('request-snippet.media-headers')
         ->and($sendModeMarkup)->not->toContain('TODO')
         ->and($sendModeMarkup)->not->toContain('Developer mode');
 });
@@ -273,8 +280,9 @@ it('renders request read mode as static documentation rows', function () {
     expect($html)->toContain('foad-property-row')
         ->and($html)->toContain('foad-property-name')
         ->and($html)->toContain('Security')
-        ->and($html)->toContain('Media headers')
+        ->and($html)->not->toContain('Media headers')
         ->and($html)->toContain('Headers')
+        ->and($html)->toContain('Content-Type: application/json')
         ->and($html)->toContain('Path parameters')
         ->and($html)->toContain('Query parameters')
         ->and($html)->toContain('Required')

@@ -2,7 +2,7 @@
   <div class="foad-stack foad-stack-sm">
     <div class="foad-inline-list foad-inline-list-sm">
       <h4 class="fi-section-header-heading">
-        {{ __('filament-openapi-docs::ui.labels.auth') }}
+        {{ __('filament-openapi-docs::ui.labels.security') }}
       </h4>
     </div>
     <div class="foad-send-controls foad-send-controls-grid">

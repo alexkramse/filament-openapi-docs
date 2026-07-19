@@ -19,10 +19,10 @@
     </div>
   @endif
 
-  @if ($requestData['mediaHeaders'] !== [])
+  @if ($requestData['mediaHeaders'] !== [] || $requestData['headerParameters'] !== [])
     <div class="foad-stack foad-stack-sm">
       <h4 class="fi-section-header-heading">
-        {{ __('filament-openapi-docs::ui.labels.media_headers') }}
+        {{ __('filament-openapi-docs::ui.labels.headers') }}
       </h4>
       <div class="">
         @foreach ($requestData['mediaHeaders'] as $mediaHeader)
@@ -33,12 +33,26 @@
                         'metadata' => [],
                     ])
         @endforeach
+
+        @foreach ($requestData['headerParameters'] as $parameter)
+          @include ('filament-openapi-docs::components.request-doc-item', [
+                        'title' => $parameter['name'],
+                        'description' => $parameter['description'],
+                        'badges' => [
+                            ['label' => $parameter['type'], 'color' => 'info'],
+                            ...(filled($parameter['value'] ?? null) ? [['label' => \Illuminate\Support\Str::lower(__('filament-openapi-docs::ui.labels.example')).': '.$parameter['value'], 'color' => 'primary']] : []),
+                            ['label' => $parameter['required'] ? __('filament-openapi-docs::ui.badges.required') : __('filament-openapi-docs::ui.badges.optional'), 'color' => $parameter['required'] ? 'danger' : 'gray'],
+                        ],
+                        'metadata' => [
+                            __('filament-openapi-docs::ui.labels.example') => $parameter['example'] ?? null,
+                        ],
+                    ])
+        @endforeach
       </div>
     </div>
   @endif
 
   @foreach ([
-        __('filament-openapi-docs::ui.labels.headers') => $requestData['headerParameters'],
         __('filament-openapi-docs::ui.labels.path_parameters') => $requestData['pathParameters'],
         __('filament-openapi-docs::ui.labels.query_parameters') => $requestData['queryParameters'],
     ] as $heading => $parameters)

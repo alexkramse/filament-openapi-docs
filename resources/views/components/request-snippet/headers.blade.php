@@ -13,6 +13,23 @@
     </div>
     <div class="foad-send-controls foad-send-controls-grid">
       <template
+        x-for="parameter in mediaHeaderParameters"
+        x-bind:key="`media-header-${parameter.name}`"
+      >
+        <x-filament::input.wrapper>
+          <x-slot name="prefix">
+            <span x-text="parameter.name"></span>
+          </x-slot>
+
+          <x-filament::input
+            type="text"
+            x-model="parameter.value"
+            x-bind:disabled="!developerMode"
+          />
+        </x-filament::input.wrapper>
+      </template>
+
+      <template
         x-for="(parameter, index) in headerParameters"
         x-bind:key="`header-${index}`"
       >

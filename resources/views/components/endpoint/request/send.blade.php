@@ -10,7 +10,6 @@
   >
     <div class="foad-stack foad-stack-sm">
       @include ('filament-openapi-docs::components.request-snippet.auth')
-      @include ('filament-openapi-docs::components.request-snippet.media-headers')
       @include ('filament-openapi-docs::components.request-snippet.headers')
       @include ('filament-openapi-docs::components.request-snippet.path-parameters')
       @include ('filament-openapi-docs::components.request-snippet.query-parameters')

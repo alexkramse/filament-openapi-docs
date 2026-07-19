@@ -519,9 +519,11 @@ it('documents translation publishing and updates', function () {
 it('adds spacing between openapi summary server urls and meta badges', function () {
     $styles = file_get_contents(__DIR__.'/../../resources/css/openapi-docs.css');
     $bodyView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/body.blade.php');
+    $headersView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/headers.blade.php');
     $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
     $sampleView = file_get_contents(__DIR__.'/../../resources/views/components/sample.blade.php');
     $endpointView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
+    $readRequestView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/read.blade.php');
     $sendRequestView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/send.blade.php');
 
     expect($styles)->toContain('.foad-openapi-summary-servers')
@@ -583,6 +585,9 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($styles)->toContain('overflow-x: auto;')
         ->and($styles)->toContain('overflow-y: hidden;')
         ->and($endpointView)->toContain('class="foad-sample-section"')
+        ->and($readRequestView)->toContain('$requestData[\'mediaHeaders\'] !== [] || $requestData[\'headerParameters\'] !== []')
+        ->and($readRequestView)->toContain('ui.labels.headers')
+        ->and($readRequestView)->not->toContain('ui.labels.media_headers')
         ->and($bodyView)->toContain('class="foad-body-toolbar"')
         ->and($bodyView)->toContain('class="foad-json-editor"')
         ->and($bodyView)->toContain('icon="heroicon-m-document-duplicate"')
@@ -594,11 +599,15 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($bodyView)->toContain('x-on:scroll="syncBodyEditorScroll($event)"')
         ->and($bodyView)->toContain('wrap="off"')
         ->and($bodyView)->toContain('class="foad-try-textarea foad-json-editor-textarea"')
+        ->and($headersView)->toContain('x-for="parameter in mediaHeaderParameters"')
+        ->and($headersView)->toContain('x-bind:key="`media-header-${parameter.name}`"')
+        ->and($headersView)->toContain('x-bind:disabled="!developerMode"')
         ->and($requestSnippetView)->toContain('class="foad-sample-scroll"')
         ->and($sampleView)->toContain('class="foad-sample-scroll"')
         ->and($sendRequestView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
         ->and($sendRequestView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
         ->and($sendRequestView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
+        ->and($sendRequestView)->not->toContain('request-snippet.media-headers')
         ->and($sendRequestView)->toContain('class="foad-sample-scroll foad-response-code"')
         ->and($sendRequestView)->toContain('class="foad-body-toolbar"')
         ->and($sendRequestView)->toContain('x-bind:data-color="responseStatusColor(response.status)"')

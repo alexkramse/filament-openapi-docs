@@ -148,7 +148,11 @@ export default function requestSnippet(config) {
     },
 
     get hasHeaderParameters() {
-      return this.developerMode || this.headerParameters.length > 0;
+      return (
+        this.developerMode ||
+        this.headerParameters.length > 0 ||
+        this.mediaHeaderParameters.length > 0
+      );
     },
 
     get hasBody() {
@@ -167,7 +171,6 @@ export default function requestSnippet(config) {
         this.hasPathParameters ||
         this.hasQueryParameters ||
         this.hasHeaderParameters ||
-        this.hasMediaHeaderParameters ||
         this.hasAuthParameters ||
         this.hasBody
       );
