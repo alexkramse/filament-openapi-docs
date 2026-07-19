@@ -4,6 +4,7 @@ use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
 use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsServiceProvider;
 use Alexkramse\FilamentOpenapiDocs\Pages\OpenApiDocsPage;
+use Alexkramse\FilamentOpenapiDocs\Services\ExamplePresenter;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiDataResolver;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiParser;
@@ -267,15 +268,14 @@ it('stores selected endpoint in browser history', function () {
 
 it('registers package assets for lazy loading', function () {
     $serviceProvider = file_get_contents(__DIR__.'/../../src/FilamentOpenApiDocsServiceProvider.php');
-    $pageView = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
-    $endpointView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
+    $pageView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
 
     expect($serviceProvider)->toContain("Css::make('openapi-docs'")
         ->and($serviceProvider)->toContain('->loadedOnRequest()')
         ->and($serviceProvider)->toContain("AlpineComponent::make('request-snippet'")
         ->and($serviceProvider)->toContain("'alexkramse/filament-openapi-docs'")
         ->and($pageView)->toContain("FilamentAsset::getStyleHref('openapi-docs', package: 'alexkramse/filament-openapi-docs')")
-        ->and($endpointView)->toContain("FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs')");
+        ->and($pageView)->toContain("FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs')");
 });
 
 it('uses compiled filament or package classes in blade views', function () {
@@ -328,8 +328,8 @@ it('uses compiled filament or package classes in blade views', function () {
 });
 
 it('moves openapi summary from the page content to the sub navigation partial', function () {
-    $pageView = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
-    $summaryView = file_get_contents(__DIR__.'/../../resources/views/sub-navigation/openapi-summary.blade.php');
+    $pageView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
+    $summaryView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/sub-navigation/summary.blade.php');
 
     expect($pageView)->not->toContain(':heading="$info[\'title\'] ?? \'API Documentation\'"')
         ->and($summaryView)->not->toContain('<x-filament::section')
@@ -462,11 +462,11 @@ it('renders package ui strings in the active locale', function () {
     ]);
 
     $endpoint = $parsed['endpoints']['Users'][0];
-    $html = html_entity_decode(view('filament-openapi-docs::components.endpoint', [
-        'endpoint'   => $endpoint,
-        'servers'    => $parsed['servers'],
-        'components' => $parsed['components'],
-    ])->render());
+    $html = html_entity_decode(renderPluginOpenApiDocsEndpoint(
+        $endpoint,
+        $parsed['servers'],
+        $parsed['components'],
+    ));
 
     expect($html)->toContain('Запит')
         ->and($html)->toContain('Режим надсилання')
@@ -532,13 +532,14 @@ it('documents translation publishing and updates', function () {
 
 it('adds spacing between openapi summary server urls and meta badges', function () {
     $styles = file_get_contents(__DIR__.'/../../resources/css/openapi-docs.css');
-    $bodyView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/body.blade.php');
-    $headersView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/headers.blade.php');
-    $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
-    $sampleView = file_get_contents(__DIR__.'/../../resources/views/components/sample.blade.php');
-    $endpointView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
-    $readRequestView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/read.blade.php');
-    $sendRequestView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/send.blade.php');
+    $bodyView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/body.blade.php');
+    $headersView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/headers.blade.php');
+    $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/http-snippet.blade.php');
+    $sampleView = file_get_contents(__DIR__.'/../../resources/views/components/code-sample.blade.php');
+    $pageView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
+    $readRequestView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/data.blade.php');
+    $sendRequestView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester.blade.php');
+    $responsePreviewView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/response-preview.blade.php');
 
     expect($styles)->toContain('.foad-openapi-summary-servers')
         ->and($styles)->toContain('gap: 0.375rem;')
@@ -599,14 +600,14 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($styles)->toContain('min-width: max-content;')
         ->and($styles)->toContain('overflow-x: auto;')
         ->and($styles)->toContain('overflow-y: hidden;')
-        ->and($endpointView)->toContain('class="foad-sample-section"')
+        ->and($requestSnippetView)->toContain('class="foad-sample-section"')
         ->and($readRequestView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
         ->and($readRequestView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
         ->and($readRequestView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
         ->and($readRequestView)->toContain('$requestData[\'mediaHeaders\'] !== [] || $requestData[\'headerParameters\'] !== []')
         ->and($readRequestView)->toContain('ui.labels.headers')
         ->and($readRequestView)->not->toContain('ui.labels.media_headers')
-        ->and($endpointView)->toContain('$hasSamplePreviews')
+        ->and($pageView)->toContain('$hasSamplePreviews')
         ->and($bodyView)->toContain('class="foad-body-toolbar"')
         ->and($bodyView)->toContain('class="foad-json-editor"')
         ->and($bodyView)->toContain('icon="heroicon-m-document-duplicate"')
@@ -631,21 +632,21 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($sendRequestView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
         ->and($sendRequestView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
         ->and($sendRequestView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
-        ->and($sendRequestView)->not->toContain('request-snippet.media-headers')
-        ->and($sendRequestView)->toContain('class="foad-sample-scroll foad-response-code"')
-        ->and($sendRequestView)->toContain('class="foad-body-toolbar"')
-        ->and($sendRequestView)->toContain('x-bind:data-color="responseStatusColor(response.status)"')
-        ->and($sendRequestView)->toContain('x-text="response.status"')
-        ->and($sendRequestView)->toContain('x-text="response.contentType"')
-        ->and($sendRequestView)->toContain('icon="heroicon-m-document-duplicate"')
-        ->and($sendRequestView)->toContain('x-on:click="copyResponseBody()"')
-        ->and($sendRequestView)->toContain('x-bind:class="`language-${responsePrismLanguage}`"')
-        ->and($sendRequestView)->toContain('x-html="highlightedResponseBody"')
-        ->and($sendRequestView)->not->toContain('x-text="response.body"')
+        ->and($sendRequestView)->not->toContain('media-headers')
+        ->and($responsePreviewView)->toContain('class="foad-sample-scroll foad-response-code"')
+        ->and($responsePreviewView)->toContain('class="foad-body-toolbar"')
+        ->and($responsePreviewView)->toContain('x-bind:data-color="responseStatusColor(response.status)"')
+        ->and($responsePreviewView)->toContain('x-text="response.status"')
+        ->and($responsePreviewView)->toContain('x-text="response.contentType"')
+        ->and($responsePreviewView)->toContain('icon="heroicon-m-document-duplicate"')
+        ->and($responsePreviewView)->toContain('x-on:click="copyResponseBody()"')
+        ->and($responsePreviewView)->toContain('x-bind:class="`language-${responsePrismLanguage}`"')
+        ->and($responsePreviewView)->toContain('x-html="highlightedResponseBody"')
+        ->and($responsePreviewView)->not->toContain('x-text="response.body"')
         ->and($styles)->not->toContain('width: 50%;')
         ->and($sendRequestView)->not->toContain('TODO')
-        ->and($sendRequestView)->not->toContain('HttpStatus::color($status)')
-        ->and($sendRequestView)->not->toContain('{{ response.status }}');
+        ->and($responsePreviewView)->not->toContain('HttpStatus::color($status)')
+        ->and($responsePreviewView)->not->toContain('{{ response.status }}');
 });
 
 it('exposes endpoints through native filament sub navigation', function () {
@@ -778,7 +779,7 @@ it('escapes operation ids in endpoint navigation click handlers', function () {
 });
 
 it('normalizes persisted collapsed state for endpoint sub navigation groups', function () {
-    $view = file_get_contents(__DIR__.'/../../resources/views/pages/openapi-docs.blade.php');
+    $view = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
 
     expect($view)->toContain('collapsedGroups')
         ->and($view)->toContain('document.querySelectorAll')
@@ -801,6 +802,31 @@ function endpointForNavigation(string $id, string $method, string $path, string 
         security: [],
         deprecated: false,
     );
+}
+
+function renderPluginOpenApiDocsEndpoint(Endpoint $endpoint, array $servers = [], array $components = []): string
+{
+    $examplePresenter = app(ExamplePresenter::class);
+    $requestData = app(RequestSnippetPresenter::class)->present($endpoint, $servers, $components);
+
+    return view('filament-openapi-docs::openapi-docs.info', [
+        'endpoint'          => $endpoint,
+        'documentedServers' => $servers,
+    ])->render()
+        .view('filament-openapi-docs::openapi-docs.request', [
+            'endpoint'         => $endpoint,
+            'components'       => $components,
+            'examplePresenter' => $examplePresenter,
+            'requestData'      => $requestData,
+        ])->render()
+        .view('filament-openapi-docs::openapi-docs.http-snippet', [
+            'requestData' => $requestData,
+        ])->render()
+        .view('filament-openapi-docs::openapi-docs.response', [
+            'endpoint'         => $endpoint,
+            'schemaComponents' => $components,
+            'examplePresenter' => $examplePresenter,
+        ])->render();
 }
 
 function bindOpenApiSpec(array $spec): void

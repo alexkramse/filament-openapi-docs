@@ -1,3 +1,8 @@
+@props([
+    'schema',
+    'components' => [],
+])
+
 @php
     $presenter = app(\Alexkramse\FilamentOpenapiDocs\Services\SchemaPresenter::class);
     $schemaComponents = $components ?? [];
@@ -8,7 +13,10 @@
   @if ($rows !== [])
     <div class="foad-schema-tree">
       @foreach ($rows as $row)
-        @include ('filament-openapi-docs::components.schema-row', ['row' => $row, 'depth' => 0])
+        <x-filament-openapi-docs::schema-tree.row
+          :row="$row"
+          :depth="0"
+        />
       @endforeach
     </div>
   @elseif (isset($schema['$ref']))

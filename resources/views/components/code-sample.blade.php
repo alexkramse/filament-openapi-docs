@@ -1,3 +1,9 @@
+@props([
+    'label' => null,
+    'contentType' => null,
+    'samples' => [],
+])
+
 @php
     $sampleOptions = collect($samples ?? [])
         ->values()

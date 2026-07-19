@@ -57,7 +57,7 @@ class FilamentOpenApiDocsServiceProvider extends PackageServiceProvider
 
         FilamentView::registerRenderHook(
             PanelsRenderHook::PAGE_SUB_NAVIGATION_SIDEBAR_BEFORE,
-            fn (): View => view('filament-openapi-docs::sub-navigation.openapi-summary', $this->openApiSummaryData()),
+            fn (): View => view('filament-openapi-docs::openapi-docs.sub-navigation.summary', $this->openApiSummaryData()),
             scopes: OpenApiDocsPage::class,
         );
     }

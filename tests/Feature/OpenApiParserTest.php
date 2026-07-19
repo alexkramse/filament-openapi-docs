@@ -122,7 +122,7 @@ it('detects bearer security from the referenced scheme definition', function () 
     ]);
     $endpoint = $parsed['endpoints']['API'][0];
     $requestData = app(RequestSnippetPresenter::class)->present($endpoint, $parsed['servers'], $parsed['components']);
-    $html = html_entity_decode(view('filament-openapi-docs::components.endpoint.request.read', [
+    $html = html_entity_decode(view('filament-openapi-docs::openapi-docs.request.data', [
         'endpoint'         => $endpoint,
         'components'       => $parsed['components'],
         'examplePresenter' => app(ExamplePresenter::class),
@@ -199,18 +199,21 @@ it('renders non bearer security schemes without bearer documentation', function 
 });
 
 it('renders request read and send modes', function () {
-    $html = html_entity_decode(view('filament-openapi-docs::components.endpoint', [
-        'endpoint'   => endpointWithRequestData(),
-        'servers'    => ['https://api.example.test'],
-        'components' => securityComponents(),
-    ])->render());
+    $html = html_entity_decode(renderParserOpenApiDocsEndpoint(
+        endpointWithRequestData(),
+        ['https://api.example.test'],
+        securityComponents(),
+    ));
 
-    $removableParameterMarkup = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/headers.blade.php')
-        .file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/query-parameters.blade.php');
-    $requestSnippetMarkup = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
-    $endpointMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
-    $readModeMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/read.blade.php');
-    $sendModeMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/send.blade.php');
+    $removableParameterMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/headers.blade.php')
+        .file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/query-parameters.blade.php');
+    $requestSnippetMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/http-snippet.blade.php');
+    $pageMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
+    $infoMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/info.blade.php');
+    $requestMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request.blade.php');
+    $readModeMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/data.blade.php');
+    $sendModeMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester.blade.php');
+    $responsePreviewMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/response-preview.blade.php');
     $requestSnippetRuntime = file_get_contents(__DIR__.'/../../resources/js/request-snippet.js');
 
     expect($html)->toContain('Send mode')
@@ -245,7 +248,7 @@ it('renders request read and send modes', function () {
         ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(4)
         ->and(substr_count($html, 'foad-send-controls foad-justify-content-space-between'))->toBe(2)
         ->and(substr_count($html, 'class="foad-header-row"'))->toBe(2)
-        ->and(substr_count($html, 'x-data="requestSnippet'))->toBe(1)
+        ->and($pageMarkup)->toContain('x-data="requestSnippet(@js($requestData))"')
         ->and(substr_count($removableParameterMarkup, '<x-filament::icon-button'))->toBe(2)
         ->and(substr_count($removableParameterMarkup, 'icon="heroicon-m-x-mark"'))->toBe(2)
         ->and(substr_count($removableParameterMarkup, "label=\"{{ __('filament-openapi-docs::ui.actions.remove') }}\""))->toBe(2)
@@ -254,12 +257,12 @@ it('renders request read and send modes', function () {
         ->and($removableParameterMarkup)->toContain('x-bind:key="`media-header-${parameter.name}`"')
         ->and($removableParameterMarkup)->toContain('x-bind:disabled="!canUseDeveloperOptions"')
         ->and($requestSnippetMarkup)->toContain('icon="heroicon-m-document-duplicate"')
-        ->and($endpointMarkup)->toContain('x-model="sendMode"')
-        ->and($endpointMarkup)->toContain('x-show="sendMode && hasDeveloperOptions"')
-        ->and($endpointMarkup)->toContain('x-model="developerMode"')
-        ->and($endpointMarkup)->toContain('<x-filament-openapi-docs::copyable-badge')
-        ->and($endpointMarkup)->not->toContain('async copy(server)')
-        ->and($endpointMarkup)->not->toContain('<div'.PHP_EOL.'                @if ($requestData[\'hasRequestSamples\'])')
+        ->and($requestMarkup)->toContain('x-model="sendMode"')
+        ->and($requestMarkup)->toContain('x-show="sendMode && hasDeveloperOptions"')
+        ->and($requestMarkup)->toContain('x-model="developerMode"')
+        ->and($infoMarkup)->toContain('<x-filament-openapi-docs::copyable-badge')
+        ->and($pageMarkup)->not->toContain('async copy(server)')
+        ->and($pageMarkup)->not->toContain('<div'.PHP_EOL.'                @if ($requestData[\'hasRequestSamples\'])')
         ->and($readModeMarkup)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
         ->and($readModeMarkup)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
         ->and($readModeMarkup)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
@@ -267,7 +270,8 @@ it('renders request read and send modes', function () {
         ->and($requestSnippetRuntime)->toContain('this.mediaHeaderParameters.length > 0')
         ->and($requestSnippetRuntime)->toContain('hasDeveloperOptions: Boolean(config.hasDeveloperOptions ?? false)')
         ->and($requestSnippetRuntime)->toContain('this.hasDeveloperOptions && this.developerMode')
-        ->and($sendModeMarkup)->not->toContain('request-snippet.media-headers')
+        ->and($sendModeMarkup)->not->toContain('media-headers')
+        ->and($responsePreviewMarkup)->not->toContain('media-headers')
         ->and($sendModeMarkup)->not->toContain('TODO')
         ->and($sendModeMarkup)->not->toContain('Developer mode');
 });
@@ -277,7 +281,7 @@ it('renders request read mode as static documentation rows', function () {
 
     $endpoint = endpointWithRequestData();
     $requestData = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test'], securityComponents());
-    $html = html_entity_decode(view('filament-openapi-docs::components.endpoint.request.read', [
+    $html = html_entity_decode(view('filament-openapi-docs::openapi-docs.request.data', [
         'endpoint'         => $endpoint,
         'components'       => securityComponents(),
         'examplePresenter' => app(ExamplePresenter::class),
@@ -305,17 +309,18 @@ it('renders request read mode as static documentation rows', function () {
 it('does not render request send mode when request samples are disabled', function () {
     config()->set('filament-openapi-docs.request_samples.enabled', false);
 
-    $html = view('filament-openapi-docs::components.endpoint', [
-        'endpoint'   => endpointWithRequestData(),
-        'servers'    => ['https://api.example.test'],
-        'components' => securityComponents(),
-    ])->render();
+    $html = renderParserOpenApiDocsEndpoint(
+        endpointWithRequestData(),
+        ['https://api.example.test'],
+        securityComponents(),
+    );
+    $pageMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
 
     expect($html)->toContain('Security')
         ->and($html)->toContain('Request sample')
         ->and($html)->toContain('No request sample available.')
         ->and($html)->not->toContain('Send API request')
-        ->and($html)->toContain('requestSnippet(');
+        ->and($pageMarkup)->toContain('requestSnippet(');
 });
 
 it('uses shared method color logic for endpoint and navigation badges', function () {
@@ -333,7 +338,10 @@ it('uses shared method color logic for endpoint and navigation badges', function
         deprecated: false,
     );
 
-    $html = view('filament-openapi-docs::components.endpoint', ['endpoint' => $endpoint])->render();
+    $html = view('filament-openapi-docs::openapi-docs.info', [
+        'endpoint'          => $endpoint,
+        'documentedServers' => [],
+    ])->render();
     $navigation = app(OpenApiNavigationBuilder::class)->build(['Users' => [$endpoint]]);
 
     expect(HttpMethod::color('DELETE'))->toBe('danger')
@@ -342,7 +350,7 @@ it('uses shared method color logic for endpoint and navigation badges', function
 });
 
 it('uses shared response status color logic for response badges', function () {
-    $responseMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/responses.blade.php');
+    $responseMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/response/item.blade.php');
 
     expect(HttpStatus::color('200'))->toBe('success')
         ->and(HttpStatus::color(201))->toBe('success')
@@ -471,6 +479,31 @@ function endpointWithRequestData(): Endpoint
         ],
         deprecated: false,
     );
+}
+
+function renderParserOpenApiDocsEndpoint(Endpoint $endpoint, array $servers = [], array $components = []): string
+{
+    $examplePresenter = app(ExamplePresenter::class);
+    $requestData = app(RequestSnippetPresenter::class)->present($endpoint, $servers, $components);
+
+    return view('filament-openapi-docs::openapi-docs.info', [
+        'endpoint'          => $endpoint,
+        'documentedServers' => $servers,
+    ])->render()
+        .view('filament-openapi-docs::openapi-docs.request', [
+            'endpoint'         => $endpoint,
+            'components'       => $components,
+            'examplePresenter' => $examplePresenter,
+            'requestData'      => $requestData,
+        ])->render()
+        .view('filament-openapi-docs::openapi-docs.http-snippet', [
+            'requestData' => $requestData,
+        ])->render()
+        .view('filament-openapi-docs::openapi-docs.response', [
+            'endpoint'         => $endpoint,
+            'schemaComponents' => $components,
+            'examplePresenter' => $examplePresenter,
+        ])->render();
 }
 
 /**

@@ -1,10 +1,15 @@
+@props([
+    'row',
+    'depth' => 0,
+])
+
 @php
     $hasChildren = $row['children'] !== [];
 @endphp
 
 <{{ $hasChildren ? 'details' : 'div' }}
   class="foad-property-row {{ $hasChildren ? 'foad-property-row-collapsible' : '' }}"
-  style="--foad-depth: {{ 0 }};"
+  style="--foad-depth: {{ $depth }};"
 >
   @if ($hasChildren)
     <summary class="foad-property-summary">
@@ -87,7 +92,10 @@
   @if ($hasChildren)
     <div class="foad-schema-tree">
       @foreach ($row['children'] as $child)
-        @include ('filament-openapi-docs::components.schema-row', ['row' => $child, 'depth' => $depth + 1])
+        <x-filament-openapi-docs::schema-tree.row
+          :row="$child"
+          :depth="$depth + 1"
+        />
       @endforeach
     </div>
   @endif

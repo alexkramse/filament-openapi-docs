@@ -21,7 +21,7 @@ class OpenApiDocsPage extends Page
 
     protected static ?string $slug = 'api-docs';
 
-    protected string $view = 'filament-openapi-docs::pages.openapi-docs';
+    protected string $view = 'filament-openapi-docs::openapi-docs';
 
     #[Url(as: 'endpoint', history: true)]
     public ?string $selectedEndpointId = null;
