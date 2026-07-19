@@ -150,6 +150,18 @@ return [
         |
         */
         'description' => '',
+
+        /*
+        |--------------------------------------------------------------------------
+        | Enable In Production
+        |--------------------------------------------------------------------------
+        |
+        | Controls whether the OpenAPI documentation page is registered when
+        | the application environment is "production". It is disabled by
+        | default to avoid exposing API documentation in production panels.
+        |
+        */
+        'enabled_in_production' => false,
     ],
 
     'layout' => [

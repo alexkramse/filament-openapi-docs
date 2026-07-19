@@ -32,6 +32,52 @@ it('registers the api docs page with a panel', function () {
     expect($panel->getPages())->toContain(OpenApiDocsPage::class);
 });
 
+it('does not register the api docs page in production by default', function () {
+    app()->detectEnvironment(fn (): string => 'production');
+
+    $panel = Panel::make()->id('admin');
+
+    FilamentOpenApiDocsPlugin::make()->register($panel);
+
+    expect($panel->getPages())->not->toContain(OpenApiDocsPage::class);
+});
+
+it('can register the api docs page in production from config', function () {
+    app()->detectEnvironment(fn (): string => 'production');
+    config()->set('filament-openapi-docs.page.enabled_in_production', true);
+
+    $panel = Panel::make()->id('admin');
+
+    FilamentOpenApiDocsPlugin::make()->register($panel);
+
+    expect($panel->getPages())->toContain(OpenApiDocsPage::class);
+});
+
+it('can register the api docs page in production from fluent plugin configuration', function () {
+    app()->detectEnvironment(fn (): string => 'production');
+
+    $panel = Panel::make()->id('admin');
+
+    FilamentOpenApiDocsPlugin::make()
+        ->enabledInProduction()
+        ->register($panel);
+
+    expect($panel->getPages())->toContain(OpenApiDocsPage::class);
+});
+
+it('uses fluent production visibility before package config', function () {
+    app()->detectEnvironment(fn (): string => 'production');
+    config()->set('filament-openapi-docs.page.enabled_in_production', true);
+
+    $panel = Panel::make()->id('admin');
+
+    FilamentOpenApiDocsPlugin::make()
+        ->enabledInProduction(false)
+        ->register($panel);
+
+    expect($panel->getPages())->not->toContain(OpenApiDocsPage::class);
+});
+
 it('reads navigation values from config', function () {
     config()->set('filament-openapi-docs.navigation.label', 'OpenAPI');
     config()->set('filament-openapi-docs.navigation.icon', 'heroicon-o-code-bracket-square');
