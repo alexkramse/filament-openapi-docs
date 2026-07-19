@@ -24,38 +24,54 @@
     </div>
   </div>
 
-  <div class="foad-send-actions">
-    <x-filament::button
-      type="button"
-      x-on:click="sendRequest()"
-      x-bind:disabled="sending"
-      x-text="sending ? {{ $sendingLabel }} : {{ $sendApiRequestLabel }}"
-    />
+  <x-filament::button
+    type="button"
+    x-on:click="sendRequest()"
+    x-bind:disabled="sending"
+    x-text="sending ? {{ $sendingLabel }} : {{ $sendApiRequestLabel }}"
+  />
 
-    <template x-if="sendError">
-      <p class="foad-sample-error foad-try-message" x-text="sendError"></p>
-    </template>
+  <template x-if="sendError">
+    <p class="foad-sample-error foad-try-message" x-text="sendError"></p>
+  </template>
 
-    <template x-if="response">
-      <div class="foad-response-preview">
-        <div class="foad-inline-list foad-inline-list-sm">
-          <x-filament::badge
-            class="foad-response-status-badge"
-            x-bind:data-color="responseStatusColor(response.status)"
-            x-text="responseStatusLabel(response.status)"
-          ></x-filament::badge>
-          <template x-if="response.contentType">
-            <x-filament::badge color="gray" x-text="responseTypeLabel(response.contentType)"></x-filament::badge>
-          </template>
-          <template x-if="response.statusText">
-            <x-filament::badge color="gray" x-text="response.statusText"></x-filament::badge>
-          </template>
-        </div>
+  <template x-if="response">
+    <div class="foad-stack foad-stack-sm">
+      <div class="foad-body-toolbar">
+        <h4 class="fi-section-header-heading">
+          <div class="foad-property-main">
+            <x-filament::badge
+              x-bind:data-color="responseStatusColor(response.status)"
+              x-text="response.status"
+            ></x-filament::badge>
+            {{ __('filament-openapi-docs::ui.labels.response') }}
+          </div>
+        </h4>
+        <x-filament::button
+          size="xs"
+          icon="heroicon-m-document-duplicate"
+          icon-position="after"
+          outlined
+          x-on:click="copyResponseBody()"
+        />
+      </div>
+      <p class="fi-section-header-description">
+        <template x-if="response.contentType">
+          <x-filament::badge color="gray" x-text="response.contentType"></x-filament::badge>
+        </template>
+        <template x-if="response.statusText">
+          <x-filament::badge color="gray" x-text="response.statusText"></x-filament::badge>
+        </template>
+      </p>
 
+      <div class="foad-response-block">
         <div class="foad-sample-scroll foad-response-code">
-          <pre class="foad-sample-code"><code x-text="response.body"></code></pre>
+          <pre class="foad-sample-code"><code
+              x-bind:class="`language-${responsePrismLanguage}`"
+              x-html="highlightedResponseBody"
+            ></code></pre>
         </div>
       </div>
-    </template>
-  </div>
+    </div>
+  </template>
 </div>

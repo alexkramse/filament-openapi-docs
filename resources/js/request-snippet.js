@@ -233,6 +233,35 @@ export default function requestSnippet(config) {
       return Prism.highlight(visibleCode, grammar, "json");
     },
 
+    get responsePrismLanguage() {
+      const contentType = this.response?.contentType ?? "";
+
+      if (contentType.includes("json")) {
+        return "json";
+      }
+
+      if (
+        contentType.includes("xml") ||
+        contentType.includes("html") ||
+        contentType.includes("svg")
+      ) {
+        return "markup";
+      }
+
+      return "none";
+    },
+
+    get highlightedResponseBody() {
+      const body = this.response?.body ?? "";
+      const grammar = Prism.languages[this.responsePrismLanguage];
+
+      if (!grammar) {
+        return escapeHtml(body);
+      }
+
+      return Prism.highlight(body, grammar, this.responsePrismLanguage);
+    },
+
     syncBodyEditorScroll(event) {
       const highlightScroller = this.$refs.bodyHighlightScroller;
 
@@ -578,6 +607,26 @@ export default function requestSnippet(config) {
         }
 
         await navigator.clipboard.writeText(this.bodyText);
+
+        new FilamentNotification()
+          .title(this.message("copiedToClipboard", "Copied to clipboard."))
+          .success()
+          .send();
+      } catch (error) {
+        new FilamentNotification()
+          .title(this.message("copyFailed", "Copy failed."))
+          .danger()
+          .send();
+      }
+    },
+
+    async copyResponseBody() {
+      try {
+        if (!this.response?.body || !navigator.clipboard?.writeText) {
+          throw new Error("Clipboard unavailable");
+        }
+
+        await navigator.clipboard.writeText(this.response.body);
 
         new FilamentNotification()
           .title(this.message("copiedToClipboard", "Copied to clipboard."))

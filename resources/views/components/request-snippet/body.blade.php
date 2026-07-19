@@ -4,7 +4,6 @@
       <h4 class="fi-section-header-heading">
         {{ __('filament-openapi-docs::ui.labels.body') }}
       </h4>
-
       <x-filament::button
         size="xs"
         icon="heroicon-m-document-duplicate"
