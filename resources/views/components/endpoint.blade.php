@@ -5,12 +5,14 @@
   $documentedServers = $servers ?? [];
   $requestData = app(\Alexkramse\FilamentOpenapiDocs\Services\RequestSnippetPresenter::class)
       ->present($endpoint, $documentedServers, $schemaComponents);
+  $hasSamplePreviews = $endpoint->hasRequestBody()
+      || collect($endpoint->responses)->contains(fn (array $response): bool => ($response['content'] ?? []) !== []);
 @endphp
 
 <div
   id="{{ $endpoint->id }}"
   class="foad-stack"
-  @if ($requestData['hasRequestSamples'])
+  @if ($requestData['hasRequestSamples'] || $hasSamplePreviews)
     x-load
   x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs') }}"
   x-data="requestSnippet(@js($requestData))"

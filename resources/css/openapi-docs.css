@@ -233,6 +233,8 @@
 .foad-response-block {
   display: grid;
   gap: 0.75rem;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .foad-response-block + .foad-response-block {

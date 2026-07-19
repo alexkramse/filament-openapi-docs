@@ -23,11 +23,15 @@
     @endif
 
     @foreach ($sampleOptions as $sample)
-      <div
-        class="foad-sample-scroll"
-        x-show="activeSample === @js($sample['key'])"
-      >
-        <pre class="foad-sample-code"><code>{{ $sample['value'] }}</code></pre>
+      <div x-show="activeSample === @js($sample['key'])">
+        <div class="foad-response-block">
+          <div class="foad-sample-scroll foad-response-code">
+            <pre class="foad-sample-code"><code
+                x-bind:class="'language-' + samplePrismLanguage(@js($contentType ?? ''))"
+                x-html="highlightSample(@js($sample['value']), @js($contentType ?? ''))"
+              ></code></pre>
+          </div>
+        </div>
       </div>
     @endforeach
   </div>

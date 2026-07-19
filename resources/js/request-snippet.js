@@ -236,6 +236,36 @@ export default function requestSnippet(config) {
       return Prism.highlight(visibleCode, grammar, "json");
     },
 
+    samplePrismLanguage(contentType) {
+      const normalizedContentType = String(contentType ?? "").toLowerCase();
+
+      if (normalizedContentType.includes("json")) {
+        return "json";
+      }
+
+      if (
+        normalizedContentType.includes("xml") ||
+        normalizedContentType.includes("html") ||
+        normalizedContentType.includes("svg")
+      ) {
+        return "markup";
+      }
+
+      return "none";
+    },
+
+    highlightSample(value, contentType) {
+      const code = String(value ?? "");
+      const language = this.samplePrismLanguage(contentType);
+      const grammar = Prism.languages[language];
+
+      if (!grammar) {
+        return escapeHtml(code);
+      }
+
+      return Prism.highlight(code, grammar, language);
+    },
+
     get responsePrismLanguage() {
       const contentType = this.response?.contentType ?? "";
 

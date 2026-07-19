@@ -209,6 +209,7 @@ it('renders request read and send modes', function () {
         .file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/query-parameters.blade.php');
     $requestSnippetMarkup = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
     $endpointMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
+    $readModeMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/read.blade.php');
     $sendModeMarkup = file_get_contents(__DIR__.'/../../resources/views/components/endpoint/request/send.blade.php');
     $requestSnippetRuntime = file_get_contents(__DIR__.'/../../resources/js/request-snippet.js');
 
@@ -259,6 +260,9 @@ it('renders request read and send modes', function () {
         ->and($endpointMarkup)->toContain('<x-filament-openapi-docs::copyable-badge')
         ->and($endpointMarkup)->not->toContain('async copy(server)')
         ->and($endpointMarkup)->not->toContain('<div'.PHP_EOL.'                @if ($requestData[\'hasRequestSamples\'])')
+        ->and($readModeMarkup)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
+        ->and($readModeMarkup)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
+        ->and($readModeMarkup)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
         ->and($requestSnippetRuntime)->toContain('this.mediaHeaderParameters.length > 0')
         ->and($sendModeMarkup)->not->toContain('request-snippet.media-headers')
         ->and($sendModeMarkup)->not->toContain('TODO')
@@ -308,7 +312,7 @@ it('does not render request send mode when request samples are disabled', functi
         ->and($html)->toContain('Request sample')
         ->and($html)->toContain('No request sample available.')
         ->and($html)->not->toContain('Send API request')
-        ->and($html)->not->toContain('requestSnippet(');
+        ->and($html)->toContain('requestSnippet(');
 });
 
 it('uses shared method color logic for endpoint and navigation badges', function () {
@@ -375,6 +379,10 @@ it('keeps request snippet javascript inside runtime boundaries', function () {
         ->and($script)->toContain('Prism.languages.json')
         ->and($script)->toContain('Prism.highlight(visibleCode, grammar, "json")')
         ->and($script)->toContain('escapeHtml(visibleCode)')
+        ->and($script)->toContain('samplePrismLanguage(contentType)')
+        ->and($script)->toContain('normalizedContentType.includes("json")')
+        ->and($script)->toContain('highlightSample(value, contentType)')
+        ->and($script)->toContain('Prism.highlight(code, grammar, language)')
         ->and($script)->toContain('responsePrismLanguage')
         ->and($script)->toContain('contentType.includes("json")')
         ->and($script)->toContain('contentType.includes("xml")')
