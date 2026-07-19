@@ -459,7 +459,7 @@ it('renders package ui strings in the active locale', function () {
         ->and($html)->toContain('Режим розробника')
         ->and($html)->toContain('Безпека')
         ->and($html)->toContain('Тіло')
-        ->and($html)->toContain('Форматувати JSON')
+        ->and($html)->toContain('x-on:click="copyBody()"')
         ->and($html)->toContain('Відповіді');
 });
 
@@ -518,6 +518,7 @@ it('documents translation publishing and updates', function () {
 
 it('adds spacing between openapi summary server urls and meta badges', function () {
     $styles = file_get_contents(__DIR__.'/../../resources/css/openapi-docs.css');
+    $bodyView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet/body.blade.php');
     $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/components/request-snippet.blade.php');
     $sampleView = file_get_contents(__DIR__.'/../../resources/views/components/sample.blade.php');
     $endpointView = file_get_contents(__DIR__.'/../../resources/views/components/endpoint.blade.php');
@@ -546,6 +547,26 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($styles)->toContain('field-sizing: content;')
         ->and($styles)->toContain('height: 100%;')
         ->and($styles)->toContain('min-height: 3rem;')
+        ->and($styles)->toContain('.foad-body-toolbar')
+        ->and($styles)->toContain('justify-content: space-between;')
+        ->and($styles)->toContain('.foad-json-editor')
+        ->and($styles)->toContain('box-sizing: border-box;')
+        ->and($styles)->toContain('inline-size: 100%;')
+        ->and($styles)->toContain('.foad-json-editor-highlight.foad-sample-code')
+        ->and($styles)->toContain('.foad-json-editor-textarea')
+        ->and($styles)->toContain('caret-color: var(--gray-950);')
+        ->and($styles)->toContain('color: transparent;')
+        ->and($styles)->toContain('field-sizing: fixed;')
+        ->and($styles)->toContain('max-width: 100%;')
+        ->and($styles)->toContain('min-width: 0;')
+        ->and($styles)->toContain('overflow: hidden;')
+        ->and($styles)->toContain('overflow: auto;')
+        ->and($styles)->toContain('overflow-x: auto;')
+        ->and($styles)->toContain('overflow-y: auto;')
+        ->and($styles)->toContain('white-space: pre;')
+        ->and($styles)->toContain('word-break: normal;')
+        ->and($styles)->not->toContain(".foad-json-editor-highlight {\n  background: white;")
+        ->and($styles)->not->toContain(".foad-json-editor-textarea {\n  background: transparent;\n  box-sizing: border-box;\n  caret-color: var(--gray-950);\n  color: transparent;\n  min-width: max-content;")
         ->and($styles)->toContain('.foad-header-row')
         ->and($styles)->toContain('grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;')
         ->and($styles)->toContain('.foad-header-row > *')
@@ -562,6 +583,17 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($styles)->toContain('overflow-x: auto;')
         ->and($styles)->toContain('overflow-y: hidden;')
         ->and($endpointView)->toContain('class="foad-sample-section"')
+        ->and($bodyView)->toContain('class="foad-body-toolbar"')
+        ->and($bodyView)->toContain('class="foad-json-editor"')
+        ->and($bodyView)->toContain('icon="heroicon-m-document-duplicate"')
+        ->and($bodyView)->toContain('x-on:click="copyBody()"')
+        ->and($bodyView)->not->toContain('format_json')
+        ->and($bodyView)->toContain('x-html="highlightedBodyText"')
+        ->and($bodyView)->toContain('x-on:input.debounce.500ms="formatJsonBody(false, $event.target.value)"')
+        ->and($bodyView)->toContain('x-on:blur="formatJsonBody(true, $event.target.value)"')
+        ->and($bodyView)->toContain('x-on:scroll="syncBodyEditorScroll($event)"')
+        ->and($bodyView)->toContain('wrap="off"')
+        ->and($bodyView)->toContain('class="foad-try-textarea foad-json-editor-textarea"')
         ->and($requestSnippetView)->toContain('class="foad-sample-scroll"')
         ->and($sampleView)->toContain('class="foad-sample-scroll"')
         ->and($sendRequestView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')

@@ -221,6 +221,29 @@ export default function requestSnippet(config) {
       return Prism.highlight(code, grammar, this.prismLanguage);
     },
 
+    get highlightedBodyText() {
+      const grammar = Prism.languages.json;
+      const code = this.bodyText || " ";
+      const visibleCode = code.endsWith("\n") ? `${code} ` : code;
+
+      if (!grammar) {
+        return escapeHtml(visibleCode);
+      }
+
+      return Prism.highlight(visibleCode, grammar, "json");
+    },
+
+    syncBodyEditorScroll(event) {
+      const highlightScroller = this.$refs.bodyHighlightScroller;
+
+      if (!highlightScroller) {
+        return;
+      }
+
+      highlightScroller.scrollTop = event.target.scrollTop;
+      highlightScroller.scrollLeft = event.target.scrollLeft;
+    },
+
     selectTarget() {
       this.activeClient = this.defaultClientForSelectedTarget();
     },
@@ -310,6 +333,10 @@ export default function requestSnippet(config) {
         this.selectedRequest.queryParameters ?? [],
       );
       this.bodyText = this.selectedRequest.bodyText ?? "";
+
+      if (this.hasJsonBody) {
+        this.formatJsonBody(false);
+      }
     },
 
     applyRuntimeEditsToHar(includePlaceholders = true) {
@@ -400,6 +427,10 @@ export default function requestSnippet(config) {
       har.headers = headers;
 
       if (har.postData) {
+        if (this.hasJsonBody) {
+          this.formatJsonBody(false);
+        }
+
         har.postData = {
           ...har.postData,
           text: this.bodyText,
@@ -415,9 +446,7 @@ export default function requestSnippet(config) {
       this.bodyJsonError = null;
 
       if (this.hasJsonBody && this.bodyText.trim() !== "") {
-        try {
-          JSON.parse(this.bodyText);
-        } catch (error) {
+        if (!this.formatJsonBody(false)) {
           this.bodyJsonError = this.message(
             "jsonBeforeSending",
             "Body must be valid JSON before sending.",
@@ -487,20 +516,27 @@ export default function requestSnippet(config) {
       }
     },
 
-    formatJsonBody() {
+    formatJsonBody(showErrors = true, value = this.bodyText) {
       this.bodyJsonError = null;
+      this.bodyText = value;
 
-      if (!this.bodyText.trim()) {
-        return;
+      if (!value.trim()) {
+        return true;
       }
 
       try {
-        this.bodyText = JSON.stringify(JSON.parse(this.bodyText), null, 2);
+        this.bodyText = JSON.stringify(JSON.parse(value), null, 2);
+
+        return true;
       } catch (error) {
-        this.bodyJsonError = this.message(
-          "jsonBeforeFormatting",
-          "Body must be valid JSON before formatting.",
-        );
+        if (showErrors) {
+          this.bodyJsonError = this.message(
+            "jsonBeforeFormatting",
+            "Body must be valid JSON before formatting.",
+          );
+        }
+
+        return false;
       }
     },
 
@@ -518,6 +554,30 @@ export default function requestSnippet(config) {
         this.copyTimeout = window.setTimeout(() => {
           this.copied = false;
         }, 1000);
+
+        new FilamentNotification()
+          .title(this.message("copiedToClipboard", "Copied to clipboard."))
+          .success()
+          .send();
+      } catch (error) {
+        new FilamentNotification()
+          .title(this.message("copyFailed", "Copy failed."))
+          .danger()
+          .send();
+      }
+    },
+
+    async copyBody() {
+      if (this.hasJsonBody) {
+        this.formatJsonBody(false);
+      }
+
+      try {
+        if (!this.bodyText || !navigator.clipboard?.writeText) {
+          throw new Error("Clipboard unavailable");
+        }
+
+        await navigator.clipboard.writeText(this.bodyText);
 
         new FilamentNotification()
           .title(this.message("copiedToClipboard", "Copied to clipboard."))

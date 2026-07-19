@@ -1,25 +1,45 @@
 <template x-if="hasBody">
   <div class="foad-stack foad-stack-sm">
-    <div class="foad-inline-list foad-inline-list-sm">
+    <div class="foad-body-toolbar">
       <h4 class="fi-section-header-heading">
         {{ __('filament-openapi-docs::ui.labels.body') }}
       </h4>
-      <template x-if="hasJsonBody">
-        <x-filament::button
-          color="gray"
-          size="xs"
-          type="button"
-          x-on:click="formatJsonBody()"
-          >{{ __('filament-openapi-docs::ui.actions.format_json') }}</x-filament::button
-        >
-      </template>
+
+      <x-filament::button
+        size="xs"
+        icon="heroicon-m-document-duplicate"
+        icon-position="after"
+        outlined
+        x-on:click="copyBody()"
+      />
     </div>
 
-    <textarea
-      class="foad-try-textarea"
-      x-model="bodyText"
-      spellcheck="false"
-    ></textarea>
+    <template x-if="hasJsonBody">
+      <div class="foad-json-editor">
+        <pre
+          class="foad-json-editor-highlight foad-sample-code"
+          x-ref="bodyHighlightScroller"
+          aria-hidden="true"
+        ><code class="language-json" x-html="highlightedBodyText"></code></pre>
+        <textarea
+          class="foad-try-textarea foad-json-editor-textarea"
+          x-model="bodyText"
+          x-on:input.debounce.500ms="formatJsonBody(false, $event.target.value)"
+          x-on:blur="formatJsonBody(true, $event.target.value)"
+          x-on:scroll="syncBodyEditorScroll($event)"
+          spellcheck="false"
+          wrap="off"
+        ></textarea>
+      </div>
+    </template>
+
+    <template x-if="!hasJsonBody">
+      <textarea
+        class="foad-try-textarea"
+        x-model="bodyText"
+        spellcheck="false"
+      ></textarea>
+    </template>
 
     <template x-if="bodyJsonError">
       <p class="foad-sample-error foad-try-message" x-text="bodyJsonError"></p>
