@@ -1,7 +1,7 @@
 # Filament OpenAPI Docs
 
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-![Stable Version](https://img.shields.io/badge/stable-v0.6.0-blue)
+![Stable Version](https://img.shields.io/badge/stable-v0.7.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Native OpenAPI documentation for Filament panels, powered by Scramble.
@@ -122,6 +122,7 @@ FilamentOpenApiDocsPlugin::make()
     ->subNavigationPosition('right')
     ->title('API Documentation')
     ->description('Browse and test available API endpoints.')
+    ->enabledInProduction()
     ->fullWidth()
     ->requestSamples()
     ->developerOptions()
@@ -144,6 +145,7 @@ FilamentOpenApiDocsPlugin::make()
 | `subNavigationPosition()` | `sub_navigation.position`        | Uses `left` or `right` endpoint navigation.        |
 | `title()`                 | `page.title`                     | Overrides the page title.                         |
 | `description()`           | `page.description`               | Overrides the page description.                   |
+| `enabledInProduction()`   | `page.enabled_in_production`     | Registers the docs page in production.            |
 | `fullWidth()`             | `layout.full_width`              | Uses Filament's full-width page layout.           |
 | `requestSamples()`        | `request_samples.enabled`        | Enables or disables snippets and request testing. |
 | `developerOptions()`      | `request_samples.developer_options` | Enables developer mode for custom headers and query parameters. |
@@ -151,6 +153,8 @@ FilamentOpenApiDocsPlugin::make()
 | `scrambleGenerator()`     | `scramble.generator`             | Selects the Scramble generator name.              |
 
 Supported navigation badge modes are `version`, `count`, and `null`.
+
+The docs page is hidden in production by default. Enable `page.enabled_in_production` or call `enabledInProduction()` only when trusted production panel users should be able to access API documentation.
 
 Developer options are disabled by default. Enable them when dashboard users should be able to toggle developer mode and add or edit custom request headers and query parameters.
 

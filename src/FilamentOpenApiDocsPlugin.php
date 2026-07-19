@@ -40,6 +40,10 @@ class FilamentOpenApiDocsPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
+        if (! $this->shouldRegisterPage()) {
+            return;
+        }
+
         $page = OpenApiDocsPage::class;
 
         if (filled($slug = $this->getSlug())) {
@@ -126,6 +130,13 @@ class FilamentOpenApiDocsPlugin implements Plugin
     public function description(?string $description): static
     {
         $this->options['page.description'] = $description;
+
+        return $this;
+    }
+
+    public function enabledInProduction(bool $condition = true): static
+    {
+        $this->options['page.enabled_in_production'] = $condition;
 
         return $this;
     }
@@ -222,6 +233,11 @@ class FilamentOpenApiDocsPlugin implements Plugin
         return $this->option('page.description', 'page.description');
     }
 
+    public function isEnabledInProduction(): bool
+    {
+        return (bool) $this->option('page.enabled_in_production', 'page.enabled_in_production', false);
+    }
+
     public function hasFullWidthLayout(): bool
     {
         return (bool) $this->option('layout.full_width', 'layout.full_width', true);
@@ -245,6 +261,11 @@ class FilamentOpenApiDocsPlugin implements Plugin
     public function getScrambleGenerator(): string
     {
         return (string) $this->option('scramble.generator', 'scramble.generator', 'default');
+    }
+
+    private function shouldRegisterPage(): bool
+    {
+        return ! app()->environment('production') || $this->isEnabledInProduction();
     }
 
     private function option(string $option, string $config, mixed $default = null): mixed
