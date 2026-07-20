@@ -84,6 +84,19 @@ class SchemaPresenter
     private function properties(array $schema, mixed $required = [], array $components = []): array
     {
         $schema = $this->resolveReference($schema, $components);
+        $required = is_array($required) ? $required : [];
+
+        if (isset($schema['allOf']) && is_array($schema['allOf'])) {
+            return $this->compositionProperties($schema['allOf'], $required, $components, true);
+        }
+
+        foreach (['oneOf', 'anyOf'] as $composition) {
+            if (! is_array($schema[$composition] ?? null)) {
+                continue;
+            }
+
+            return $this->compositionProperties($schema[$composition], $required, $components, false);
+        }
 
         if (($schema['type'] ?? null) === 'array' && is_array($schema['items'] ?? null)) {
             $items = $this->resolveReference($schema['items'], $components);
@@ -103,8 +116,6 @@ class SchemaPresenter
             return [];
         }
 
-        $required = is_array($required) ? $required : [];
-
         return collect($schema['properties'])
             ->filter(fn (mixed $property): bool => is_array($property))
             ->map(function (array $property, string $name) use ($components, $required): array {
@@ -122,6 +133,104 @@ class SchemaPresenter
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<int, mixed>  $schemas
+     * @param  array<int, mixed>  $required
+     * @param  array<string, mixed>  $components
+     * @return array<int, array{
+     *     name: string,
+     *     types: array<int, string>,
+     *     required: bool,
+     *     description: ?string,
+     *     enum: array<int, string>,
+     *     examples: array<int, string>,
+     *     children: array<int, mixed>,
+     * }>
+     */
+    private function compositionProperties(array $schemas, array $required, array $components, bool $mergeAll): array
+    {
+        $rows = [];
+
+        foreach ($schemas as $schema) {
+            if (! is_array($schema)) {
+                continue;
+            }
+
+            $schema = $this->resolveReference($schema, $components);
+            $schemaRequired = array_values(array_unique([
+                ...$required,
+                ...(is_array($schema['required'] ?? null) ? $schema['required'] : []),
+            ]));
+            $schemaRows = $this->properties($schema, $schemaRequired, $components);
+
+            if ($schemaRows === []) {
+                continue;
+            }
+
+            if (! $mergeAll) {
+                return $schemaRows;
+            }
+
+            $rows = $this->mergeRows($rows, $schemaRows);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  array<int, array{
+     *     name: string,
+     *     types: array<int, string>,
+     *     required: bool,
+     *     description: ?string,
+     *     enum: array<int, string>,
+     *     examples: array<int, string>,
+     *     children: array<int, mixed>,
+     * }>  $rows
+     * @param  array<int, array{
+     *     name: string,
+     *     types: array<int, string>,
+     *     required: bool,
+     *     description: ?string,
+     *     enum: array<int, string>,
+     *     examples: array<int, string>,
+     *     children: array<int, mixed>,
+     * }>  $newRows
+     * @return array<int, array{
+     *     name: string,
+     *     types: array<int, string>,
+     *     required: bool,
+     *     description: ?string,
+     *     enum: array<int, string>,
+     *     examples: array<int, string>,
+     *     children: array<int, mixed>,
+     * }>
+     */
+    private function mergeRows(array $rows, array $newRows): array
+    {
+        foreach ($newRows as $newRow) {
+            $index = array_search($newRow['name'], array_column($rows, 'name'), true);
+
+            if ($index === false) {
+                $rows[] = $newRow;
+
+                continue;
+            }
+
+            $rows[$index] = [
+                'name'        => $rows[$index]['name'],
+                'types'       => array_values(array_unique([...$rows[$index]['types'], ...$newRow['types']])),
+                'required'    => $rows[$index]['required'] || $newRow['required'],
+                'description' => $rows[$index]['description'] ?? $newRow['description'],
+                'enum'        => array_values(array_unique([...$rows[$index]['enum'], ...$newRow['enum']])),
+                'examples'    => array_values(array_unique([...$rows[$index]['examples'], ...$newRow['examples']])),
+                'children'    => $this->mergeRows($rows[$index]['children'], $newRow['children']),
+            ];
+        }
+
+        return $rows;
     }
 
     /**

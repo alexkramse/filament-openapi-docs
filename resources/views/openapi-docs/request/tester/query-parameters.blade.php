@@ -11,7 +11,7 @@
         tag="button"
         x-show="canUseDeveloperOptions"
         x-on:click="addQueryParameter()"
-      >{{ __('filament-openapi-docs::ui.actions.add_parameter') }}</x-filament::link
+        >{{ __('filament-openapi-docs::ui.actions.add_parameter') }}</x-filament::link
       >
     </div>
 

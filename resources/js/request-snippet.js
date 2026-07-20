@@ -418,7 +418,8 @@ export default function requestSnippet(config) {
       const har = structuredCloneSafe(this.selectedRequest?.har ?? {});
       const queryString = this.queryParameters
         .filter(
-          (parameter) => this.canUseDeveloperOptions || !parameter.developerOnly,
+          (parameter) =>
+            this.canUseDeveloperOptions || !parameter.developerOnly,
         )
         .filter(
           (parameter) => parameter.name && String(parameter.value).length > 0,

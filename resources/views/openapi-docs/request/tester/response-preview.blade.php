@@ -20,10 +20,16 @@
     </div>
     <p class="fi-section-header-description">
       <template x-if="response.contentType">
-        <x-filament::badge color="gray" x-text="response.contentType"></x-filament::badge>
+        <x-filament::badge
+          color="gray"
+          x-text="response.contentType"
+        ></x-filament::badge>
       </template>
       <template x-if="response.statusText">
-        <x-filament::badge color="gray" x-text="response.statusText"></x-filament::badge>
+        <x-filament::badge
+          color="gray"
+          x-text="response.statusText"
+        ></x-filament::badge>
       </template>
     </p>
 

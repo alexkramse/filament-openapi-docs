@@ -44,10 +44,7 @@
           x-model="activeClient"
           aria-label="{{ __('filament-openapi-docs::ui.aria.request_sample_client') }}"
         >
-          <template
-            x-for="client in selectedClients"
-            x-bind:key="client.key"
-          >
+          <template x-for="client in selectedClients" x-bind:key="client.key">
             <option
               x-bind:value="client.key"
               x-bind:selected="client.key === activeClient"

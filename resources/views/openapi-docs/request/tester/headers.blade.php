@@ -10,7 +10,8 @@
         tag="button"
         x-show="canUseDeveloperOptions"
         x-on:click="addHeader()"
-      >{{ __('filament-openapi-docs::ui.actions.add_header') }}</x-filament::link>
+        >{{ __('filament-openapi-docs::ui.actions.add_header') }}</x-filament::link
+      >
     </div>
     <div class="foad-send-controls foad-send-controls-grid">
       <template
