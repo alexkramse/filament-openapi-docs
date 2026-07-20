@@ -51,8 +51,6 @@ class OpenApiParser
             }
         }
 
-        ksort($endpoints);
-
         return [
             'info'          => is_array($spec['info'] ?? null) ? $spec['info'] : [],
             'servers'       => $this->servers($spec),

@@ -65,6 +65,44 @@ it('falls back to method and path slug when operation id is missing', function (
     expect($parsed['endpoints']['System'][0]->id)->toBe('get-health-check');
 });
 
+it('preserves endpoint group order from the openapi paths', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.1.0',
+        'info'    => [
+            'title'   => 'Laravel',
+            'version' => '0.0.1',
+        ],
+        'paths' => [
+            '/feedback' => [
+                'post' => [
+                    'tags'      => ['Feedback'],
+                    'responses' => [
+                        '202' => ['description' => 'Accepted'],
+                    ],
+                ],
+            ],
+            '/accounts' => [
+                'get' => [
+                    'tags'      => ['Accounts'],
+                    'responses' => [
+                        '200' => ['description' => 'OK'],
+                    ],
+                ],
+            ],
+            '/games' => [
+                'get' => [
+                    'tags'      => ['Games'],
+                    'responses' => [
+                        '200' => ['description' => 'OK'],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    expect(array_keys($parsed['endpoints']))->toBe(['Feedback', 'Accounts', 'Games']);
+});
+
 it('uses documented content type header as a request sample media type override', function () {
     $parsed = app(OpenApiParser::class)->parse([
         'openapi' => '3.0.0',
@@ -121,21 +159,62 @@ it('uses documented content type header as a request sample media type override'
     $endpoint = $parsed['endpoints']['Demo API'][0];
     $presented = app(RequestSnippetPresenter::class)->present($endpoint, [], $parsed['components']);
     $request = $presented['requests'][0];
+    $html = renderParserOpenApiDocsEndpoint($endpoint, [], $parsed['components']);
 
     expect($endpoint->requestBodies[0]['contentType'])->toBe('application/json')
         ->and($presented['headerParameters'])->toBe([])
+        ->and($html)->toContain('Form request')
+        ->and($html)->toContain('Body')
+        ->and($html)->toContain('Type: application/x-www-form-urlencoded')
+        ->and($html)->toContain('URL encoded')
+        ->and($html)->not->toContain('Type: application/json')
         ->and($presented['mediaHeaders'])->toContain([
             'name'        => 'Content-Type',
             'value'       => 'application/x-www-form-urlencoded',
             'description' => 'Request body media type',
         ])
         ->and($request['label'])->toBe('application/x-www-form-urlencoded - Generated')
+        ->and($presented['requestBodies'][0]['contentType'])->toBe('application/x-www-form-urlencoded')
         ->and($request['bodyMimeType'])->toBe('application/x-www-form-urlencoded')
+        ->and($request['formParameters'])->toBe([
+            [
+                'name'          => 'name',
+                'value'         => 'Katherine Johnson',
+                'developerOnly' => false,
+                'removable'     => false,
+            ],
+            [
+                'name'          => 'email',
+                'value'         => 'katherine@example.test',
+                'developerOnly' => false,
+                'removable'     => false,
+            ],
+            [
+                'name'          => 'rating',
+                'value'         => '5',
+                'developerOnly' => false,
+                'removable'     => false,
+            ],
+        ])
         ->and($request['bodyText'])->toBe('name=Katherine%20Johnson&email=katherine%40example.test&rating=5')
         ->and($request['har']['headers'])->toContain(['name' => 'Content-Type', 'value' => 'application/x-www-form-urlencoded'])
         ->and($request['har']['postData'])->toBe([
             'mimeType' => 'application/x-www-form-urlencoded',
             'text'     => 'name=Katherine%20Johnson&email=katherine%40example.test&rating=5',
+            'params'   => [
+                [
+                    'name'  => 'name',
+                    'value' => 'Katherine Johnson',
+                ],
+                [
+                    'name'  => 'email',
+                    'value' => 'katherine@example.test',
+                ],
+                [
+                    'name'  => 'rating',
+                    'value' => '5',
+                ],
+            ],
         ]);
 });
 
@@ -208,6 +287,7 @@ it('provides request docs editable controls and baseline har from one presenter 
         ->and($request['cookieParameters'][0]['name'])->toBe('demo_session')
         ->and($request['pathParameters'][0]['name'])->toBe('user')
         ->and($request['queryParameters'][0]['name'])->toBe('include')
+        ->and($request['formParameters'])->toBe([])
         ->and($request['har']['url'])->toBe('https://api.example.test/users/5?include=profile')
         ->and($request['har']['cookies'])->toContain(['name' => 'demo_session', 'value' => 'session-token'])
         ->and($request['har']['headers'])->toContain(['name' => 'Authorization', 'value' => 'Bearer <token>'])
@@ -341,6 +421,8 @@ it('renders request read and send modes', function () {
     $requestMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request.blade.php');
     $readModeMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/data.blade.php');
     $sendModeMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester.blade.php');
+    $formRequestMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/form-request.blade.php');
+    $bodyMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/body.blade.php');
     $responsePreviewMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/response-preview.blade.php');
     $requestSnippetRuntime = file_get_contents(__DIR__.'/../../resources/js/request-snippet.js');
 
@@ -377,9 +459,9 @@ it('renders request read and send modes', function () {
         ->and($html)->toContain('await navigator.clipboard.writeText(text)')
         ->and($html)->toContain('https:\\/\\/api.example.test\\/users')
         ->and($html)->toContain('demo_session')
-        ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(5)
-        ->and(substr_count($html, 'foad-send-controls foad-justify-content-space-between'))->toBe(2)
-        ->and(substr_count($html, 'class="foad-header-row"'))->toBe(2)
+        ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(6)
+        ->and(substr_count($html, 'foad-send-controls foad-justify-content-space-between'))->toBe(3)
+        ->and(substr_count($html, 'class="foad-header-row"'))->toBe(3)
         ->and($pageMarkup)->toContain('x-data="requestSnippet(@js($requestData))"')
         ->and(substr_count($removableParameterMarkup, '<x-filament::icon-button'))->toBe(2)
         ->and(substr_count($removableParameterMarkup, 'icon="heroicon-m-x-mark"'))->toBe(2)
@@ -407,6 +489,14 @@ it('renders request read and send modes', function () {
         ->and($requestSnippetRuntime)->toContain('this.cookieParameters.length > 0')
         ->and($requestSnippetRuntime)->toContain('har.cookies = this.cookieParameters')
         ->and($requestSnippetRuntime)->toContain('this.mediaHeaderParameters.length > 0')
+        ->and($requestSnippetRuntime)->toContain('hasFormUrlEncodedBody')
+        ->and($requestSnippetRuntime)->toContain('encodeFormParameters')
+        ->and($sendModeMarkup)->toContain('request.tester.form-request')
+        ->and($formRequestMarkup)->toContain('ui.labels.form_request')
+        ->and($formRequestMarkup)->toContain('x-for="(parameter, index) in formParameters"')
+        ->and($bodyMarkup)->not->toContain('ui.labels.form_request')
+        ->and($bodyMarkup)->not->toContain('x-for="(parameter, index) in formParameters"')
+        ->and($bodyMarkup)->toContain('x-bind:value="encodedFormBodyText()"')
         ->and($requestSnippetRuntime)->toContain('hasDeveloperOptions: Boolean(config.hasDeveloperOptions ?? false)')
         ->and($requestSnippetRuntime)->toContain('this.hasDeveloperOptions && this.developerMode')
         ->and($sendModeMarkup)->not->toContain('media-headers')

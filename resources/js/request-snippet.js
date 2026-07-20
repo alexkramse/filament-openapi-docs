@@ -83,6 +83,7 @@ export default function requestSnippet(config) {
     bodyJsonError: null,
     pathParameters: [],
     queryParameters: [],
+    formParameters: [],
     cookieParameters: [],
     headerParameters: [],
     mediaHeaderParameters: [],
@@ -172,6 +173,13 @@ export default function requestSnippet(config) {
     get hasJsonBody() {
       return (
         this.selectedRequest?.har?.postData?.mimeType === "application/json"
+      );
+    },
+
+    get hasFormUrlEncodedBody() {
+      return (
+        normalizeContentType(this.selectedRequest?.har?.postData?.mimeType) ===
+        "application/x-www-form-urlencoded"
       );
     },
 
@@ -370,11 +378,31 @@ export default function requestSnippet(config) {
       this.queryParameters.splice(index, 1);
     },
 
+    addFormParameter() {
+      if (!this.canUseDeveloperOptions || !this.hasFormUrlEncodedBody) {
+        return;
+      }
+
+      this.formParameters.push({
+        name: "",
+        value: "",
+        developerOnly: true,
+        removable: true,
+      });
+    },
+
+    removeFormParameter(index) {
+      this.formParameters.splice(index, 1);
+    },
+
     resetDeveloperModeState() {
       this.headerParameters = this.headerParameters.filter(
         (parameter) => !parameter.removable,
       );
       this.queryParameters = this.queryParameters.filter(
+        (parameter) => !parameter.developerOnly,
+      );
+      this.formParameters = this.formParameters.filter(
         (parameter) => !parameter.developerOnly,
       );
       this.mediaHeaderParameters = cloneParameters(
@@ -391,6 +419,7 @@ export default function requestSnippet(config) {
         this.pathParameters = [];
         this.queryParameters = [];
         this.cookieParameters = [];
+        this.formParameters = [];
         this.headerParameters = [];
         this.mediaHeaderParameters = [];
         this.authParameters = [];
@@ -416,6 +445,9 @@ export default function requestSnippet(config) {
       );
       this.cookieParameters = cloneParameters(
         this.selectedRequest.cookieParameters ?? [],
+      );
+      this.formParameters = cloneParameters(
+        this.selectedRequest.formParameters ?? [],
       );
       this.bodyText = this.selectedRequest.bodyText ?? "";
 
@@ -540,6 +572,19 @@ export default function requestSnippet(config) {
       if (har.postData) {
         if (this.hasJsonBody) {
           this.formatJsonBody(false);
+        }
+
+        if (this.hasFormUrlEncodedBody) {
+          const formParameters = this.editableFormParameters();
+
+          this.bodyText = encodeFormParameters(formParameters);
+          har.postData = {
+            ...har.postData,
+            params: formParameters,
+            text: this.bodyText,
+          };
+
+          return har;
         }
 
         har.postData = {
@@ -683,6 +728,10 @@ export default function requestSnippet(config) {
         this.formatJsonBody(false);
       }
 
+      if (this.hasFormUrlEncodedBody) {
+        this.bodyText = encodeFormParameters(this.editableFormParameters());
+      }
+
       try {
         if (!this.bodyText || !navigator.clipboard?.writeText) {
           throw new Error("Clipboard unavailable");
@@ -700,6 +749,29 @@ export default function requestSnippet(config) {
           .danger()
           .send();
       }
+    },
+
+    encodedFormBodyText() {
+      if (!this.hasFormUrlEncodedBody) {
+        return this.bodyText;
+      }
+
+      return encodeFormParameters(this.editableFormParameters());
+    },
+
+    editableFormParameters() {
+      return this.formParameters
+        .filter(
+          (parameter) =>
+            this.canUseDeveloperOptions || !parameter.developerOnly,
+        )
+        .filter(
+          (parameter) => parameter.name && String(parameter.value).length > 0,
+        )
+        .map((parameter) => ({
+          name: parameter.name,
+          value: String(parameter.value),
+        }));
     },
 
     async copyResponseBody() {
@@ -802,6 +874,29 @@ function isPlaceholderValue(value) {
 
 function isValidHeaderName(name) {
   return /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(String(name));
+}
+
+function normalizeContentType(contentType) {
+  return String(contentType ?? "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+}
+
+function encodeFormParameters(parameters) {
+  return parameters
+    .map(
+      (parameter) =>
+        `${encodeFormComponent(parameter.name)}=${encodeFormComponent(parameter.value)}`,
+    )
+    .join("&");
+}
+
+function encodeFormComponent(value) {
+  return encodeURIComponent(String(value)).replace(
+    /[!'()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 }
 
 function formatResponseBody(body, contentType) {
