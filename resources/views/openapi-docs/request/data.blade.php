@@ -110,26 +110,57 @@
           </div>
         @endif
       @endforeach
+
+      @foreach ($requestData['requestBodies'] as $body)
+        <div class="foad-stack foad-stack-sm">
+          <div class="foad-request-body-heading">
+            <h4 class="fi-section-header-heading">
+              {{ __('filament-openapi-docs::ui.labels.body') }}
+            </h4>
+
+            <x-filament::badge color="gray" size="md">
+              {{ $body['contentType'] }}
+            </x-filament::badge>
+          </div>
+
+          <x-filament-openapi-docs::schema-tree
+            :schema="$body['schema']"
+            :components="$components"
+          />
+        </div>
+      @endforeach
     </div>
 
     <div class="foad-stack foad-stack-sm">
-      @if ($requestData['requestBodies'] !== [])
-        <div class="foad-stack foad-stack-md">
-          <h4 class="fi-section-header-heading">
-            {{ __('filament-openapi-docs::ui.labels.body') }}
-          </h4>
+      @foreach ($requestData['requestBodies'] as $body)
+        <div class="foad-stack foad-stack-sm">
+          <div class="foad-request-body-heading">
+            <h4 class="fi-section-header-heading">
+              {{ __('filament-openapi-docs::ui.labels.body') }}
+            </h4>
 
-          @foreach ($requestData['requestBodies'] as $body)
-            <x-filament-openapi-docs::media-type-content
+            <x-filament::badge color="gray" size="md">
+              {{ $body['contentType'] }}
+            </x-filament::badge>
+          </div>
+
+          @if (\Illuminate\Support\Str::lower(\Illuminate\Support\Str::before($body['contentType'], ';')) === 'application/x-www-form-urlencoded')
+            <div class="foad-request-body-sample-wrap">
+              <x-filament-openapi-docs::code-sample
+                :label="__('filament-openapi-docs::ui.labels.body')"
+                :content-type="$body['contentType']"
+                :samples="$examplePresenter->samples($body, $components)"
+              />
+            </div>
+          @else
+            <x-filament-openapi-docs::code-sample
               :label="__('filament-openapi-docs::ui.labels.body')"
               :content-type="$body['contentType']"
-              :schema="$body['schema']"
-              :components="$components"
               :samples="$examplePresenter->samples($body, $components)"
             />
-          @endforeach
+          @endif
         </div>
-      @endif
+      @endforeach
 
       @if ($requestData['securityItems'] === [] && $requestData['mediaHeaders'] === [] && $requestData['headerParameters'] === [] && $requestData['cookieParameters'] === [] && $requestData['pathParameters'] === [] && $requestData['queryParameters'] === [] && $requestData['requestBodies'] === [])
         <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.request_data') }}</p>

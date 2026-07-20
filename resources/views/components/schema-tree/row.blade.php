@@ -14,7 +14,7 @@
   @if ($hasChildren)
     <summary class="foad-property-summary">
   @endif
-  <div class="foad-property-main">
+  <div class="foad-property-main foad-schema-property-main">
     <span class="foad-property-title">
       <span class="foad-property-connector" aria-hidden="true"></span>
 
@@ -28,7 +28,7 @@
       <span class="foad-property-name">{{ $row['name'] }}</span>
     </span>
 
-    <div class="foad-inline-list foad-inline-list-sm">
+    <div class="foad-inline-list foad-inline-list-sm foad-schema-type-badges">
       @foreach ($row['types'] as $type)
         <x-filament::badge
           color="info"
@@ -36,7 +36,9 @@
           >{{ $type }}</x-filament::badge
         >
       @endforeach
+    </div>
 
+    <div class="foad-schema-presence-badge">
       <x-filament::badge
         :color="$row['required'] ? 'danger' : 'gray'"
         size="xs"
