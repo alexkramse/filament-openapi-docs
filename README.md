@@ -1,7 +1,7 @@
 # Filament OpenAPI Docs
 
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-![Stable Version](https://img.shields.io/badge/stable-v0.8.0-blue)
+![Latest Stable Version](https://img.shields.io/packagist/v/alexkramse/filament-openapi-docs.svg?label=stable)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Native OpenAPI documentation for Filament panels, powered by Scramble.
