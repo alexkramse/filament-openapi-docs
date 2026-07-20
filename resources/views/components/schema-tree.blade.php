@@ -1,4 +1,4 @@
-@props([
+@props ([
     'schema',
     'components' => [],
 ])
@@ -13,10 +13,7 @@
   @if ($rows !== [])
     <div class="foad-schema-tree">
       @foreach ($rows as $row)
-        <x-filament-openapi-docs::schema-tree.row
-          :row="$row"
-          :depth="0"
-        />
+        <x-filament-openapi-docs::schema-tree.row :row="$row" :depth="0" />
       @endforeach
     </div>
   @elseif (isset($schema['$ref']))

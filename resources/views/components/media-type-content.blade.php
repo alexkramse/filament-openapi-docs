@@ -1,4 +1,4 @@
-@props([
+@props ([
   'label',
   'contentType',
   'schema',
@@ -15,10 +15,7 @@
 
   <div class="fi-sc-component">
     <div x-data="{ tab: 'tab2' }" class="fi-sc-tabs fi-contained">
-      <x-filament::tabs
-        :label="$label"
-        class="fi-contained"
-      >
+      <x-filament::tabs :label="$label" class="fi-contained">
         <x-filament::tabs.item
           @click="tab = 'tab2'"
           :alpine-active="'tab === \'tab2\''"

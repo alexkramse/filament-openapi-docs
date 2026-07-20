@@ -1,4 +1,4 @@
-@props([
+@props ([
     'row',
     'depth' => 0,
 ])

@@ -1,4 +1,4 @@
-@props([
+@props ([
     'label' => null,
     'contentType' => null,
     'samples' => [],
@@ -30,13 +30,11 @@
 
     @foreach ($sampleOptions as $sample)
       <div x-show="activeSample === @js($sample['key'])">
-        <div class="foad-response-block">
-          <div class="foad-sample-scroll foad-response-code">
-            <pre class="foad-sample-code"><code
+        <div class="foad-sample-scroll">
+          <pre class="foad-sample-code"><code
                 x-bind:class="'language-' + samplePrismLanguage(@js($contentType ?? ''))"
                 x-html="highlightSample(@js($sample['value']), @js($contentType ?? ''))"
               ></code></pre>
-          </div>
         </div>
       </div>
     @endforeach

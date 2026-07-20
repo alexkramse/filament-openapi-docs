@@ -1,7 +1,10 @@
 <div class="foad-stack foad-stack-md">
   <div
     class="fi-grid foad-send-layout md:fi-grid-cols"
-    style="--cols-default: repeat(1, minmax(0, 1fr)); --cols-md: repeat(2, minmax(0, 1fr));"
+    style="
+      --cols-default: repeat(1, minmax(0, 1fr));
+      --cols-md: repeat(2, minmax(0, 1fr));
+    "
   >
     <div class="foad-stack foad-stack-sm">
       @if ($requestData['securityItems'] !== [])

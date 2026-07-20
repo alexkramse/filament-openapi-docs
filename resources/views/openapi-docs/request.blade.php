@@ -17,7 +17,7 @@
           </span>
           <span
             class="fi-fo-field-label-content"
-          >{{ __('filament-openapi-docs::ui.labels.send_mode') }}</span
+            >{{ __('filament-openapi-docs::ui.labels.send_mode') }}</span
           >
         </label>
       </div>
@@ -46,7 +46,7 @@
           </span>
           <span
             class="fi-fo-field-label-content"
-          >{{ __('filament-openapi-docs::ui.labels.developer_mode') }}</span
+            >{{ __('filament-openapi-docs::ui.labels.developer_mode') }}</span
           >
         </label>
       </div>
