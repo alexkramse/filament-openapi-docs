@@ -44,6 +44,7 @@ return [
         'cookies'              => 'Cookies',
         'developer_mode'       => 'Developer mode',
         'example'              => 'Example',
+        'form_request'         => 'Form request',
         'headers'              => 'Headers',
         'json'                 => 'JSON',
         'media_headers'        => 'Media headers',
@@ -60,6 +61,7 @@ return [
         'security'             => 'Security',
         'send_mode'            => 'View/Send mode',
         'tree_view'            => 'Tree view',
+        'urlencoded'           => 'URL encoded',
         'value'                => 'Value',
     ],
     'messages' => [

@@ -32,7 +32,16 @@
       </div>
     </template>
 
-    <template x-if="!hasJsonBody">
+    <template x-if="hasFormUrlEncodedBody">
+      <textarea
+        class="foad-try-textarea"
+        x-bind:value="encodedFormBodyText()"
+        readonly
+        spellcheck="false"
+      ></textarea>
+    </template>
+
+    <template x-if="!hasJsonBody && !hasFormUrlEncodedBody">
       <textarea
         class="foad-try-textarea"
         x-model="bodyText"

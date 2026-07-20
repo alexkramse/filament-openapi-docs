@@ -396,6 +396,26 @@
   overflow: hidden;
 }
 
+.foad-media-type-content,
+.foad-media-type-content .fi-sc-tabs,
+.foad-media-type-content .fi-sc-tabs-tab,
+.foad-code-sample,
+.foad-code-sample-panel,
+.foad-media-type-content [x-show],
+.foad-media-type-content .foad-sample-scroll {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.foad-media-type-content .fi-sc-tabs-tab,
+.foad-code-sample,
+.foad-code-sample-panel {
+  overflow: hidden;
+}
+
 .foad-sample-toolbar {
   align-items: center;
   border-bottom: 1px solid color-mix(in oklab, currentColor 12%, transparent);

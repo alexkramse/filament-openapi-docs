@@ -584,6 +584,7 @@ it('adds spacing between openapi summary server urls and meta badges', function 
     $queryParametersView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/query-parameters.blade.php');
     $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/http-snippet.blade.php');
     $sampleView = file_get_contents(__DIR__.'/../../resources/views/components/code-sample.blade.php');
+    $mediaTypeContentView = file_get_contents(__DIR__.'/../../resources/views/components/media-type-content.blade.php');
     $pageView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
     $readRequestView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/data.blade.php');
     $sendRequestView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester.blade.php');
@@ -638,6 +639,16 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($styles)->toContain('.foad-header-row > *')
         ->and($styles)->toContain('.foad-send-actions')
         ->and($styles)->toContain('.foad-sample')
+        ->and($styles)->toContain('.foad-media-type-content')
+        ->and($styles)->toContain('.foad-media-type-content .fi-sc-tabs')
+        ->and($styles)->toContain('.foad-media-type-content .fi-sc-tabs-tab')
+        ->and($styles)->toContain('.foad-code-sample')
+        ->and($styles)->toContain('.foad-code-sample-panel')
+        ->and($styles)->toContain('.foad-media-type-content [x-show]')
+        ->and($styles)->toContain('.foad-media-type-content .foad-sample-scroll')
+        ->and($styles)->toContain('box-sizing: border-box;')
+        ->and($styles)->toContain('inline-size: 100%;')
+        ->and($styles)->toContain('width: 100%;')
         ->and($styles)->toContain('.foad-sample-section')
         ->and($styles)->toContain('.foad-sample-section > .fi-section-content-ctn > .fi-section-content')
         ->and($styles)->toContain('.foad-sample-scroll')
@@ -684,9 +695,14 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($responsePreviewView)->toContain('class="foad-response-block"')
         ->and($sampleView)->toContain('class="foad-sample-scroll"')
         ->and($sampleView)->toContain('class="foad-sample-code"')
+        ->and($sampleView)->toContain('class="foad-code-sample"')
+        ->and($sampleView)->toContain('class="foad-code-sample-panel"')
         ->and($sampleView)->toContain('samplePrismLanguage(@js($contentType ?? \'\'))')
         ->and($sampleView)->toContain('x-html="highlightSample(@js($sample[\'value\']), @js($contentType ?? \'\'))"')
         ->and($sampleView)->not->toContain('<code>{{ $sample[\'value\'] }}</code>')
+        ->and($mediaTypeContentView)->toContain('class="fi-sc-component foad-media-type-content"')
+        ->and($mediaTypeContentView)->toContain('application/x-www-form-urlencoded')
+        ->and($mediaTypeContentView)->toContain('ui.labels.urlencoded')
         ->and($sendRequestView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
         ->and($sendRequestView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
         ->and($sendRequestView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
@@ -761,6 +777,47 @@ it('exposes endpoints through native filament sub navigation', function () {
     expect($page->selectedEndpointId)->toBe('showUser')
         ->and($subNavigation[0]->getItems()[0]->isActive())->toBeFalse()
         ->and($subNavigation[0]->getItems()[1]->isActive())->toBeTrue();
+});
+
+it('preserves openapi endpoint group order in native filament sub navigation', function () {
+    $provider = m::mock(SpecProvider::class);
+    $provider
+        ->shouldReceive('spec')
+        ->once()
+        ->andReturn([
+            'paths' => [
+                '/feedback' => [
+                    'post' => [
+                        'tags'        => ['Feedback'],
+                        'operationId' => 'createFeedback',
+                        'summary'     => 'Create feedback',
+                    ],
+                ],
+                '/accounts' => [
+                    'get' => [
+                        'tags'        => ['Accounts'],
+                        'operationId' => 'listAccounts',
+                        'summary'     => 'List accounts',
+                    ],
+                ],
+                '/games' => [
+                    'get' => [
+                        'tags'        => ['Games'],
+                        'operationId' => 'listGames',
+                        'summary'     => 'List games',
+                    ],
+                ],
+            ],
+        ]);
+
+    app()->instance(SpecProvider::class, $provider);
+
+    $subNavigation = app(OpenApiDocsPage::class)->getSubNavigation();
+
+    expect($subNavigation)->toHaveCount(3)
+        ->and($subNavigation[0]->getLabel())->toContain('Feedback')
+        ->and($subNavigation[1]->getLabel())->toContain('Accounts')
+        ->and($subNavigation[2]->getLabel())->toContain('Games');
 });
 
 it('caches parsed openapi data for the current request', function () {

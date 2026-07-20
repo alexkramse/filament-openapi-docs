@@ -44,6 +44,7 @@ return [
         'cookies'              => 'Cookies',
         'developer_mode'       => 'Режим розробника',
         'example'              => 'Приклад',
+        'form_request'         => 'Форма запиту',
         'headers'              => 'Заголовки',
         'json'                 => 'JSON',
         'media_headers'        => 'Медіазаголовки',
@@ -60,6 +61,7 @@ return [
         'security'             => 'Безпека',
         'send_mode'            => 'Режим надсилання',
         'tree_view'            => 'Дерево',
+        'urlencoded'           => 'URL-кодовано',
         'value'                => 'Значення',
     ],
     'messages' => [

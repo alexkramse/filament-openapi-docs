@@ -6,6 +6,18 @@
   'samples' => [],
 ])
 
+@php
+    $normalizedContentType = \Illuminate\Support\Str::of($contentType)
+        ->before(';')
+        ->trim()
+        ->lower()
+        ->toString();
+
+    $sampleTabLabel = $normalizedContentType === 'application/x-www-form-urlencoded'
+        ? __('filament-openapi-docs::ui.labels.urlencoded')
+        : __('filament-openapi-docs::ui.labels.json');
+@endphp
+
 <div class="foad-stack foad-stack-sm">
   <div class="foad-inline-list foad-inline-list-sm">
     <x-filament::badge color="gray" size="md">
@@ -13,7 +25,7 @@
     </x-filament::badge>
   </div>
 
-  <div class="fi-sc-component">
+  <div class="fi-sc-component foad-media-type-content">
     <div x-data="{ tab: 'tab2' }" class="fi-sc-tabs fi-contained">
       <x-filament::tabs :label="$label" class="fi-contained">
         <x-filament::tabs.item
@@ -28,7 +40,7 @@
           @click="tab = 'tab1'"
           :alpine-active="'tab === \'tab1\''"
         >
-          {{ __('filament-openapi-docs::ui.labels.json') }}
+          {{ $sampleTabLabel }}
         </x-filament::tabs.item>
       </x-filament::tabs>
 

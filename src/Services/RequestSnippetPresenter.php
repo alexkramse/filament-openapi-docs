@@ -32,6 +32,7 @@ class RequestSnippetPresenter
      *     cookieParameters: array<int, array<string, mixed>>,
      *     pathParameters: array<int, array<string, mixed>>,
      *     queryParameters: array<int, array<string, mixed>>,
+     *     requestBodies: array<int, array<string, mixed>>,
      *     requests: array<int, array<string, mixed>>,
      *     messages: array<string, string>,
      *     hasRequestSamples: bool,
@@ -47,12 +48,12 @@ class RequestSnippetPresenter
         $cookieParameters = $this->parameters($endpoint, $components, 'cookie');
         $pathParameters = $this->parameters($endpoint, $components, 'path');
         $queryParameters = $this->parameters($endpoint, $components, 'query');
-        $requestBodies = $endpoint->requestBodies === [] ? [null] : $endpoint->requestBodies;
+        $requestBodies = $this->requestBodies($endpoint, $contentTypeOverride);
+        $sampleRequestBodies = $requestBodies === [] ? [null] : $requestBodies;
         $requests = [];
 
-        foreach ($requestBodies as $bodyIndex => $body) {
-            $presentedBody = is_array($body) ? $this->withContentType($body, $contentTypeOverride) : $body;
-            $samples = is_array($presentedBody) ? $this->examplePresenter->samples($presentedBody, $components) : [[]];
+        foreach ($sampleRequestBodies as $bodyIndex => $body) {
+            $samples = is_array($body) ? $this->examplePresenter->samples($body, $components) : [[]];
 
             if ($samples === []) {
                 $samples = [[]];
@@ -62,7 +63,7 @@ class RequestSnippetPresenter
                 $bodyText = is_string($sample['value'] ?? null) ? $sample['value'] : '';
                 $requests[] = [
                     'key'                   => "request-{$bodyIndex}-{$sampleIndex}",
-                    'label'                 => $this->label($presentedBody, $sample),
+                    'label'                 => $this->label($body, $sample),
                     'urlTemplate'           => $this->urlTemplate($endpoint, $servers),
                     'authParameters'        => $this->authParameters($securityItems),
                     'mediaHeaderParameters' => $this->editableMediaHeaders($mediaHeaders),
@@ -70,8 +71,9 @@ class RequestSnippetPresenter
                     'cookieParameters'      => $this->editableParameters($cookieParameters),
                     'pathParameters'        => $this->editableParameters($pathParameters),
                     'queryParameters'       => $this->editableParameters($queryParameters),
+                    'formParameters'        => $this->editableFormParameters($body, $bodyText),
                     'bodyText'              => $bodyText,
-                    'bodyMimeType'          => is_array($presentedBody) ? $presentedBody['contentType'] : null,
+                    'bodyMimeType'          => is_array($body) ? $body['contentType'] : null,
                     'har'                   => $this->har(
                         endpoint: $endpoint,
                         servers: $servers,
@@ -81,7 +83,7 @@ class RequestSnippetPresenter
                         cookieParameters: $cookieParameters,
                         mediaHeaders: $mediaHeaders,
                         securityItems: $securityItems,
-                        body: $presentedBody,
+                        body: $body,
                         bodyText: $bodyText,
                     ),
                 ];
@@ -95,6 +97,7 @@ class RequestSnippetPresenter
             'cookieParameters'    => $cookieParameters,
             'pathParameters'      => $pathParameters,
             'queryParameters'     => $queryParameters,
+            'requestBodies'       => $requestBodies,
             'requests'            => $requests,
             'messages'            => $this->messages(),
             'hasRequestSamples'   => $this->hasRequestSamples() && $requests !== [],
@@ -357,19 +360,21 @@ class RequestSnippetPresenter
     }
 
     /**
-     * @param  array<string, mixed>  $body
-     * @return array<string, mixed>
+     * @return array<int, array<string, mixed>>
      */
-    private function withContentType(array $body, ?string $contentType): array
+    private function requestBodies(Endpoint $endpoint, ?string $contentType): array
     {
         if ($contentType === null) {
-            return $body;
+            return $endpoint->requestBodies;
         }
 
-        return [
-            ...$body,
-            'contentType' => $contentType,
-        ];
+        return collect($endpoint->requestBodies)
+            ->map(fn (array $body): array => [
+                ...$body,
+                'contentType' => $contentType,
+            ])
+            ->values()
+            ->all();
     }
 
     /**
@@ -398,6 +403,27 @@ class RequestSnippetPresenter
                 'name'          => $header['name'],
                 'value'         => $header['value'],
                 'description'   => $header['description'],
+                'developerOnly' => false,
+                'removable'     => false,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $body
+     * @return array<int, array<string, mixed>>
+     */
+    private function editableFormParameters(?array $body, string $bodyText): array
+    {
+        if (! $this->isFormUrlEncodedBody($body)) {
+            return [];
+        }
+
+        return collect($this->parseFormEncodedBody($bodyText))
+            ->map(fn (array $parameter): array => [
+                'name'          => $parameter['name'],
+                'value'         => $parameter['value'],
                 'developerOnly' => false,
                 'removable'     => false,
             ])
@@ -475,6 +501,10 @@ class RequestSnippetPresenter
                 'mimeType' => $body['contentType'],
                 'text'     => $bodyText,
             ];
+
+            if ($this->isFormUrlEncodedBody($body)) {
+                $har['postData']['params'] = $this->parseFormEncodedBody($bodyText);
+            }
         }
 
         return $har;
@@ -692,6 +722,36 @@ class RequestSnippetPresenter
         }
 
         return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '';
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $body
+     */
+    private function isFormUrlEncodedBody(?array $body): bool
+    {
+        return is_array($body)
+            && is_string($body['contentType'] ?? null)
+            && Str::lower(trim(Str::before($body['contentType'], ';'))) === 'application/x-www-form-urlencoded';
+    }
+
+    /**
+     * @return array<int, array{name: string, value: string}>
+     */
+    private function parseFormEncodedBody(string $bodyText): array
+    {
+        return Str::of($bodyText)
+            ->explode('&')
+            ->filter(fn (string $pair): bool => $pair !== '')
+            ->map(function (string $pair): array {
+                [$name, $value] = array_pad(explode('=', $pair, 2), 2, '');
+
+                return [
+                    'name'  => urldecode($name),
+                    'value' => urldecode($value),
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     /**
