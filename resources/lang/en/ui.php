@@ -13,7 +13,7 @@ return [
     ],
     'aria' => [
         'request_example'         => 'Request example',
-        'request_sample_client'   => 'Request sample client',
+        'request_sample_client'   => 'Request HTTP Snippet',
         'request_sample_language' => 'Request sample language',
     ],
     'auth' => [
@@ -41,6 +41,7 @@ return [
         'allowed'              => 'Allowed',
         'auth'                 => 'Auth',
         'body'                 => 'Body',
+        'cookies'              => 'Cookies',
         'developer_mode'       => 'Developer mode',
         'example'              => 'Example',
         'headers'              => 'Headers',

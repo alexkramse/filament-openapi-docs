@@ -60,6 +60,30 @@
         </div>
       @endif
 
+      @if ($requestData['cookieParameters'] !== [])
+        <div class="foad-stack foad-stack-sm">
+          <h4 class="fi-section-header-heading">
+            {{ __('filament-openapi-docs::ui.labels.cookies') }}
+          </h4>
+          <div class="">
+            @foreach ($requestData['cookieParameters'] as $parameter)
+              @include ('filament-openapi-docs::openapi-docs.request.data.item', [
+                            'title' => $parameter['name'],
+                            'description' => $parameter['description'],
+                            'badges' => [
+                                ['label' => $parameter['type'], 'color' => 'info'],
+                                ...(filled($parameter['value'] ?? null) ? [['label' => \Illuminate\Support\Str::lower(__('filament-openapi-docs::ui.labels.example')).': '.$parameter['value'], 'color' => 'primary']] : []),
+                                ['label' => $parameter['required'] ? __('filament-openapi-docs::ui.badges.required') : __('filament-openapi-docs::ui.badges.optional'), 'color' => $parameter['required'] ? 'danger' : 'gray'],
+                            ],
+                            'metadata' => [
+                                __('filament-openapi-docs::ui.labels.example') => $parameter['example'] ?? null,
+                            ],
+                        ])
+            @endforeach
+          </div>
+        </div>
+      @endif
+
       @foreach ([
             __('filament-openapi-docs::ui.labels.path_parameters') => $requestData['pathParameters'],
             __('filament-openapi-docs::ui.labels.query_parameters') => $requestData['queryParameters'],
@@ -107,7 +131,7 @@
         </div>
       @endif
 
-      @if ($requestData['securityItems'] === [] && $requestData['mediaHeaders'] === [] && $requestData['headerParameters'] === [] && $requestData['pathParameters'] === [] && $requestData['queryParameters'] === [] && ! $endpoint->hasRequestBody())
+      @if ($requestData['securityItems'] === [] && $requestData['mediaHeaders'] === [] && $requestData['headerParameters'] === [] && $requestData['cookieParameters'] === [] && $requestData['pathParameters'] === [] && $requestData['queryParameters'] === [] && ! $endpoint->hasRequestBody())
         <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.request_data') }}</p>
       @endif
     </div>

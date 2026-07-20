@@ -9194,6 +9194,7 @@ function jl(t) {
     bodyJsonError: null,
     pathParameters: [],
     queryParameters: [],
+    cookieParameters: [],
     headerParameters: [],
     mediaHeaderParameters: [],
     authParameters: [],
@@ -9239,6 +9240,9 @@ function jl(t) {
     get hasQueryParameters() {
       return this.canUseDeveloperOptions || this.queryParameters.length > 0;
     },
+    get hasCookieParameters() {
+      return this.cookieParameters.length > 0;
+    },
     get hasPathParameters() {
       return this.pathParameters.length > 0;
     },
@@ -9267,6 +9271,7 @@ function jl(t) {
       return (
         this.canUseDeveloperOptions ||
         this.hasPathParameters ||
+        this.hasCookieParameters ||
         this.hasQueryParameters ||
         this.hasHeaderParameters ||
         this.hasAuthParameters ||
@@ -9405,6 +9410,7 @@ function jl(t) {
       ) {
         ((this.pathParameters = []),
           (this.queryParameters = []),
+          (this.cookieParameters = []),
           (this.headerParameters = []),
           (this.mediaHeaderParameters = []),
           (this.authParameters = []),
@@ -9420,6 +9426,9 @@ function jl(t) {
         )),
         (this.pathParameters = Ue(this.selectedRequest.pathParameters ?? [])),
         (this.queryParameters = Ue(this.selectedRequest.queryParameters ?? [])),
+        (this.cookieParameters = Ue(
+          this.selectedRequest.cookieParameters ?? [],
+        )),
         (this.bodyText = this.selectedRequest.bodyText ?? ""),
         this.hasJsonBody && this.formatJsonBody(!1));
     },
@@ -9434,6 +9443,15 @@ function jl(t) {
         s && n.push({ name: o.name, value: s });
       }
       ((r.queryString = n),
+        (r.cookies = this.cookieParameters
+          .filter((o) => o.name && String(o.value).length > 0)
+          .map((o) => ({ name: o.name, value: String(o.value) }))),
+        this.authParameters
+          .filter((o) => o.location === "cookie")
+          .forEach((o) => {
+            let s = o.value || (e ? o.placeholder : "");
+            s && r.cookies.push({ name: o.name, value: s });
+          }),
         (r.url = Rl(
           ql(this.selectedRequest?.urlTemplate ?? r.url, this.pathParameters),
           n,

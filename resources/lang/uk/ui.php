@@ -8,12 +8,12 @@ return [
         'copied'           => 'Скопійовано',
         'format_json'      => 'Форматувати JSON',
         'remove'           => 'Видалити',
-        'send_api_request' => 'Надіслати API-запит',
+        'send_api_request' => 'Надіслати запит',
         'sending'          => 'Надсилання',
     ],
     'aria' => [
         'request_example'         => 'Приклад запиту',
-        'request_sample_client'   => 'Клієнт прикладу запиту',
+        'request_sample_client'   => 'HTTP Snippet',
         'request_sample_language' => 'Мова прикладу запиту',
     ],
     'auth' => [
@@ -41,6 +41,7 @@ return [
         'allowed'              => 'Дозволено',
         'auth'                 => 'Автентифікація',
         'body'                 => 'Тіло',
+        'cookies'              => 'Cookies',
         'developer_mode'       => 'Режим розробника',
         'example'              => 'Приклад',
         'headers'              => 'Заголовки',
@@ -62,7 +63,7 @@ return [
         'value'                => 'Значення',
     ],
     'messages' => [
-        'copied_to_clipboard'               => 'Скопійовано в буфер обміну.',
+        'copied_to_clipboard'               => 'Скопійовано.',
         'copy_failed'                       => 'Не вдалося скопіювати.',
         'invalid_header_name'               => 'Некоректна назва заголовка: :name',
         'json_before_formatting'            => 'Перед форматуванням тіло має бути коректним JSON.',

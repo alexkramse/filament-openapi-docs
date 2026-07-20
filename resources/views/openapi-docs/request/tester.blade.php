@@ -14,6 +14,7 @@
     <div class="foad-stack foad-stack-sm">
       @include ('filament-openapi-docs::openapi-docs.request.tester.auth')
       @include ('filament-openapi-docs::openapi-docs.request.tester.headers')
+      @include ('filament-openapi-docs::openapi-docs.request.tester.cookies')
       @include ('filament-openapi-docs::openapi-docs.request.tester.path-parameters')
       @include ('filament-openapi-docs::openapi-docs.request.tester.query-parameters')
     </div>

@@ -580,6 +580,7 @@ it('adds spacing between openapi summary server urls and meta badges', function 
     $styles = file_get_contents(__DIR__.'/../../resources/css/openapi-docs.css');
     $bodyView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/body.blade.php');
     $headersView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/headers.blade.php');
+    $cookiesView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/cookies.blade.php');
     $queryParametersView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/query-parameters.blade.php');
     $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/http-snippet.blade.php');
     $sampleView = file_get_contents(__DIR__.'/../../resources/views/components/code-sample.blade.php');
@@ -653,6 +654,8 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($readRequestView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
         ->and($readRequestView)->toContain('$requestData[\'mediaHeaders\'] !== [] || $requestData[\'headerParameters\'] !== []')
         ->and($readRequestView)->toContain('ui.labels.headers')
+        ->and($readRequestView)->toContain('ui.labels.cookies')
+        ->and($readRequestView)->toContain('$requestData[\'cookieParameters\']')
         ->and($readRequestView)->not->toContain('ui.labels.media_headers')
         ->and($pageView)->toContain('$hasSamplePreviews')
         ->and($bodyView)->toContain('class="foad-body-toolbar"')
@@ -671,6 +674,10 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and(substr_count($headersView, 'x-bind:disabled="!canUseDeveloperOptions"'))->toBe(1)
         ->and(substr_count($queryParametersView, 'x-bind:disabled="!canUseDeveloperOptions"'))->toBe(1)
         ->and($headersView)->toContain('x-bind:id="`header-name-${index}`"')
+        ->and($cookiesView)->toContain('x-if="hasCookieParameters"')
+        ->and($cookiesView)->toContain('x-for="parameter in cookieParameters"')
+        ->and($cookiesView)->toContain('x-bind:key="`cookie-${parameter.name}`"')
+        ->and($cookiesView)->toContain('ui.labels.cookies')
         ->and($queryParametersView)->toContain('x-bind:id="`parameter-name-${index}`"')
         ->and($headersView)->toContain('x-show="canUseDeveloperOptions"')
         ->and($requestSnippetView)->toContain('class="foad-sample-scroll"')
@@ -683,6 +690,7 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($sendRequestView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
         ->and($sendRequestView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
         ->and($sendRequestView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
+        ->and($sendRequestView)->toContain('request.tester.cookies')
         ->and($sendRequestView)->not->toContain('media-headers')
         ->and($responsePreviewView)->toContain('class="foad-sample-scroll foad-response-code"')
         ->and($responsePreviewView)->toContain('class="foad-body-toolbar"')
