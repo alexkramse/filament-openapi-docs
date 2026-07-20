@@ -26,7 +26,6 @@
           <x-filament::input
             type="text"
             x-model="parameter.value"
-            x-bind:disabled="!canUseDeveloperOptions"
           />
         </x-filament::input.wrapper>
       </template>
@@ -44,7 +43,6 @@
               <x-filament::input
                 type="text"
                 x-model="parameter.value"
-                x-bind:disabled="!canUseDeveloperOptions"
               />
             </x-filament::input.wrapper>
           </template>
@@ -65,7 +63,6 @@
                   type="text"
                   x-bind:id="`header-value-${index}`"
                   x-model="parameter.value"
-                  x-bind:disabled="!canUseDeveloperOptions"
                   placeholder="{{ __('filament-openapi-docs::ui.placeholders.value') }}"
                 />
               </x-filament::input.wrapper>
