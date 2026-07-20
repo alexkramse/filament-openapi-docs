@@ -580,6 +580,7 @@ it('adds spacing between openapi summary server urls and meta badges', function 
     $styles = file_get_contents(__DIR__.'/../../resources/css/openapi-docs.css');
     $bodyView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/body.blade.php');
     $headersView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/headers.blade.php');
+    $queryParametersView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/query-parameters.blade.php');
     $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/http-snippet.blade.php');
     $sampleView = file_get_contents(__DIR__.'/../../resources/views/components/code-sample.blade.php');
     $pageView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
@@ -667,11 +668,15 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($bodyView)->toContain('class="foad-try-textarea foad-json-editor-textarea"')
         ->and($headersView)->toContain('x-for="parameter in mediaHeaderParameters"')
         ->and($headersView)->toContain('x-bind:key="`media-header-${parameter.name}`"')
-        ->and($headersView)->toContain('x-bind:disabled="!canUseDeveloperOptions"')
+        ->and(substr_count($headersView, 'x-bind:disabled="!canUseDeveloperOptions"'))->toBe(1)
+        ->and(substr_count($queryParametersView, 'x-bind:disabled="!canUseDeveloperOptions"'))->toBe(1)
+        ->and($headersView)->toContain('x-bind:id="`header-name-${index}`"')
+        ->and($queryParametersView)->toContain('x-bind:id="`parameter-name-${index}`"')
         ->and($headersView)->toContain('x-show="canUseDeveloperOptions"')
         ->and($requestSnippetView)->toContain('class="foad-sample-scroll"')
-        ->and($sampleView)->toContain('class="foad-response-block"')
-        ->and($sampleView)->toContain('class="foad-sample-scroll foad-response-code"')
+        ->and($responsePreviewView)->toContain('class="foad-response-block"')
+        ->and($sampleView)->toContain('class="foad-sample-scroll"')
+        ->and($sampleView)->toContain('class="foad-sample-code"')
         ->and($sampleView)->toContain('samplePrismLanguage(@js($contentType ?? \'\'))')
         ->and($sampleView)->toContain('x-html="highlightSample(@js($sample[\'value\']), @js($contentType ?? \'\'))"')
         ->and($sampleView)->not->toContain('<code>{{ $sample[\'value\'] }}</code>')
