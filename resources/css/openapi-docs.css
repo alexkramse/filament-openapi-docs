@@ -278,6 +278,24 @@
   flex-direction: row;
 }
 
+.foad-schema-property-main {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  justify-content: stretch;
+}
+
+.foad-schema-property-main .foad-property-title {
+  min-width: 0;
+}
+
+.foad-schema-type-badges {
+  min-width: 0;
+}
+
+.foad-schema-presence-badge {
+  justify-self: end;
+}
+
 .foad-justify-content-space-between {
   align-items: center;
   display: flex;
@@ -564,6 +582,37 @@
   display: flex;
   gap: 0.5rem;
   justify-content: space-between;
+}
+
+.foad-request-body-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.foad-request-body-heading .fi-section-header-heading {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.foad-request-body-heading .fi-badge {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.foad-request-body-sample-wrap .foad-sample-scroll {
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.foad-request-body-sample-wrap .foad-sample-code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .foad-header-row {

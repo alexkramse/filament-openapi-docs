@@ -165,8 +165,11 @@ it('uses documented content type header as a request sample media type override'
         ->and($presented['headerParameters'])->toBe([])
         ->and($html)->toContain('Form request')
         ->and($html)->toContain('Body')
-        ->and($html)->toContain('Type: application/x-www-form-urlencoded')
-        ->and($html)->toContain('URL encoded')
+        ->and($html)->toContain('application/x-www-form-urlencoded')
+        ->and($html)->toContain('foad-request-body-sample-wrap')
+        ->and($html)->toContain('name=Katherine%20Johnson\\u0026email=katherine%40example.test\\u0026rating=5')
+        ->and($html)->not->toContain('URL encoded')
+        ->and($html)->not->toContain('Tree view')
         ->and($html)->not->toContain('Type: application/json')
         ->and($presented['mediaHeaders'])->toContain([
             'name'        => 'Content-Type',
