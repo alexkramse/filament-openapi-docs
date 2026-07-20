@@ -29,6 +29,7 @@ class RequestSnippetPresenter
      *     securityItems: array<int, array<string, mixed>>,
      *     mediaHeaders: array<int, array<string, mixed>>,
      *     headerParameters: array<int, array<string, mixed>>,
+     *     cookieParameters: array<int, array<string, mixed>>,
      *     pathParameters: array<int, array<string, mixed>>,
      *     queryParameters: array<int, array<string, mixed>>,
      *     requests: array<int, array<string, mixed>>,
@@ -42,6 +43,7 @@ class RequestSnippetPresenter
         $securityItems = $this->securityItems($endpoint, $components);
         $mediaHeaders = $this->mediaHeaders($endpoint);
         $headerParameters = $this->parameters($endpoint, $components, 'header', true);
+        $cookieParameters = $this->parameters($endpoint, $components, 'cookie');
         $pathParameters = $this->parameters($endpoint, $components, 'path');
         $queryParameters = $this->parameters($endpoint, $components, 'query');
         $requestBodies = $endpoint->requestBodies === [] ? [null] : $endpoint->requestBodies;
@@ -63,6 +65,7 @@ class RequestSnippetPresenter
                     'authParameters'        => $this->authParameters($securityItems),
                     'mediaHeaderParameters' => $this->editableMediaHeaders($mediaHeaders),
                     'headerParameters'      => $this->editableParameters($headerParameters),
+                    'cookieParameters'      => $this->editableParameters($cookieParameters),
                     'pathParameters'        => $this->editableParameters($pathParameters),
                     'queryParameters'       => $this->editableParameters($queryParameters),
                     'bodyText'              => $bodyText,
@@ -73,6 +76,7 @@ class RequestSnippetPresenter
                         pathParameters: $pathParameters,
                         queryParameters: $queryParameters,
                         headerParameters: $headerParameters,
+                        cookieParameters: $cookieParameters,
                         mediaHeaders: $mediaHeaders,
                         securityItems: $securityItems,
                         body: $body,
@@ -86,6 +90,7 @@ class RequestSnippetPresenter
             'securityItems'       => $securityItems,
             'mediaHeaders'        => $mediaHeaders,
             'headerParameters'    => $headerParameters,
+            'cookieParameters'    => $cookieParameters,
             'pathParameters'      => $pathParameters,
             'queryParameters'     => $queryParameters,
             'requests'            => $requests,
@@ -360,6 +365,7 @@ class RequestSnippetPresenter
      * @param  array<int, array<string, mixed>>  $pathParameters
      * @param  array<int, array<string, mixed>>  $queryParameters
      * @param  array<int, array<string, mixed>>  $headerParameters
+     * @param  array<int, array<string, mixed>>  $cookieParameters
      * @param  array<int, array<string, mixed>>  $mediaHeaders
      * @param  array<int, array<string, mixed>>  $securityItems
      * @param  array<string, mixed>|null  $body
@@ -371,6 +377,7 @@ class RequestSnippetPresenter
         array $pathParameters,
         array $queryParameters,
         array $headerParameters,
+        array $cookieParameters,
         array $mediaHeaders,
         array $securityItems,
         ?array $body,
@@ -384,7 +391,10 @@ class RequestSnippetPresenter
             ->map(fn (array $parameter): array => ['name' => $parameter['name'], 'value' => $parameter['value'] ?? ''])
             ->values()
             ->all();
-        $cookies = [];
+        $cookies = collect($cookieParameters)
+            ->map(fn (array $parameter): array => ['name' => $parameter['name'], 'value' => $parameter['value'] ?? ''])
+            ->values()
+            ->all();
 
         $this->applySecurity($securityItems, $headers, $queryString, $cookies);
 

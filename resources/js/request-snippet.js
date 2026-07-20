@@ -83,6 +83,7 @@ export default function requestSnippet(config) {
     bodyJsonError: null,
     pathParameters: [],
     queryParameters: [],
+    cookieParameters: [],
     headerParameters: [],
     mediaHeaderParameters: [],
     authParameters: [],
@@ -140,6 +141,10 @@ export default function requestSnippet(config) {
       return this.canUseDeveloperOptions || this.queryParameters.length > 0;
     },
 
+    get hasCookieParameters() {
+      return this.cookieParameters.length > 0;
+    },
+
     get hasPathParameters() {
       return this.pathParameters.length > 0;
     },
@@ -174,6 +179,7 @@ export default function requestSnippet(config) {
       return (
         this.canUseDeveloperOptions ||
         this.hasPathParameters ||
+        this.hasCookieParameters ||
         this.hasQueryParameters ||
         this.hasHeaderParameters ||
         this.hasAuthParameters ||
@@ -384,6 +390,7 @@ export default function requestSnippet(config) {
       if (!this.selectedRequest) {
         this.pathParameters = [];
         this.queryParameters = [];
+        this.cookieParameters = [];
         this.headerParameters = [];
         this.mediaHeaderParameters = [];
         this.authParameters = [];
@@ -406,6 +413,9 @@ export default function requestSnippet(config) {
       );
       this.queryParameters = cloneParameters(
         this.selectedRequest.queryParameters ?? [],
+      );
+      this.cookieParameters = cloneParameters(
+        this.selectedRequest.cookieParameters ?? [],
       );
       this.bodyText = this.selectedRequest.bodyText ?? "";
 
@@ -444,6 +454,29 @@ export default function requestSnippet(config) {
       }
 
       har.queryString = queryString;
+      har.cookies = this.cookieParameters
+        .filter(
+          (parameter) => parameter.name && String(parameter.value).length > 0,
+        )
+        .map((parameter) => ({
+          name: parameter.name,
+          value: String(parameter.value),
+        }));
+
+      for (const parameter of this.authParameters.filter(
+        (item) => item.location === "cookie",
+      )) {
+        const value =
+          parameter.value || (includePlaceholders ? parameter.placeholder : "");
+
+        if (value) {
+          har.cookies.push({
+            name: parameter.name,
+            value,
+          });
+        }
+      }
+
       har.url = buildUrlWithQueryString(
         buildUrlWithPathParameters(
           this.selectedRequest?.urlTemplate ?? har.url,

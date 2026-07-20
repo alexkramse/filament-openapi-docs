@@ -74,14 +74,17 @@ it('provides request docs editable controls and baseline har from one presenter 
         ->and($presented['securityItems'])->toHaveCount(2)
         ->and($presented['mediaHeaders'])->toContain(['name' => 'Content-Type', 'value' => 'application/json', 'description' => 'Request body media type'])
         ->and($presented['headerParameters'][0]['name'])->toBe('X-Trace')
+        ->and($presented['cookieParameters'][0]['name'])->toBe('demo_session')
         ->and($presented['pathParameters'][0]['value'])->toBe('5')
         ->and($presented['queryParameters'][0]['value'])->toBe('profile')
         ->and($request['authParameters'])->toHaveCount(2)
         ->and($request['mediaHeaderParameters'][0]['name'])->toBe('Content-Type')
         ->and($request['headerParameters'][0]['name'])->toBe('X-Trace')
+        ->and($request['cookieParameters'][0]['name'])->toBe('demo_session')
         ->and($request['pathParameters'][0]['name'])->toBe('user')
         ->and($request['queryParameters'][0]['name'])->toBe('include')
         ->and($request['har']['url'])->toBe('https://api.example.test/users/5?include=profile')
+        ->and($request['har']['cookies'])->toContain(['name' => 'demo_session', 'value' => 'session-token'])
         ->and($request['har']['headers'])->toContain(['name' => 'Authorization', 'value' => 'Bearer <token>'])
         ->and($request['har']['headers'])->toContain(['name' => 'X-Api-Key', 'value' => '<api-key>'])
         ->and($request['har']['headers'])->toContain(['name' => 'Content-Type', 'value' => 'application/json'])
@@ -221,8 +224,11 @@ it('renders request read and send modes', function () {
         ->and($html)->not->toContain('Media headers')
         ->and($html)->toContain('Headers')
         ->and($html)->toContain('Content-Type: application/json')
+        ->and($html)->toContain('Cookies')
         ->and($html)->toContain('Path parameters')
         ->and($html)->toContain('Query parameters')
+        ->and(strpos($html, 'Headers') < strpos($html, 'Cookies'))->toBeTrue()
+        ->and(strpos($html, 'Cookies') < strpos($html, 'Path parameters'))->toBeTrue()
         ->and($html)->toContain('Body')
         ->and($html)->toContain('Tree view')
         ->and($html)->toContain('JSON')
@@ -245,7 +251,8 @@ it('renders request read and send modes', function () {
         ->and($html)->not->toContain('textcommit')
         ->and($html)->toContain('await navigator.clipboard.writeText(text)')
         ->and($html)->toContain('https:\\/\\/api.example.test\\/users')
-        ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(4)
+        ->and($html)->toContain('demo_session')
+        ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(5)
         ->and(substr_count($html, 'foad-send-controls foad-justify-content-space-between'))->toBe(2)
         ->and(substr_count($html, 'class="foad-header-row"'))->toBe(2)
         ->and($pageMarkup)->toContain('x-data="requestSnippet(@js($requestData))"')
@@ -270,7 +277,10 @@ it('renders request read and send modes', function () {
         ->and($readModeMarkup)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
         ->and($readModeMarkup)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
         ->and($readModeMarkup)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
+        ->and($readModeMarkup)->toContain('ui.labels.cookies')
         ->and($requestSnippetRuntime)->toContain('this.queryParameters.length > 0')
+        ->and($requestSnippetRuntime)->toContain('this.cookieParameters.length > 0')
+        ->and($requestSnippetRuntime)->toContain('har.cookies = this.cookieParameters')
         ->and($requestSnippetRuntime)->toContain('this.mediaHeaderParameters.length > 0')
         ->and($requestSnippetRuntime)->toContain('hasDeveloperOptions: Boolean(config.hasDeveloperOptions ?? false)')
         ->and($requestSnippetRuntime)->toContain('this.hasDeveloperOptions && this.developerMode')
@@ -450,6 +460,7 @@ function endpointWithRequestData(): Endpoint
             parameter('user', 'path', 'integer', true, ['type' => 'integer', 'example' => 5]),
             parameter('include', 'query', 'string', false, ['type' => 'string', 'default' => 'profile']),
             parameter('X-Trace', 'header', 'string', false, ['type' => 'string'], 'trace-1'),
+            parameter('demo_session', 'cookie', 'string', false, ['type' => 'string'], 'session-token'),
             parameter('Accept', 'header', 'string', false, ['type' => 'string'], 'text/plain'),
             parameter('Authorization', 'header', 'string', false, ['type' => 'string'], 'Token documented-header'),
         ],
