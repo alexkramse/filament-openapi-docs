@@ -113,13 +113,13 @@
     </div>
 
     <div class="foad-stack foad-stack-sm">
-      @if ($endpoint->hasRequestBody())
+      @if ($requestData['requestBodies'] !== [])
         <div class="foad-stack foad-stack-md">
           <h4 class="fi-section-header-heading">
             {{ __('filament-openapi-docs::ui.labels.body') }}
           </h4>
 
-          @foreach ($endpoint->requestBodies as $body)
+          @foreach ($requestData['requestBodies'] as $body)
             <x-filament-openapi-docs::media-type-content
               :label="__('filament-openapi-docs::ui.labels.body')"
               :content-type="$body['contentType']"
@@ -131,7 +131,7 @@
         </div>
       @endif
 
-      @if ($requestData['securityItems'] === [] && $requestData['mediaHeaders'] === [] && $requestData['headerParameters'] === [] && $requestData['cookieParameters'] === [] && $requestData['pathParameters'] === [] && $requestData['queryParameters'] === [] && ! $endpoint->hasRequestBody())
+      @if ($requestData['securityItems'] === [] && $requestData['mediaHeaders'] === [] && $requestData['headerParameters'] === [] && $requestData['cookieParameters'] === [] && $requestData['pathParameters'] === [] && $requestData['queryParameters'] === [] && $requestData['requestBodies'] === [])
         <p class="fi-section-header-description">{{ __('filament-openapi-docs::ui.empty.request_data') }}</p>
       @endif
     </div>
