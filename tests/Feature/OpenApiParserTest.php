@@ -65,6 +65,131 @@ it('falls back to method and path slug when operation id is missing', function (
     expect($parsed['endpoints']['System'][0]->id)->toBe('get-health-check');
 });
 
+it('uses documented content type header as a request sample media type override', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.0.0',
+        'info'    => [
+            'title'   => 'Game API',
+            'version' => '1.0.0',
+        ],
+        'paths' => [
+            '/v1/feedback' => [
+                'post' => [
+                    'tags'        => ['Demo API'],
+                    'operationId' => 'demoFeedbackSubmit',
+                    'parameters'  => [
+                        [
+                            'name'        => 'Content-Type',
+                            'in'          => 'header',
+                            'required'    => true,
+                            'description' => 'Use application/x-www-form-urlencoded for this demo.',
+                            'schema'      => ['type' => 'string'],
+                            'example'     => 'application/x-www-form-urlencoded',
+                        ],
+                    ],
+                    'requestBody' => [
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type'       => 'object',
+                                    'properties' => [
+                                        'name' => [
+                                            'type'    => 'string',
+                                            'example' => 'Katherine Johnson',
+                                        ],
+                                        'email' => [
+                                            'type'    => 'string',
+                                            'format'  => 'email',
+                                            'example' => 'katherine@example.test',
+                                        ],
+                                        'rating' => [
+                                            'type'    => 'integer',
+                                            'example' => 5,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'responses' => [
+                        '202' => ['description' => 'Accepted'],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $endpoint = $parsed['endpoints']['Demo API'][0];
+    $presented = app(RequestSnippetPresenter::class)->present($endpoint, [], $parsed['components']);
+    $request = $presented['requests'][0];
+
+    expect($endpoint->requestBodies[0]['contentType'])->toBe('application/json')
+        ->and($presented['headerParameters'])->toBe([])
+        ->and($presented['mediaHeaders'])->toContain([
+            'name'        => 'Content-Type',
+            'value'       => 'application/x-www-form-urlencoded',
+            'description' => 'Request body media type',
+        ])
+        ->and($request['label'])->toBe('application/x-www-form-urlencoded - Generated')
+        ->and($request['bodyMimeType'])->toBe('application/x-www-form-urlencoded')
+        ->and($request['bodyText'])->toBe('name=Katherine%20Johnson&email=katherine%40example.test&rating=5')
+        ->and($request['har']['headers'])->toContain(['name' => 'Content-Type', 'value' => 'application/x-www-form-urlencoded'])
+        ->and($request['har']['postData'])->toBe([
+            'mimeType' => 'application/x-www-form-urlencoded',
+            'text'     => 'name=Katherine%20Johnson&email=katherine%40example.test&rating=5',
+        ]);
+});
+
+it('resolves referenced response objects into documented response content', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.0.0',
+        'info'    => [
+            'title'   => 'Game API',
+            'version' => '1.0.0',
+        ],
+        'components' => [
+            'responses' => [
+                'ValidationException' => [
+                    'description' => 'Validation error',
+                    'content'     => [
+                        'application/json' => [
+                            'schema' => [
+                                '$ref' => '#/components/schemas/ValidationException',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'schemas' => [
+                'ValidationException' => [
+                    'type'       => 'object',
+                    'properties' => [
+                        'message' => ['type' => 'string'],
+                        'errors'  => ['type' => 'object'],
+                    ],
+                ],
+            ],
+        ],
+        'paths' => [
+            '/v1/feedback' => [
+                'post' => [
+                    'tags'        => ['Demo API'],
+                    'operationId' => 'demoFeedbackSubmit',
+                    'responses'   => [
+                        '422' => [
+                            '$ref' => '#/components/responses/ValidationException',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $response = $parsed['endpoints']['Demo API'][0]->responses['422'];
+
+    expect($response['description'])->toBe('Validation error')
+        ->and($response['content'])->toHaveKey('application/json')
+        ->and($response['content']['application/json']['schema']['$ref'])->toBe('#/components/schemas/ValidationException');
+});
+
 it('provides request docs editable controls and baseline har from one presenter payload', function () {
     $endpoint = endpointWithRequestData();
     $presented = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test'], securityComponents());

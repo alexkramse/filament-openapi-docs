@@ -45,7 +45,7 @@ class OpenApiParser
                     continue;
                 }
 
-                $endpoint = $this->endpoint($method, (string) $path, $operation, $pathParameters, $globalSecurity, $spec);
+                $endpoint = $this->endpoint($method, (string) $path, $operation, $pathParameters, $globalSecurity, $spec, $components);
 
                 $endpoints[$endpoint->group()][] = $endpoint;
             }
@@ -67,7 +67,7 @@ class OpenApiParser
      * @param  array<int, array{name: string, in: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, default?: mixed}>  $pathParameters
      * @param  array<int, array<string, mixed>>  $globalSecurity
      */
-    private function endpoint(string $method, string $path, array $operation, array $pathParameters, array $globalSecurity, array $spec): Endpoint
+    private function endpoint(string $method, string $path, array $operation, array $pathParameters, array $globalSecurity, array $spec, array $components): Endpoint
     {
         $summary = (string) ($operation['summary'] ?? $operation['operationId'] ?? '');
         $tags = array_values(array_filter(
@@ -88,8 +88,8 @@ class OpenApiParser
             description: isset($operation['description']) ? (string) $operation['description'] : null,
             tags: $tags,
             parameters: $parameters,
-            requestBodies: $this->requestBodies($operation, $spec),
-            responses: $this->responses($operation['responses'] ?? []),
+            requestBodies: $this->requestBodies($operation, $spec, $components),
+            responses: $this->responses($operation['responses'] ?? [], $components),
             security: is_array($operation['security'] ?? null) ? $operation['security'] : $globalSecurity,
             deprecated: (bool) ($operation['deprecated'] ?? false),
         );
@@ -131,9 +131,13 @@ class OpenApiParser
     /**
      * @return array<int, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>
      */
-    private function requestBodies(array $operation, array $spec): array
+    private function requestBodies(array $operation, array $spec, array $components): array
     {
         $requestBody = $operation['requestBody'] ?? [];
+
+        if (is_array($requestBody)) {
+            $requestBody = $this->resolveReference($requestBody, $components);
+        }
 
         if (! is_array($requestBody) || ! is_array($requestBody['content'] ?? null)) {
             return $this->swaggerRequestBodies($operation, $spec);
@@ -212,7 +216,7 @@ class OpenApiParser
     /**
      * @return array<string, array{description: ?string, content: array<string, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>}>
      */
-    private function responses(mixed $responses): array
+    private function responses(mixed $responses, array $components): array
     {
         if (! is_array($responses)) {
             return [];
@@ -220,12 +224,16 @@ class OpenApiParser
 
         return collect($responses)
             ->filter(fn (mixed $response): bool => is_array($response))
-            ->mapWithKeys(fn (array $response, string|int $status): array => [
-                (string) $status => [
-                    'description' => isset($response['description']) ? (string) $response['description'] : null,
-                    'content'     => $this->responseContent($response['content'] ?? []),
-                ],
-            ])
+            ->mapWithKeys(function (array $response, string|int $status) use ($components): array {
+                $response = $this->resolveReference($response, $components);
+
+                return [
+                    (string) $status => [
+                        'description' => isset($response['description']) ? (string) $response['description'] : null,
+                        'content'     => $this->responseContent($response['content'] ?? []),
+                    ],
+                ];
+            })
             ->all();
     }
 
@@ -326,6 +334,31 @@ class OpenApiParser
         }
 
         return $scheme;
+    }
+
+    /**
+     * @param  array<string, mixed>  $value
+     * @param  array<string, mixed>  $components
+     * @return array<string, mixed>
+     */
+    private function resolveReference(array $value, array $components): array
+    {
+        if (! isset($value['$ref']) || ! is_string($value['$ref']) || ! Str::startsWith($value['$ref'], '#/components/')) {
+            return $value;
+        }
+
+        $path = Str::of($value['$ref'])
+            ->after('#/components/')
+            ->replace('/', '.')
+            ->toString();
+
+        $resolved = data_get($components, $path);
+
+        if (! is_array($resolved)) {
+            return $value;
+        }
+
+        return array_replace_recursive($resolved, array_diff_key($value, ['$ref' => true]));
     }
 
     /**

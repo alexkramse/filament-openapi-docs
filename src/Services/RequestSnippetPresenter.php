@@ -41,7 +41,8 @@ class RequestSnippetPresenter
     public function present(Endpoint $endpoint, array $servers = [], array $components = []): array
     {
         $securityItems = $this->securityItems($endpoint, $components);
-        $mediaHeaders = $this->mediaHeaders($endpoint);
+        $contentTypeOverride = $this->contentTypeHeaderValue($endpoint, $components);
+        $mediaHeaders = $this->mediaHeaders($endpoint, $contentTypeOverride);
         $headerParameters = $this->parameters($endpoint, $components, 'header', true);
         $cookieParameters = $this->parameters($endpoint, $components, 'cookie');
         $pathParameters = $this->parameters($endpoint, $components, 'path');
@@ -50,7 +51,8 @@ class RequestSnippetPresenter
         $requests = [];
 
         foreach ($requestBodies as $bodyIndex => $body) {
-            $samples = is_array($body) ? $this->examplePresenter->samples($body, $components) : [[]];
+            $presentedBody = is_array($body) ? $this->withContentType($body, $contentTypeOverride) : $body;
+            $samples = is_array($presentedBody) ? $this->examplePresenter->samples($presentedBody, $components) : [[]];
 
             if ($samples === []) {
                 $samples = [[]];
@@ -60,7 +62,7 @@ class RequestSnippetPresenter
                 $bodyText = is_string($sample['value'] ?? null) ? $sample['value'] : '';
                 $requests[] = [
                     'key'                   => "request-{$bodyIndex}-{$sampleIndex}",
-                    'label'                 => $this->label($body, $sample),
+                    'label'                 => $this->label($presentedBody, $sample),
                     'urlTemplate'           => $this->urlTemplate($endpoint, $servers),
                     'authParameters'        => $this->authParameters($securityItems),
                     'mediaHeaderParameters' => $this->editableMediaHeaders($mediaHeaders),
@@ -69,7 +71,7 @@ class RequestSnippetPresenter
                     'pathParameters'        => $this->editableParameters($pathParameters),
                     'queryParameters'       => $this->editableParameters($queryParameters),
                     'bodyText'              => $bodyText,
-                    'bodyMimeType'          => is_array($body) ? $body['contentType'] : null,
+                    'bodyMimeType'          => is_array($presentedBody) ? $presentedBody['contentType'] : null,
                     'har'                   => $this->har(
                         endpoint: $endpoint,
                         servers: $servers,
@@ -79,7 +81,7 @@ class RequestSnippetPresenter
                         cookieParameters: $cookieParameters,
                         mediaHeaders: $mediaHeaders,
                         securityItems: $securityItems,
-                        body: $body,
+                        body: $presentedBody,
                         bodyText: $bodyText,
                     ),
                 ];
@@ -281,11 +283,11 @@ class RequestSnippetPresenter
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function mediaHeaders(Endpoint $endpoint): array
+    private function mediaHeaders(Endpoint $endpoint, ?string $contentTypeOverride): array
     {
         $headers = [];
         $contentTypes = collect($endpoint->requestBodies)
-            ->pluck('contentType')
+            ->map(fn (array $body): mixed => $contentTypeOverride ?? $body['contentType'] ?? null)
             ->filter(fn (mixed $contentType): bool => is_string($contentType) && filled($contentType))
             ->unique()
             ->values();
@@ -307,6 +309,67 @@ class RequestSnippetPresenter
         }
 
         return $headers;
+    }
+
+    private function contentTypeHeaderValue(Endpoint $endpoint, array $components): ?string
+    {
+        $parameter = collect($endpoint->parameters)
+            ->first(fn (array $parameter): bool => ($parameter['in'] ?? null) === 'header'
+                && is_string($parameter['name'] ?? null)
+                && Str::lower($parameter['name']) === 'content-type');
+
+        if (! is_array($parameter)) {
+            return null;
+        }
+
+        if (array_key_exists('example', $parameter)) {
+            return $this->contentTypeValue($parameter['example']);
+        }
+
+        if (is_array($parameter['examples'] ?? null) && $parameter['examples'] !== []) {
+            return $this->contentTypeValue($this->exampleValue(reset($parameter['examples'])));
+        }
+
+        if (array_key_exists('default', $parameter)) {
+            return $this->contentTypeValue($parameter['default']);
+        }
+
+        $schema = $this->resolveReference(is_array($parameter['schema'] ?? null) ? $parameter['schema'] : [], $components);
+
+        if (array_key_exists('example', $schema)) {
+            return $this->contentTypeValue($schema['example']);
+        }
+
+        if (array_key_exists('default', $schema)) {
+            return $this->contentTypeValue($schema['default']);
+        }
+
+        if (is_array($schema['enum'] ?? null) && $schema['enum'] !== []) {
+            return $this->contentTypeValue($schema['enum'][0]);
+        }
+
+        return null;
+    }
+
+    private function contentTypeValue(mixed $value): ?string
+    {
+        return is_string($value) && filled($value) ? $value : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     * @return array<string, mixed>
+     */
+    private function withContentType(array $body, ?string $contentType): array
+    {
+        if ($contentType === null) {
+            return $body;
+        }
+
+        return [
+            ...$body,
+            'contentType' => $contentType,
+        ];
     }
 
     /**
