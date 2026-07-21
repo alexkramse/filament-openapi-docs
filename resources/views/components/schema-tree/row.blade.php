@@ -14,7 +14,7 @@
   @if ($hasChildren)
     <summary class="foad-property-summary">
   @endif
-  <div class="foad-property-main foad-schema-property-main">
+  <div class="foad-property-main">
     <span class="foad-property-title">
       <span class="foad-property-connector" aria-hidden="true"></span>
 
