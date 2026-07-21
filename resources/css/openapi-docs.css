@@ -843,6 +843,7 @@
   border: 1px solid color-mix(in oklab, currentColor 10%, transparent);
   border-radius: 0.375rem;
   max-height: 22rem;
+  padding: 0.5rem;
 }
 
 .foad-sample-scroll {
