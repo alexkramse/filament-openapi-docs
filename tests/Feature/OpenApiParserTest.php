@@ -221,6 +221,236 @@ it('uses documented content type header as a request sample media type override'
         ]);
 });
 
+it('reuses multipart form data schema fields as send mode form inputs with file uploads', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.1.0',
+        'info'    => [
+            'title'   => 'Game API',
+            'version' => '1.0.0',
+        ],
+        'paths' => [
+            '/v1/assets' => [
+                'post' => [
+                    'tags'        => ['Assets'],
+                    'operationId' => 'uploadAsset',
+                    'requestBody' => [
+                        'content' => [
+                            'multipart/form-data' => [
+                                'schema' => [
+                                    'allOf' => [
+                                        [
+                                            '$ref' => '#/components/schemas/AssetUploadRequest',
+                                        ],
+                                        [
+                                            'type'       => 'object',
+                                            'required'   => ['asset'],
+                                            'properties' => [
+                                                'asset' => [
+                                                    'type'             => 'string',
+                                                    'format'           => 'binary',
+                                                    'contentMediaType' => 'video/mp4',
+                                                ],
+                                                'screenshots' => [
+                                                    'type'  => 'array',
+                                                    'items' => [
+                                                        'type'             => 'string',
+                                                        'format'           => 'binary',
+                                                        'contentMediaType' => 'image/png',
+                                                    ],
+                                                ],
+                                                'archive' => [
+                                                    'type'             => 'string',
+                                                    'contentEncoding'  => 'base64',
+                                                    'contentMediaType' => 'application/zip',
+                                                ],
+                                            ],
+                                        ],
+                                        [
+                                            'oneOf' => [
+                                                [
+                                                    'type'       => 'object',
+                                                    'properties' => [
+                                                        'notes' => [
+                                                            'type'    => 'string',
+                                                            'example' => 'Internal only',
+                                                        ],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                        [
+                                            'anyOf' => [
+                                                [
+                                                    'type'       => 'object',
+                                                    'properties' => [
+                                                        'thumbnail' => [
+                                                            'type'             => 'string',
+                                                            'format'           => 'base64',
+                                                            'contentMediaType' => 'image/jpeg',
+                                                        ],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                        [
+                                            'type'       => 'object',
+                                            'properties' => [
+                                                'legacy_upload' => [
+                                                    'type'             => 'string',
+                                                    'contentEncoding'  => 'base64',
+                                                    'contentMediaType' => 'application/pdf',
+                                                ],
+                                            ],
+                                        ],
+                                        [
+                                            'type'       => 'object',
+                                            'properties' => [
+                                                'legacy_file' => [
+                                                    'type' => 'file',
+                                                ],
+                                            ],
+                                        ],
+                                        [
+                                            'type'       => 'object',
+                                            'properties' => [
+                                                'binary_value' => [
+                                                    'type'   => 'string',
+                                                    'format' => 'base64',
+                                                ],
+                                            ],
+                                        ],
+                                        [
+                                            'type'       => 'object',
+                                            'properties' => [
+                                                'other_file' => [
+                                                    '$ref' => '#/components/schemas/PdfFile',
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'responses' => [
+                        '201' => ['description' => 'Created'],
+                    ],
+                ],
+            ],
+        ],
+        'components' => [
+            'schemas' => [
+                'AssetUploadRequest' => [
+                    'type'       => 'object',
+                    'required'   => ['title'],
+                    'properties' => [
+                        'title' => [
+                            'type'    => 'string',
+                            'example' => 'Launch trailer',
+                        ],
+                    ],
+                ],
+                'PdfFile' => [
+                    'type'             => 'string',
+                    'format'           => 'binary',
+                    'contentMediaType' => 'application/pdf',
+                ],
+            ],
+        ],
+    ]);
+    $endpoint = $parsed['endpoints']['Assets'][0];
+    $presented = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test'], $parsed['components']);
+    $request = $presented['requests'][0];
+    $html = html_entity_decode(renderParserOpenApiDocsEndpoint($endpoint, ['https://api.example.test'], $parsed['components']));
+    $formRequestMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/form-request.blade.php');
+    $requestSnippetRuntime = file_get_contents(__DIR__.'/../../resources/js/request-snippet.js');
+    $distRuntime = file_get_contents(__DIR__.'/../../resources/js/dist/request-snippet.js');
+
+    expect($endpoint->requestBodies[0]['contentType'])->toBe('multipart/form-data')
+        ->and($presented['mediaHeaders'])->toContain([
+            'name'        => 'Content-Type',
+            'value'       => 'multipart/form-data',
+            'description' => 'Request body media type',
+        ])
+        ->and(collect($request['formParameters'])->pluck('name')->all())->toBe([
+            'title',
+            'asset',
+            'screenshots',
+            'archive',
+            'notes',
+            'thumbnail',
+            'legacy_upload',
+            'legacy_file',
+            'binary_value',
+            'other_file',
+        ])
+        ->and(collect($request['formParameters'])->where('type', 'file')->pluck('name')->values()->all())->toBe([
+            'asset',
+            'screenshots',
+            'archive',
+            'thumbnail',
+            'legacy_upload',
+            'legacy_file',
+            'binary_value',
+            'other_file',
+        ])
+        ->and($request['formParameters'][0])->toBe([
+            'name'          => 'title',
+            'value'         => 'Launch trailer',
+            'type'          => 'text',
+            'multiple'      => false,
+            'contentType'   => null,
+            'required'      => true,
+            'developerOnly' => false,
+            'removable'     => false,
+        ])
+        ->and($request['formParameters'][1])->toBe([
+            'name'          => 'asset',
+            'value'         => '',
+            'type'          => 'file',
+            'multiple'      => false,
+            'contentType'   => 'video/mp4',
+            'required'      => true,
+            'developerOnly' => false,
+            'removable'     => false,
+        ])
+        ->and($request['formParameters'][2])->toBe([
+            'name'          => 'screenshots',
+            'value'         => '',
+            'type'          => 'file',
+            'multiple'      => true,
+            'contentType'   => 'image/png',
+            'required'      => false,
+            'developerOnly' => false,
+            'removable'     => false,
+        ])
+        ->and($request['har']['postData']['mimeType'])->toBe('multipart/form-data')
+        ->and($request['har']['postData']['text'])->toBe('')
+        ->and($request['har']['postData']['params'])->toContain([
+            'name'  => 'title',
+            'value' => 'Launch trailer',
+        ])
+        ->and($request['har']['postData']['params'])->toContain([
+            'name'        => 'other_file',
+            'value'       => '',
+            'fileName'    => 'other_file',
+            'contentType' => 'application/pdf',
+        ])
+        ->and($html)->toContain('Form request')
+        ->and($html)->toContain('multipart/form-data')
+        ->and($html)->toContain('type="file"')
+        ->and($html)->toContain('x-on:change="setFormParameterFiles(index, $event.target.files)"')
+        ->and($formRequestMarkup)->toContain('hasFormRequestBody')
+        ->and($formRequestMarkup)->toContain('parameter.type === \'file\'')
+        ->and($requestSnippetRuntime)->toContain('hasMultipartFormDataBody')
+        ->and($requestSnippetRuntime)->toContain('const requestBody = isMultipartFormData')
+        ->and($requestSnippetRuntime)->toContain('const responseBody = await response.text()')
+        ->and($requestSnippetRuntime)->toContain('new FormData()')
+        ->and($requestSnippetRuntime)->toContain('header.name.toLowerCase() === "content-type"')
+        ->and($requestSnippetRuntime)->toContain('formData.append(parameter.name, file)')
+        ->and($distRuntime)->not->toContain('body:["GET","HEAD"].includes(o)?void 0:c');
+});
+
 it('resolves referenced response objects into documented response content', function () {
     $parsed = app(OpenApiParser::class)->parse([
         'openapi' => '3.0.0',
