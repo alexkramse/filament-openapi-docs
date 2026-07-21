@@ -4,7 +4,7 @@
       <h4 class="fi-section-header-heading">
         <div class="foad-property-main">
           <x-filament::badge
-            x-bind:data-color="responseStatusColor(response.status)"
+            x-bind:class="responseStatusClass(response.status)"
             x-text="response.status"
           ></x-filament::badge>
           {{ __('filament-openapi-docs::ui.labels.response') }}
@@ -33,13 +33,18 @@
       </template>
     </p>
 
-    <div class="foad-response-block">
-      <div class="foad-sample-scroll foad-response-code">
-        <pre class="foad-sample-code"><code
-            x-bind:class="`language-${responsePrismLanguage}`"
-            x-html="highlightedResponseBody"
-          ></code></pre>
+    <template x-if="response.body">
+      <div class="foad-response-block">
+        <div class="foad-sample-scroll foad-response-code">
+          <pre class="foad-sample-code"><code
+              x-bind:class="`language-${responsePrismLanguage}`"
+              x-html="highlightedResponseBody"
+            ></code></pre>
+        </div>
       </div>
-    </div>
+    </template>
+    <template x-if="!response.body">
+      <p class="fi-section-header-description">{{ __("filament-openapi-docs::ui.empty.no_content") }}</p>
+    </template>
   </div>
 </template>

@@ -794,22 +794,15 @@ export default function requestSnippet(config) {
       }
     },
 
-    responseStatusColor(status) {
+    responseStatusClass(status) {
       const value = String(status ?? "");
 
-      if (value.startsWith("2")) {
-        return "success";
-      }
-
-      if (value.startsWith("3") || value.startsWith("4")) {
-        return "warning";
-      }
-
-      if (value.startsWith("5")) {
-        return "danger";
-      }
-
-      return "gray";
+      return {
+        'fi-color-success': value.startsWith("2"),
+        'fi-color-warning': value.startsWith("3") || value.startsWith("4"),
+        'fi-color-danger': value.startsWith("5"),
+        'fi-color-gray': !["2", "3", "4", "5"].some((p) => value.startsWith(p)),
+      };
     },
 
     responseStatusLabel(status) {

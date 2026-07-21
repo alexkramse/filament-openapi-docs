@@ -722,7 +722,7 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($sendRequestView)->not->toContain('media-headers')
         ->and($responsePreviewView)->toContain('class="foad-sample-scroll foad-response-code"')
         ->and($responsePreviewView)->toContain('class="foad-body-toolbar"')
-        ->and($responsePreviewView)->toContain('x-bind:data-color="responseStatusColor(response.status)"')
+        ->and($responsePreviewView)->toContain('x-bind:class="responseStatusClass(response.status)"')
         ->and($responsePreviewView)->toContain('x-text="response.status"')
         ->and($responsePreviewView)->toContain('x-text="response.contentType"')
         ->and($responsePreviewView)->toContain('icon="heroicon-m-document-duplicate"')

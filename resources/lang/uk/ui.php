@@ -35,6 +35,7 @@ return [
         'request_data'      => 'Дані запиту не задокументовано.',
         'request_sample'    => 'Приклад запиту недоступний.',
         'response_body'     => 'Тіло відповіді не задокументовано.',
+        'no_content'        => 'No Content',
         'structured_fields' => 'Структуровані поля не задокументовано.',
     ],
     'labels' => [

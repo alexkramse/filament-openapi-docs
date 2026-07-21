@@ -35,6 +35,7 @@ return [
         'request_data'      => 'No hay datos de solicitud documentados.',
         'request_sample'    => 'No hay ejemplo de solicitud disponible.',
         'response_body'     => 'No hay cuerpo de respuesta documentado.',
+        'no_content'        => 'No Content',
         'structured_fields' => 'No hay campos estructurados documentados.',
     ],
     'labels' => [

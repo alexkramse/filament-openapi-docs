@@ -35,6 +35,7 @@ return [
         'request_data'      => 'No request data documented.',
         'request_sample'    => 'No request sample available.',
         'response_body'     => 'No response body documented.',
+        'no_content'        => 'No Content',
         'structured_fields' => 'No structured fields documented.',
     ],
     'labels' => [
