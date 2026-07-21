@@ -604,7 +604,7 @@ it('keeps request snippet javascript inside runtime boundaries', function () {
         ->and($script)->toContain('const defaultClientKey = "curl"')
         ->and($script)->toContain('defaultClientForSelectedTarget')
         ->and($script)->toContain('applyRuntimeEditsToHar')
-        ->and($script)->toContain('responseStatusColor(status)')
+        ->and($script)->toContain('responseStatusClass(status)')
         ->and($script)->toContain('value.startsWith("2")')
         ->and($script)->toContain('value.startsWith("3") || value.startsWith("4")')
         ->and($script)->toContain('value.startsWith("5")')

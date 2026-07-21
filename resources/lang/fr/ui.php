@@ -35,6 +35,7 @@ return [
         'request_data'      => 'Aucune donnée de requête documentée.',
         'request_sample'    => 'Aucun exemple de requête disponible.',
         'response_body'     => 'Aucun corps de réponse documenté.',
+        'no_content'        => 'No Content',
         'structured_fields' => 'Aucun champ structuré documenté.',
     ],
     'labels' => [
