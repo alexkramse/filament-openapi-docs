@@ -665,6 +665,189 @@ it('does not contain old package namespace references', function () {
         ->and($contents)->not->toContain($oldVendor);
 });
 
+it('parses response headers into structured header entries', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.1.0',
+        'info'    => [
+            'title'   => 'Game API',
+            'version' => '1.0.0',
+        ],
+        'paths' => [
+            '/stream' => [
+                'get' => [
+                    'tags'        => ['Streaming'],
+                    'operationId' => 'streamEvents',
+                    'responses'   => [
+                        '200' => [
+                            'description' => 'Server-sent event stream.',
+                            'content'     => [
+                                'text/event-stream' => [
+                                    'schema' => [
+                                        'type'     => 'string',
+                                        'examples' => ["event: demo\ndata: ready\n\n"],
+                                    ],
+                                ],
+                            ],
+                            'headers' => [
+                                'Transfer-Encoding' => [
+                                    'required' => true,
+                                    'schema'   => [
+                                        'type' => 'string',
+                                        'enum' => ['chunked'],
+                                    ],
+                                ],
+                                'X-RateLimit-Limit' => [
+                                    'required'    => true,
+                                    'schema'      => ['type' => 'integer'],
+                                    'description' => 'Rate limit per hour.',
+                                    'example'     => 1000,
+                                ],
+                                'X-Deprecated' => [
+                                    'deprecated' => true,
+                                    'schema'     => ['type' => 'string'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $endpoint = $parsed['endpoints']['Streaming'][0];
+    $headers = $endpoint->responses['200']['headers'];
+
+    expect($headers)->toHaveCount(3)
+        ->and($headers[0])->toBe([
+            'name'        => 'Transfer-Encoding',
+            'type'        => 'string',
+            'required'    => true,
+            'description' => null,
+            'schema'      => ['type' => 'string', 'enum' => ['chunked']],
+            'examples'    => [],
+            'deprecated'  => false,
+        ])
+        ->and($headers[1])->toBe([
+            'name'        => 'X-RateLimit-Limit',
+            'type'        => 'integer',
+            'required'    => true,
+            'description' => 'Rate limit per hour.',
+            'schema'      => ['type' => 'integer'],
+            'example'     => 1000,
+            'examples'    => [],
+            'deprecated'  => false,
+        ])
+        ->and($headers[2])->toBe([
+            'name'        => 'X-Deprecated',
+            'type'        => 'string',
+            'required'    => false,
+            'description' => null,
+            'schema'      => ['type' => 'string'],
+            'examples'    => [],
+            'deprecated'  => true,
+        ]);
+});
+
+it('renders response headers in the documentation output', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.1.0',
+        'info'    => [
+            'title'   => 'Game API',
+            'version' => '1.0.0',
+        ],
+        'paths' => [
+            '/stream' => [
+                'get' => [
+                    'tags'        => ['Streaming'],
+                    'operationId' => 'streamEvents',
+                    'responses'   => [
+                        '200' => [
+                            'description' => 'Server-sent event stream.',
+                            'content'     => [
+                                'text/event-stream' => [
+                                    'schema' => ['type' => 'string'],
+                                ],
+                            ],
+                            'headers' => [
+                                'Transfer-Encoding' => [
+                                    'required' => true,
+                                    'schema'   => [
+                                        'type' => 'string',
+                                        'enum' => ['chunked'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $endpoint = $parsed['endpoints']['Streaming'][0];
+    $html = renderParserOpenApiDocsEndpoint($endpoint, [], $parsed['components']);
+
+    expect($html)->toContain('Headers')
+        ->and($html)->toContain('Transfer-Encoding')
+        ->and($html)->toContain('string')
+        ->and($html)->toContain('Required');
+});
+
+it('resolves referenced response headers from components', function () {
+    $parsed = app(OpenApiParser::class)->parse([
+        'openapi' => '3.1.0',
+        'info'    => [
+            'title'   => 'Game API',
+            'version' => '1.0.0',
+        ],
+        'components' => [
+            'headers' => [
+                'XRateLimit' => [
+                    'description' => 'Rate limit per hour.',
+                    'required'    => true,
+                    'schema'      => ['type' => 'integer'],
+                    'example'     => 100,
+                ],
+            ],
+        ],
+        'paths' => [
+            '/rate-limited' => [
+                'get' => [
+                    'tags'        => ['RateLimiting'],
+                    'operationId' => 'getResource',
+                    'responses'   => [
+                        '200' => [
+                            'description' => 'OK',
+                            'content'     => [
+                                'application/json' => [
+                                    'schema' => ['type' => 'object'],
+                                ],
+                            ],
+                            'headers' => [
+                                'X-Rate-Limit' => [
+                                    '$ref' => '#/components/headers/XRateLimit',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $endpoint = $parsed['endpoints']['RateLimiting'][0];
+    $headers = $endpoint->responses['200']['headers'];
+
+    expect($headers)->toHaveCount(1)
+        ->and($headers[0])->toBe([
+            'name'        => 'X-Rate-Limit',
+            'type'        => 'integer',
+            'required'    => true,
+            'description' => 'Rate limit per hour.',
+            'schema'      => ['type' => 'integer'],
+            'example'     => 100,
+            'examples'    => [],
+            'deprecated'  => false,
+        ]);
+});
+
 function endpointWithRequestData(): Endpoint
 {
     return new Endpoint(

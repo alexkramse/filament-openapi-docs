@@ -212,7 +212,7 @@ class OpenApiParser
     }
 
     /**
-     * @return array<string, array{description: ?string, content: array<string, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>}>
+     * @return array<string, array{description: ?string, content: array<string, array{contentType: string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>}>, headers: array<int, array{name: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, deprecated: bool}>}>
      */
     private function responses(mixed $responses, array $components): array
     {
@@ -229,9 +229,40 @@ class OpenApiParser
                     (string) $status => [
                         'description' => isset($response['description']) ? (string) $response['description'] : null,
                         'content'     => $this->responseContent($response['content'] ?? []),
+                        'headers'     => $this->responseHeaders($response['headers'] ?? [], $components),
                     ],
                 ];
             })
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{name: string, type: string, required: bool, description: ?string, schema: array<string, mixed>, example?: mixed, examples: array<mixed>, deprecated: bool}>
+     */
+    private function responseHeaders(mixed $headers, array $components): array
+    {
+        if (! is_array($headers)) {
+            return [];
+        }
+
+        return collect($headers)
+            ->filter(fn (mixed $header): bool => is_array($header))
+            ->map(function (array $header, string $name) use ($components): array {
+                $header = $this->resolveReference($header, $components);
+                $schema = is_array($header['schema'] ?? null) ? $header['schema'] : [];
+
+                return [
+                    'name'        => $name,
+                    'type'        => $this->schemaLabel($schema),
+                    'required'    => (bool) ($header['required'] ?? false),
+                    'description' => isset($header['description']) ? (string) $header['description'] : null,
+                    'schema'      => $schema,
+                    ...(array_key_exists('example', $header) ? ['example' => $header['example']] : []),
+                    'examples'   => is_array($header['examples'] ?? null) ? $header['examples'] : [],
+                    'deprecated' => (bool) ($header['deprecated'] ?? false),
+                ];
+            })
+            ->values()
             ->all();
     }
 
