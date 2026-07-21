@@ -589,6 +589,7 @@ it('adds spacing between openapi summary server urls and meta badges', function 
     $readRequestView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/data.blade.php');
     $sendRequestView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester.blade.php');
     $responsePreviewView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/response-preview.blade.php');
+    $responseItemView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/response/item.blade.php');
 
     expect($styles)->toContain('.foad-openapi-summary-servers')
         ->and($styles)->toContain('gap: 0.375rem;')
@@ -727,6 +728,10 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($responsePreviewView)->toContain('x-text="response.contentType"')
         ->and($responsePreviewView)->toContain('icon="heroicon-m-document-duplicate"')
         ->and($responsePreviewView)->toContain('x-on:click="copyResponseBody()"')
+        ->and($responseItemView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
+        ->and($responseItemView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
+        ->and($responseItemView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
+        ->and($responseItemView)->not->toContain('media-type-content')
         ->and($responsePreviewView)->toContain('x-bind:class="`language-${responsePrismLanguage}`"')
         ->and($responsePreviewView)->toContain('x-html="highlightedResponseBody"')
         ->and($responsePreviewView)->not->toContain('x-text="response.body"')

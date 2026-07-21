@@ -670,8 +670,6 @@ it('renders request read and send modes', function () {
         ->and(strpos($html, 'Headers') < strpos($html, 'Cookies'))->toBeTrue()
         ->and(strpos($html, 'Cookies') < strpos($html, 'Path parameters'))->toBeTrue()
         ->and($html)->toContain('Body')
-        ->and($html)->toContain('Tree view')
-        ->and($html)->toContain('JSON')
         ->and($html)->toContain('Request sample')
         ->and($html)->toContain('Developer mode')
         ->and($html)->toContain("x-text=\"sending ? 'Sending' : 'Send API request'\"")
