@@ -1,4 +1,4 @@
-<template x-if="hasFormUrlEncodedBody">
+<template x-if="hasFormRequestBody">
   <div class="foad-stack foad-stack-sm">
     <div class="foad-send-controls foad-justify-content-space-between">
       <h4 class="fi-section-header-heading">
@@ -26,7 +26,16 @@
               <x-slot name="prefix">
                 <span x-text="parameter.name"></span>
               </x-slot>
-              <x-filament::input type="text" x-model="parameter.value" />
+              <template x-if="parameter.type !== 'file'">
+                <x-filament::input type="text" x-model="parameter.value" />
+              </template>
+              <template x-if="parameter.type === 'file'">
+                <x-filament::input
+                  type="file"
+                  x-bind:multiple="parameter.multiple"
+                  x-on:change="setFormParameterFiles(index, $event.target.files)"
+                />
+              </template>
             </x-filament::input.wrapper>
           </template>
           <template x-if="parameter.removable">

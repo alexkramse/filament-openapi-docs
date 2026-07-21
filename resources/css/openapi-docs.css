@@ -250,8 +250,7 @@
 
 .foad-property-row {
   --foad-tree-indent: 2rem;
-  border-inline-start: 1px solid
-    color-mix(in oklab, currentColor 12%, transparent);
+  border-inline-start: 1px solid color-mix(in oklab, currentColor 12%, transparent);
   display: grid;
   gap: 0.2rem;
   margin-inline-start: calc(var(--foad-depth, 0) * var(--foad-tree-indent));
@@ -294,6 +293,7 @@
 
 .foad-schema-presence-badge {
   justify-self: end;
+  align-items: center;
 }
 
 .foad-justify-content-space-between {
@@ -349,14 +349,14 @@
 }
 
 .foad-property-row-collapsible[open]
-  > .foad-property-summary
-  .foad-property-toggle-icon-collapsed {
+> .foad-property-summary
+.foad-property-toggle-icon-collapsed {
   display: none;
 }
 
 .foad-property-row-collapsible[open]
-  > .foad-property-summary
-  .foad-property-toggle-icon-open {
+> .foad-property-summary
+.foad-property-toggle-icon-open {
   display: block;
 }
 
@@ -531,8 +531,8 @@
 }
 
 .foad-developer-mode-input:checked
-  + .foad-developer-mode-switch
-  .foad-developer-mode-knob {
++ .foad-developer-mode-switch
+.foad-developer-mode-knob {
   transform: translateX(1rem);
 }
 
@@ -561,9 +561,8 @@
 
 .foad-try-it-url {
   color: var(--gray-700);
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+  "Courier New", monospace;
   font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
@@ -653,9 +652,8 @@
 
 .foad-try-textarea {
   field-sizing: content;
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+  "Courier New", monospace;
   line-height: 1.5;
   min-height: 3rem;
   padding: 0.5rem;
@@ -860,9 +858,8 @@
 .foad-sample-code {
   box-sizing: border-box;
   color: var(--gray-950);
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+  "Courier New", monospace;
   font-size: 0.8125rem;
   line-height: 1.5;
   margin: 0;

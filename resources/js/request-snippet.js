@@ -167,7 +167,10 @@ export default function requestSnippet(config) {
     },
 
     get hasBody() {
-      return Boolean(this.selectedRequest?.har?.postData);
+      return (
+        Boolean(this.selectedRequest?.har?.postData) &&
+        !this.hasMultipartFormDataBody
+      );
     },
 
     get hasJsonBody() {
@@ -183,6 +186,17 @@ export default function requestSnippet(config) {
       );
     },
 
+    get hasMultipartFormDataBody() {
+      return (
+        normalizeContentType(this.selectedRequest?.har?.postData?.mimeType) ===
+        "multipart/form-data"
+      );
+    },
+
+    get hasFormRequestBody() {
+      return this.hasFormUrlEncodedBody || this.hasMultipartFormDataBody;
+    },
+
     get hasRequestControls() {
       return (
         this.canUseDeveloperOptions ||
@@ -191,6 +205,7 @@ export default function requestSnippet(config) {
         this.hasQueryParameters ||
         this.hasHeaderParameters ||
         this.hasAuthParameters ||
+        this.hasFormRequestBody ||
         this.hasBody
       );
     },
@@ -379,13 +394,14 @@ export default function requestSnippet(config) {
     },
 
     addFormParameter() {
-      if (!this.canUseDeveloperOptions || !this.hasFormUrlEncodedBody) {
+      if (!this.canUseDeveloperOptions || !this.hasFormRequestBody) {
         return;
       }
 
       this.formParameters.push({
         name: "",
         value: "",
+        type: "text",
         developerOnly: true,
         removable: true,
       });
@@ -393,6 +409,17 @@ export default function requestSnippet(config) {
 
     removeFormParameter(index) {
       this.formParameters.splice(index, 1);
+    },
+
+    setFormParameterFiles(index, files) {
+      if (!this.formParameters[index]) {
+        return;
+      }
+
+      this.formParameters[index].files = Array.from(files ?? []);
+      this.formParameters[index].value = this.formParameters[index].files
+        .map((file) => file.name)
+        .join(", ");
     },
 
     resetDeveloperModeState() {
@@ -587,6 +614,16 @@ export default function requestSnippet(config) {
           return har;
         }
 
+        if (this.hasMultipartFormDataBody) {
+          har.postData = {
+            ...har.postData,
+            params: this.editableMultipartFormParameters(),
+            text: "",
+          };
+
+          return har;
+        }
+
         har.postData = {
           ...har.postData,
           text: this.bodyText,
@@ -631,12 +668,24 @@ export default function requestSnippet(config) {
       }
 
       const har = this.applyRuntimeEditsToHar(false);
+      const isMultipartFormData =
+        normalizeContentType(har.postData?.mimeType) === "multipart/form-data";
       const headers = Object.fromEntries(
         (har.headers ?? [])
+          .filter(
+            (header) =>
+              !(
+                isMultipartFormData &&
+                header.name.toLowerCase() === "content-type"
+              ),
+          )
           .filter((header) => header.value && !isPlaceholderValue(header.value))
           .map((header) => [header.name, header.value]),
       );
       const method = (har.method ?? "GET").toUpperCase();
+      const requestBody = isMultipartFormData
+        ? this.multipartFormData()
+        : har.postData?.text;
 
       this.sending = true;
 
@@ -645,19 +694,17 @@ export default function requestSnippet(config) {
           method,
           headers,
           credentials: "same-origin",
-          body: ["GET", "HEAD"].includes(method)
-            ? undefined
-            : har.postData?.text,
+          body: ["GET", "HEAD"].includes(method) ? undefined : requestBody,
         });
         const contentType = response.headers.get("Content-Type") ?? "";
-        const body = await response.text();
+        const responseBody = await response.text();
 
         this.response = {
           ok: response.ok,
           status: response.status,
           statusText: response.statusText,
           contentType,
-          body: formatResponseBody(body, contentType),
+          body: formatResponseBody(responseBody, contentType),
         };
       } catch (error) {
         this.sendError =
@@ -772,6 +819,77 @@ export default function requestSnippet(config) {
           name: parameter.name,
           value: String(parameter.value),
         }));
+    },
+
+    editableMultipartFormParameters() {
+      return this.formParameters
+        .filter(
+          (parameter) =>
+            this.canUseDeveloperOptions || !parameter.developerOnly,
+        )
+        .filter((parameter) => parameter.name)
+        .flatMap((parameter) => {
+          if (parameter.type !== "file") {
+            return String(parameter.value).length > 0
+              ? [
+                  {
+                    name: parameter.name,
+                    value: String(parameter.value),
+                  },
+                ]
+              : [];
+          }
+
+          const files = Array.isArray(parameter.files) ? parameter.files : [];
+
+          if (files.length > 0) {
+            return files.map((file) => ({
+              name: parameter.name,
+              value: "",
+              fileName: file.name,
+              contentType:
+                file.type || parameter.contentType || "application/octet-stream",
+            }));
+          }
+
+          return [
+            {
+              name: parameter.name,
+              value: "",
+              fileName: parameter.value || parameter.name,
+              contentType:
+                parameter.contentType || "application/octet-stream",
+            },
+          ];
+        });
+    },
+
+    multipartFormData() {
+      const formData = new FormData();
+
+      for (const parameter of this.formParameters.filter(
+        (item) => this.canUseDeveloperOptions || !item.developerOnly,
+      )) {
+        if (!parameter.name) {
+          continue;
+        }
+
+        if (parameter.type !== "file") {
+          if (String(parameter.value).length > 0) {
+            formData.append(parameter.name, String(parameter.value));
+          }
+
+          continue;
+        }
+
+        for (const file of Array.isArray(parameter.files)
+          ? parameter.files
+          : []) {
+          formData.append(parameter.name, file);
+        }
+      }
+
+      return formData;
     },
 
     async copyResponseBody() {

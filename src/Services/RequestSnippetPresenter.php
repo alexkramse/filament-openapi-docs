@@ -71,7 +71,7 @@ class RequestSnippetPresenter
                     'cookieParameters'      => $this->editableParameters($cookieParameters),
                     'pathParameters'        => $this->editableParameters($pathParameters),
                     'queryParameters'       => $this->editableParameters($queryParameters),
-                    'formParameters'        => $this->editableFormParameters($body, $bodyText),
+                    'formParameters'        => $this->editableFormParameters($body, $bodyText, $components),
                     'bodyText'              => $bodyText,
                     'bodyMimeType'          => is_array($body) ? $body['contentType'] : null,
                     'har'                   => $this->har(
@@ -85,6 +85,7 @@ class RequestSnippetPresenter
                         securityItems: $securityItems,
                         body: $body,
                         bodyText: $bodyText,
+                        components: $components,
                     ),
                 ];
             }
@@ -414,19 +415,46 @@ class RequestSnippetPresenter
      * @param  array<string, mixed>|null  $body
      * @return array<int, array<string, mixed>>
      */
-    private function editableFormParameters(?array $body, string $bodyText): array
+    private function editableFormParameters(?array $body, string $bodyText, array $components): array
     {
-        if (! $this->isFormUrlEncodedBody($body)) {
+        if ($this->isFormUrlEncodedBody($body)) {
+            return collect($this->parseFormEncodedBody($bodyText))
+                ->map(fn (array $parameter): array => [
+                    'name'          => $parameter['name'],
+                    'value'         => $parameter['value'],
+                    'developerOnly' => false,
+                    'removable'     => false,
+                ])
+                ->values()
+                ->all();
+        }
+
+        if (! $this->isMultipartBody($body)) {
             return [];
         }
 
-        return collect($this->parseFormEncodedBody($bodyText))
-            ->map(fn (array $parameter): array => [
-                'name'          => $parameter['name'],
-                'value'         => $parameter['value'],
-                'developerOnly' => false,
-                'removable'     => false,
-            ])
+        $sample = $this->jsonObject($bodyText);
+        $schema = $this->resolveReference(is_array($body['schema'] ?? null) ? $body['schema'] : [], $components);
+        $properties = $this->schemaProperties($schema, $components);
+        $required = $this->schemaRequired($schema, $components);
+
+        return collect($properties)
+            ->filter(fn (mixed $property): bool => is_array($property))
+            ->map(function (array $property, string $name) use ($components, $required, $sample): array {
+                $property = $this->resolveReference($property, $components);
+                $isFile = $this->isFileSchema($property, $components);
+
+                return [
+                    'name'          => $name,
+                    'value'         => $isFile ? '' : $this->stringValue($sample[$name] ?? $this->parameterValue(['name' => $name, 'schema' => $property], $components)),
+                    'type'          => $isFile ? 'file' : 'text',
+                    'multiple'      => $this->isFileArraySchema($property, $components),
+                    'contentType'   => $this->multipartContentType($property, $components),
+                    'required'      => in_array($name, $required, true),
+                    'developerOnly' => false,
+                    'removable'     => false,
+                ];
+            })
             ->values()
             ->all();
     }
@@ -471,6 +499,7 @@ class RequestSnippetPresenter
         array $securityItems,
         ?array $body,
         string $bodyText,
+        array $components,
     ): array {
         $queryString = collect($queryParameters)
             ->map(fn (array $parameter): array => ['name' => $parameter['name'], 'value' => $parameter['value'] ?? ''])
@@ -496,14 +525,33 @@ class RequestSnippetPresenter
             'cookies'     => array_values($cookies),
         ];
 
-        if (is_array($body) && filled($bodyText)) {
+        if (is_array($body) && (filled($bodyText) || $this->isMultipartBody($body))) {
             $har['postData'] = [
                 'mimeType' => $body['contentType'],
-                'text'     => $bodyText,
+                'text'     => $this->isMultipartBody($body) ? '' : $bodyText,
             ];
 
             if ($this->isFormUrlEncodedBody($body)) {
                 $har['postData']['params'] = $this->parseFormEncodedBody($bodyText);
+            }
+
+            if ($this->isMultipartBody($body)) {
+                $har['postData']['params'] = collect($this->editableFormParameters($body, $bodyText, $components))
+                    ->map(function (array $parameter): array {
+                        $harParameter = [
+                            'name'  => $parameter['name'],
+                            'value' => $parameter['type'] === 'file' ? '' : $parameter['value'],
+                        ];
+
+                        if ($parameter['type'] === 'file') {
+                            $harParameter['fileName'] = $parameter['value'] ?: $parameter['name'];
+                            $harParameter['contentType'] = $parameter['contentType'] ?: 'application/octet-stream';
+                        }
+
+                        return $harParameter;
+                    })
+                    ->values()
+                    ->all();
             }
         }
 
@@ -732,6 +780,133 @@ class RequestSnippetPresenter
         return is_array($body)
             && is_string($body['contentType'] ?? null)
             && Str::lower(trim(Str::before($body['contentType'], ';'))) === 'application/x-www-form-urlencoded';
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $body
+     */
+    private function isMultipartBody(?array $body): bool
+    {
+        return is_array($body)
+            && is_string($body['contentType'] ?? null)
+            && Str::lower(trim(Str::before($body['contentType'], ';'))) === 'multipart/form-data';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function jsonObject(string $bodyText): array
+    {
+        $decoded = json_decode($bodyText, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, mixed>  $components
+     */
+    private function isFileSchema(array $schema, array $components): bool
+    {
+        $schema = $this->resolveReference($schema, $components);
+
+        if ($this->isFileArraySchema($schema, $components)) {
+            return true;
+        }
+
+        return ($schema['type'] ?? null) === 'file'
+            || (($schema['type'] ?? null) === 'string' && in_array($schema['format'] ?? null, ['binary', 'base64'], true))
+            || (($schema['type'] ?? null) === 'string' && isset($schema['contentEncoding']));
+    }
+
+    /**
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, mixed>  $components
+     */
+    private function isFileArraySchema(array $schema, array $components): bool
+    {
+        $schema = $this->resolveReference($schema, $components);
+
+        return ($schema['type'] ?? null) === 'array'
+            && is_array($schema['items'] ?? null)
+            && $this->isFileSchema($schema['items'], $components);
+    }
+
+    /**
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, mixed>  $components
+     */
+    private function multipartContentType(array $schema, array $components): ?string
+    {
+        $schema = $this->resolveReference($schema, $components);
+
+        if (($schema['type'] ?? null) === 'array' && is_array($schema['items'] ?? null)) {
+            return $this->multipartContentType($schema['items'], $components);
+        }
+
+        return is_string($schema['contentMediaType'] ?? null) ? $schema['contentMediaType'] : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, mixed>  $components
+     * @return array<string, array<string, mixed>>
+     */
+    private function schemaProperties(array $schema, array $components): array
+    {
+        $schema = $this->resolveReference($schema, $components);
+        $properties = is_array($schema['properties'] ?? null) ? $schema['properties'] : [];
+
+        foreach (['allOf', 'oneOf', 'anyOf'] as $composition) {
+            if (! is_array($schema[$composition] ?? null)) {
+                continue;
+            }
+
+            foreach ($schema[$composition] as $childSchema) {
+                if (! is_array($childSchema)) {
+                    continue;
+                }
+
+                $properties = array_replace($properties, $this->schemaProperties($childSchema, $components));
+            }
+        }
+
+        return collect($properties)
+            ->filter(fn (mixed $property): bool => is_array($property))
+            ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $schema
+     * @param  array<string, mixed>  $components
+     * @return array<int, string>
+     */
+    private function schemaRequired(array $schema, array $components): array
+    {
+        $schema = $this->resolveReference($schema, $components);
+        $required = collect($schema['required'] ?? [])
+            ->filter(fn (mixed $name): bool => is_string($name))
+            ->values()
+            ->all();
+
+        foreach (['allOf', 'oneOf', 'anyOf'] as $composition) {
+            if (! is_array($schema[$composition] ?? null)) {
+                continue;
+            }
+
+            foreach ($schema[$composition] as $childSchema) {
+                if (! is_array($childSchema)) {
+                    continue;
+                }
+
+                $required = [
+                    ...$required,
+                    ...$this->schemaRequired($childSchema, $components),
+                ];
+            }
+        }
+
+        return array_values(array_unique($required));
     }
 
     /**
