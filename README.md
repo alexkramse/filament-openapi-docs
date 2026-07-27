@@ -1,10 +1,12 @@
-# Filament OpenAPI Docs
+# Filament OpenAPI Docs - Filament Plugin
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/alexkramse/filament-openapi-docs.svg?label=stable)](https://packagist.org/packages/alexkramse/filament-openapi-docs)
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-![Latest Stable Version](https://img.shields.io/packagist/v/alexkramse/filament-openapi-docs.svg?label=stable)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.md)
 
-Native OpenAPI documentation for Filament panels, powered by Scramble.
+## Introduction
+
+A Native [`Filament`](https://filamentphp.com/) plugin for OpenAPI documentation powered by [`Scramble`](https://scramble.dedoc.co/).
 
 Filament OpenAPI Docs adds a dashboard page to your Filament panel where authenticated dashboard users can browse your generated OpenAPI specification, inspect endpoints, view request examples, and test API calls without leaving the admin area.
 
