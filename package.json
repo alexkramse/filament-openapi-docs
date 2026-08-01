@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "@readme/httpsnippet": "^11.3.2",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.1",
     "prettier": "^3.9.6",
     "prettier-plugin-blade": "^3.2.2",
     "prismjs": "^1.30.0",
