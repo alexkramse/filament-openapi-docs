@@ -10,7 +10,7 @@ use Illuminate\Contracts\Support\Htmlable;
 
 class FilamentOpenApiDocsPlugin implements Plugin
 {
-    public const string ID = 'filament-openapi-docs';
+    public const ID = 'filament-openapi-docs';
 
     /**
      * @var array<string, mixed>
