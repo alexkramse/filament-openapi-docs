@@ -1,6 +1,8 @@
 # Filament OpenAPI Docs - Filament Plugin
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/alexkramse/filament-openapi-docs.svg?label=stable)](https://packagist.org/packages/alexkramse/filament-openapi-docs)
+[![Laravel](https://img.shields.io/badge/Laravel-11%20%7C%2012%20%7C%2013-red?logo=laravel&logoColor=white)]()
+[![Filament](https://img.shields.io/badge/Filament-4%20%7C%205-FFA500?logo=filament&logoColor=white)]()
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)]()
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.md)
 
@@ -30,9 +32,9 @@ More screenshots are available in [docs/screenshots.md](docs/screenshots.md).
 
 ## Requirements
 
-- PHP `^8.3`
-- Laravel `^13.0`
-- Filament `^5.0`
+- PHP `^8.2`
+- Laravel `^11.28 || ^12.0 || ^13.0`
+- Filament `^4.0 || ^5.0`
 - `dedoc/scramble` `^0.13.30`
 
 This package currently requires [`dedoc/scramble`](https://scramble.dedoc.co/) and is tested only with Scramble-generated OpenAPI documents. Scramble is installed as a package dependency, but your Laravel application still needs a working Scramble configuration so the OpenAPI document can be generated correctly.
@@ -263,6 +265,16 @@ You can disable request samples and request testing while keeping the documentat
 FilamentOpenApiDocsPlugin::make()
     ->requestSamples(false);
 ```
+
+## Support
+
+If this package helps you, consider supporting its development:
+
+- ⭐ Give the repository a [star on GitHub](https://github.com/alexkramse/filament-openapi-docs) — it helps other developers discover the package.
+- ☕ [Buy me a coffee](https://www.buymeacoffee.com/alexkramse) — a small thank you for the time spent maintaining the package.
+- 💖 [Become a GitHub sponsor](https://github.com/sponsors/alexkramse) — sponsor the ongoing development of this and other open source projects.
+
+Bug reports and feature requests are welcome in the [issue tracker](https://github.com/alexkramse/filament-openapi-docs/issues).
 
 ## License
 
