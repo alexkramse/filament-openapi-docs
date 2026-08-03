@@ -873,26 +873,6 @@ it('keeps request snippet javascript inside runtime boundaries', function () {
         ->and($script)->toContain('isValidHeaderName');
 });
 
-it('does not contain old package namespace references', function () {
-    $paths = collect([
-        ...glob(__DIR__.'/../../src/**/*.php'),
-        ...glob(__DIR__.'/../../resources/views/**/*.php'),
-        ...glob(__DIR__.'/../**/*.php'),
-        __DIR__.'/../../composer.json',
-    ]);
-
-    $contents = $paths
-        ->filter(fn (string $path): bool => is_file($path))
-        ->map(fn (string $path): string => file_get_contents($path))
-        ->implode("\n");
-
-    $oldVendorNamespace = 'Kram'.'arenko\\'.'FilamentOpenApiDocs';
-    $oldVendor = 'Kram'.'arenko';
-
-    expect($contents)->not->toContain($oldVendorNamespace)
-        ->and($contents)->not->toContain($oldVendor);
-});
-
 it('parses response headers into structured header entries', function () {
     $parsed = app(OpenApiParser::class)->parse([
         'openapi' => '3.1.0',

@@ -33,7 +33,7 @@ class OpenApiDocsPage extends Page
 
     public function getMaxContentWidth(): Width|string|null
     {
-        if (static::plugin()?->hasFullWidthLayout() ?? (bool) config('filament-openapi-docs.layout.full_width', true)) {
+        if (self::plugin()?->hasFullWidthLayout() ?? (bool) config('filament-openapi-docs.layout.full_width', true)) {
             return Width::Full;
         }
 
@@ -42,7 +42,7 @@ class OpenApiDocsPage extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return $this->stringValue(static::plugin()?->getTitle() ?? config('filament-openapi-docs.page.title'))
+        return $this->stringValue(self::plugin()?->getTitle() ?? config('filament-openapi-docs.page.title'))
             ?? $this->stringValue($this->openApiInfo()['title'] ?? null)
             ?? $this->stringValue(config('app.name'))
             ?? 'Laravel';
@@ -50,20 +50,20 @@ class OpenApiDocsPage extends Page
 
     public function getSubheading(): string|Htmlable|null
     {
-        return $this->stringValue(static::plugin()?->getDescription() ?? config('filament-openapi-docs.page.description'))
+        return $this->stringValue(self::plugin()?->getDescription() ?? config('filament-openapi-docs.page.description'))
             ?? $this->stringValue($this->openApiInfo()['description'] ?? null)
             ?? '';
     }
 
     public static function getNavigationLabel(): string
     {
-        return static::plugin()?->getNavigationLabel()
+        return self::plugin()?->getNavigationLabel()
             ?? config('filament-openapi-docs.navigation.label', 'API Docs');
     }
 
     public static function getNavigationIcon(): string|\BackedEnum|Htmlable|null
     {
-        if ($plugin = static::plugin()) {
+        if ($plugin = self::plugin()) {
             return $plugin->getNavigationIcon();
         }
 
@@ -72,7 +72,7 @@ class OpenApiDocsPage extends Page
 
     public static function getNavigationGroup(): string|\UnitEnum|null
     {
-        if ($plugin = static::plugin()) {
+        if ($plugin = self::plugin()) {
             return $plugin->getNavigationGroup();
         }
 
@@ -81,7 +81,7 @@ class OpenApiDocsPage extends Page
 
     public static function getNavigationSort(): ?int
     {
-        if ($plugin = static::plugin()) {
+        if ($plugin = self::plugin()) {
             return $plugin->getNavigationSort();
         }
 
@@ -90,14 +90,14 @@ class OpenApiDocsPage extends Page
 
     public static function getNavigationBadge(): ?string
     {
-        $plugin = static::plugin();
+        $plugin = self::plugin();
         $mode = $plugin
             ? $plugin->getNavigationBadgeMode()
             : config('filament-openapi-docs.navigation.badge', 'version');
 
-        $openApiData = static::staticOpenApiData();
+        $openApiData = self::staticOpenApiData();
         $badge = match ($mode) {
-            'version' => static::staticStringValue($openApiData['info']['version'] ?? null),
+            'version' => self::staticStringValue($openApiData['info']['version'] ?? null),
             'count'   => (string) $openApiData['endpointCount'],
             default   => null,
         };
@@ -118,7 +118,7 @@ class OpenApiDocsPage extends Page
 
     public static function getSubNavigationPosition(): SubNavigationPosition
     {
-        return match (static::plugin()?->getSubNavigationPosition() ?? config('filament-openapi-docs.sub_navigation.position', 'left')) {
+        return match (self::plugin()?->getSubNavigationPosition() ?? config('filament-openapi-docs.sub_navigation.position', 'left')) {
             'right' => SubNavigationPosition::End,
             default => SubNavigationPosition::Start,
         };
@@ -203,7 +203,7 @@ class OpenApiDocsPage extends Page
 
     private function stringValue(mixed $value): ?string
     {
-        return static::staticStringValue($value);
+        return self::staticStringValue($value);
     }
 
     /**

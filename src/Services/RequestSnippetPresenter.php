@@ -12,7 +12,7 @@ class RequestSnippetPresenter
     /**
      * @var array<int, string>
      */
-    private const array MEDIA_OR_AUTH_HEADERS = [
+    private const MEDIA_OR_AUTH_HEADERS = [
         'accept',
         'authorization',
         'content-type',
@@ -101,7 +101,7 @@ class RequestSnippetPresenter
             'requestBodies'       => $requestBodies,
             'requests'            => $requests,
             'messages'            => $this->messages(),
-            'hasRequestSamples'   => $this->hasRequestSamples() && $requests !== [],
+            'hasRequestSamples'   => $this->hasRequestSamples(),
             'hasDeveloperOptions' => $this->hasDeveloperOptions(),
         ];
     }
@@ -569,7 +569,7 @@ class RequestSnippetPresenter
         foreach ($securityItems as $securityItem) {
             $value = $securityItem['value'] ?? '';
             $parameter = [
-                'name'  => $securityItem['name'],
+                'name'  => (string) ($securityItem['name'] ?? ''),
                 'value' => is_string($value) ? $value : '',
             ];
 
