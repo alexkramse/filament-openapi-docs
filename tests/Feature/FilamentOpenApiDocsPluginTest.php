@@ -603,6 +603,8 @@ it('adds spacing between openapi summary server urls and meta badges', function 
         ->and($styles)->toContain('.foad-response-status-badge[data-color="warning"]')
         ->and($styles)->toContain('.foad-response-status-badge[data-color="danger"]')
         ->and($styles)->toContain('.foad-response-block')
+        ->and($styles)->toContain('.foad-sample-scroll.foad-response-code')
+        ->and($styles)->toContain(".foad-sample-scroll.foad-response-code {\n  border: 1px solid color-mix(in oklab, currentColor 10%, transparent);\n  border-radius: 0.375rem;\n  max-height: 22rem;\n  overflow-y: auto;")
         ->and($styles)->toContain('.foad-stack')
         ->and($styles)->toContain('.foad-send-layout')
         ->and($styles)->toContain('.foad-send-layout > .foad-stack')
