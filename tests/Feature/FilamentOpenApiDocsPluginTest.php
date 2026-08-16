@@ -559,21 +559,38 @@ it('includes localized request snippet runtime messages', function () {
 });
 
 it('falls back to the configured fallback locale for package translations', function () {
-    app()->setLocale('pl');
+    app()->setLocale('zz');
     app('translator')->setFallback('de');
 
     expect(__('filament-openapi-docs::ui.actions.send_api_request'))->toBe('API-Anfrage senden');
 });
 
-it('documents translation publishing and updates', function () {
-    $readme = file_get_contents(__DIR__.'/../../README.md');
+it('ships complete standalone ui translation files', function () {
+    $english = require __DIR__.'/../../resources/lang/en/ui.php';
+    $localeFiles = glob(__DIR__.'/../../resources/lang/*/ui.php');
 
-    expect($readme)->toContain('## Translations')
-        ->and($readme)->toContain('English (`en`), Ukrainian (`uk`), German (`de`), Spanish (`es`), and French (`fr`)')
-        ->and($readme)->toContain('php artisan vendor:publish --tag=filament-openapi-docs-translations')
-        ->and($readme)->toContain('lang/vendor/filament-openapi-docs/{locale}/ui.php')
-        ->and($readme)->toContain('copy the structure from `resources/lang/en/ui.php`')
-        ->and($readme)->toContain('compare the newest package `resources/lang/en/ui.php`');
+    expect($localeFiles)->toHaveCount(62);
+
+    foreach ($localeFiles as $localeFile) {
+        $contents = file_get_contents($localeFile);
+        $translation = require $localeFile;
+
+        expect(preg_match('/\b(?:require|include)(?:_once)?\b/', $contents))->toBe(0)
+            ->and(array_keys($translation))->toBe(array_keys($english));
+
+        foreach ($english as $group => $strings) {
+            expect($translation[$group])->toBeArray()
+                ->and(array_keys($translation[$group]))->toBe(array_keys($strings));
+
+            foreach ($strings as $key => $value) {
+                preg_match_all('/:\w+/', $value, $sourcePlaceholders);
+                preg_match_all('/:\w+/', $translation[$group][$key], $translationPlaceholders);
+
+                expect($translation[$group][$key])->toBeString()
+                    ->and($translationPlaceholders[0])->toBe($sourcePlaceholders[0]);
+            }
+        }
+    }
 });
 
 it('adds spacing between openapi summary server urls and meta badges', function () {
