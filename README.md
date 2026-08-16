@@ -21,6 +21,7 @@ Filament OpenAPI Docs adds a dashboard page to your Filament panel where authent
 - Lets users test API endpoints directly from the dashboard.
 - Provides configurable developer mode for custom request headers and query parameters.
 - Supports panel-level fluent configuration and a publishable config file.
+- Ships UI translations for all 62 locales supported by Filament Panels.
 - Registers package CSS and JavaScript through Filament's asset manager.
 
 ## Screenshots
@@ -163,7 +164,19 @@ Developer options are disabled by default. Enable them when dashboard users shou
 
 ## Translations
 
-The package ships with UI translations for English (`en`), Ukrainian (`uk`), German (`de`), Spanish (`es`), and French (`fr`). It uses Laravel's current locale and fallback locale, so you may switch languages with your normal application configuration:
+The package ships with UI translations for all 62 locales currently shipped by Filament Panels. It uses Laravel's current locale and fallback locale.
+
+### Supported Locales
+
+The package supports the following locale codes:
+
+`am`, `ar`, `az`, `bg`, `bn`, `bs`, `ca`, `ckb`, `cs`, `da`, `de`, `el`, `en`, `es`, `et`, `eu`, `fa`, `fi`, `fr`, `he`, `hi`, `hr`, `hu`, `hy`, `id`, `it`, `ja`, `ka`, `km`, `ko`, `ku`, `lt`, `lus`, `lv`, `mk`, `mn`, `ms`, `my`, `nb`, `ne`, `nl`, `pl`, `pt`, `pt_BR`, `ro`, `ru`, `sk`, `sl`, `sq`, `sr_Cyrl`, `sr_Latn`, `sv`, `sw`, `th`, `tr`, `uk`, `ur`, `uz`, `vi`, `zh_CN`, `zh_HK`, and `zh_TW`.
+
+If a translation is unavailable in the active locale, Laravel resolves it through `APP_FALLBACK_LOCALE`.
+
+### Switching the Active Locale
+
+For example, configure Ukrainian as the active locale and English as its fallback:
 
 ```env
 APP_LOCALE=uk
@@ -186,7 +199,7 @@ Published files are placed in:
 lang/vendor/filament-openapi-docs/{locale}/ui.php
 ```
 
-To add a new translation, create a new locale directory such as `lang/vendor/filament-openapi-docs/pl/ui.php`, copy the structure from `resources/lang/en/ui.php`, and translate only the values. Keep the array keys unchanged.
+To add a new locale, create a directory such as `lang/vendor/filament-openapi-docs/eo/ui.php`, copy the structure from `resources/lang/en/ui.php`, and translate only the values. Keep the array keys unchanged.
 
 To update local overrides after a package upgrade, compare the newest package `resources/lang/en/ui.php` file with your files in `lang/vendor/filament-openapi-docs/{locale}/ui.php` and copy any missing keys. Use `vendor:publish --tag=filament-openapi-docs-translations --force` only when you intentionally want to replace local customizations.
 
@@ -231,7 +244,6 @@ The package follows Filament's asset manager conventions:
 
 - CSS is registered with `loadedOnRequest()` and is only loaded when requested by the OpenAPI docs page.
 - The request sender is registered as an asynchronous Alpine component.
-- Assets are registered under the package name `alexkramse/filament-openapi-docs`.
 
 For application installation and deployment, run:
 
@@ -252,13 +264,6 @@ You do not need to run `npm run build` in a consuming Laravel application unless
 
 This package is intended for trusted dashboard users. The request sender can send custom headers, parameters, auth values, and request bodies from the browser.
 
-Before enabling request testing in production, confirm that:
-
-- the Filament panel is protected by the right authentication and authorization rules;
-- the configured API server is safe for dashboard users to call;
-- CORS, cookies, CSRF behavior, and API authentication are configured intentionally;
-- sensitive production endpoints should be exposed only to users who are allowed to test them.
-
 You can disable request samples and request testing while keeping the documentation page:
 
 ```php
@@ -275,6 +280,18 @@ If this package helps you, consider supporting its development:
 - 💖 [Become a GitHub sponsor](https://github.com/sponsors/alexkramse) — sponsor the ongoing development of this and other open source projects.
 
 Bug reports and feature requests are welcome in the [issue tracker](https://github.com/alexkramse/filament-openapi-docs/issues).
+
+## About Me
+
+Senior Laravel and Full-Stack Developer focused on building applications from scratch, modernizing legacy systems, and creating practical solutions that improve business operations.
+
+I like a pragmatic approach to well-optimized code, efficient database queries, use coding best practices and principles.
+
+Available now for remote full-time, part-time, and freelance opportunities in Laravel, PHP, Filament, API development, backend engineering, and application modernization.
+
+If you need someone to build, maintain, modernize, and evolve production-ready software, I’d be glad to connect.
+
+**LinkedIn:** [Connect with me on LinkedIn](https://www.linkedin.com/in/oleksandrkramarenko)
 
 ## License
 

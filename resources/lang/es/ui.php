@@ -17,10 +17,10 @@ return [
         'request_sample_language' => 'Idioma del ejemplo de solicitud',
     ],
     'auth' => [
-        'basic'              => 'Autenticación básica',
-        'bearer'             => 'Token Bearer',
+        'basic'              => 'Basic auth',
+        'bearer'             => 'Bearer token',
         'bearer_description' => 'Proporcione su token Bearer en el encabezado Authorization al realizar solicitudes a recursos protegidos.',
-        'mutual_tls'         => 'TLS mutuo',
+        'mutual_tls'         => 'Mutual TLS',
         'oauth2'             => 'OAuth 2',
         'openid_connect'     => 'OpenID Connect',
     ],
@@ -35,7 +35,7 @@ return [
         'request_data'      => 'No hay datos de solicitud documentados.',
         'request_sample'    => 'No hay ejemplo de solicitud disponible.',
         'response_body'     => 'No hay cuerpo de respuesta documentado.',
-        'no_content'        => 'No Content',
+        'no_content'        => 'Sin contenido',
         'structured_fields' => 'No hay campos estructurados documentados.',
     ],
     'labels' => [
@@ -62,7 +62,7 @@ return [
         'security'             => 'Seguridad',
         'send_mode'            => 'Modo de envío',
         'tree_view'            => 'Vista de árbol',
-        'urlencoded'           => 'URL codificado',
+        'urlencoded'           => 'URL encoded',
         'value'                => 'Valor',
     ],
     'messages' => [
@@ -76,7 +76,7 @@ return [
     ],
     'meta' => [
         'documented_responses'          => ':count respuestas documentadas',
-        'endpoints'                     => ':count endpoints',
+        'endpoints'                     => ':count puntos finales',
         'preferred_response_media_type' => 'Tipo de medio de respuesta preferido',
         'request_body_media_type'       => 'Tipo de medio del cuerpo de la solicitud',
     ],

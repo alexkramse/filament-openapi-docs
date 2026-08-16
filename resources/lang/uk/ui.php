@@ -17,10 +17,10 @@ return [
         'request_sample_language' => 'Мова прикладу запиту',
     ],
     'auth' => [
-        'basic'              => 'Базова автентифікація',
-        'bearer'             => 'Bearer-токен',
+        'basic'              => 'Basic auth',
+        'bearer'             => 'Bearer token',
         'bearer_description' => 'Укажіть Bearer-токен у заголовку Authorization під час запитів до захищених ресурсів.',
-        'mutual_tls'         => 'Взаємний TLS',
+        'mutual_tls'         => 'Mutual TLS',
         'oauth2'             => 'OAuth 2',
         'openid_connect'     => 'OpenID Connect',
     ],
@@ -35,7 +35,7 @@ return [
         'request_data'      => 'Дані запиту не задокументовано.',
         'request_sample'    => 'Приклад запиту недоступний.',
         'response_body'     => 'Тіло відповіді не задокументовано.',
-        'no_content'        => 'No Content',
+        'no_content'        => 'Немає вмісту',
         'structured_fields' => 'Структуровані поля не задокументовано.',
     ],
     'labels' => [
@@ -62,7 +62,7 @@ return [
         'security'             => 'Безпека',
         'send_mode'            => 'Режим надсилання',
         'tree_view'            => 'Дерево',
-        'urlencoded'           => 'URL-кодовано',
+        'urlencoded'           => 'URL encoded',
         'value'                => 'Значення',
     ],
     'messages' => [
