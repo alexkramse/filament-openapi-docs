@@ -7,6 +7,7 @@ use Alexkramse\FilamentOpenapiDocs\Pages\OpenApiDocsPage;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiDataResolver;
 use Alexkramse\FilamentOpenapiDocs\Support\ScrambleSpecProvider;
 use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
+use Dedoc\Scramble\Scramble;
 use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
@@ -73,6 +74,34 @@ class FilamentOpenApiDocsServiceProvider extends PackageServiceProvider
      */
     private function openApiSummaryData(): array
     {
-        return app(OpenApiDataResolver::class)->data();
+        $plugin = FilamentOpenApiDocsPlugin::current();
+        $versions = $plugin?->getVersions() ?? [];
+        $selectedVersion = $plugin?->getVersion(request()->query('version'))
+            ?? $plugin?->getDefaultVersion();
+
+        return [
+            'versions' => array_map(fn (string $version): array => [
+                'key'   => $version,
+                'label' => $this->versionLabel($version),
+            ], $versions),
+            'hasVersionSelector' => count($versions) > 1,
+            'selectedVersion'    => $selectedVersion,
+            ...app(OpenApiDataResolver::class)->data($selectedVersion),
+        ];
+    }
+
+    private function versionLabel(string $version): string
+    {
+        try {
+            $config = Scramble::getGeneratorConfig($version);
+            $apiPath = $config->apiPath()->serverPath();
+            $label = filled($config->get('info.version'))
+                ? $config->get('info.version')
+                : $version;
+
+            return $apiPath === '' ? $label : "{$label} ({$apiPath})";
+        } catch (\Throwable) {
+            return $version;
+        }
     }
 }

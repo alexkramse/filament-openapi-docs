@@ -7,6 +7,7 @@ use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
 use Filament\Panel;
 use Illuminate\Contracts\Support\Htmlable;
+use Dedoc\Scramble\Scramble;
 
 class FilamentOpenApiDocsPlugin implements Plugin
 {
@@ -17,15 +18,34 @@ class FilamentOpenApiDocsPlugin implements Plugin
      */
     private array $options = [];
 
-    public static function make(): static
+    /** @var array<int, string> */
+    private array $versions = [];
+
+    private ?string $version = null;
+
+    public function __construct(
+        private readonly string $id = self::ID,
+    ) {
+        if (blank($this->id)) {
+            throw new \InvalidArgumentException('The OpenAPI docs plugin ID must not be empty.');
+        }
+    }
+
+    public static function make(?string $id = null): static
     {
-        return app(static::class);
+        if ($id === null || $id === self::ID) {
+            return app(static::class);
+        }
+
+        return new static($id);
     }
 
     public static function current(): ?self
     {
         try {
-            $plugin = Filament::getPlugin(self::ID);
+            $plugin = Filament::getPlugin(
+                Filament::getCurrentPageConfigurationKey() ?? self::ID,
+            );
         } catch (\Throwable) {
             return null;
         }
@@ -35,7 +55,7 @@ class FilamentOpenApiDocsPlugin implements Plugin
 
     public function getId(): string
     {
-        return self::ID;
+        return $this->id;
     }
 
     public function register(Panel $panel): void
@@ -44,11 +64,10 @@ class FilamentOpenApiDocsPlugin implements Plugin
             return;
         }
 
-        $page = OpenApiDocsPage::class;
-
-        if (filled($slug = $this->getSlug())) {
-            $page = OpenApiDocsPage::make()->slug($slug);
-        }
+        $slug = $this->getSlug();
+        $page = ($this->getId() === self::ID && blank($slug))
+            ? OpenApiDocsPage::class
+            : OpenApiDocsPage::make($this->getId())->slug($slug);
 
         $panel->pages([
             $page,
@@ -176,6 +195,47 @@ class FilamentOpenApiDocsPlugin implements Plugin
         return $this;
     }
 
+    /** @param array<int, string> $versions */
+    public function versions(array $versions): static
+    {
+        if ($versions === []) {
+            throw new \InvalidArgumentException('OpenAPI versions must contain at least one Scramble alias.');
+        }
+
+        foreach ($versions as $version) {
+            if (! is_string($version) || blank($version)) {
+                throw new \InvalidArgumentException('OpenAPI versions must be non-empty Scramble aliases.');
+            }
+        }
+
+        if (count($versions) !== count(array_unique($versions))) {
+            throw new \InvalidArgumentException('OpenAPI version keys must be unique.');
+        }
+
+        $this->versions = array_values($versions);
+
+        if ($this->version !== null && ! in_array($this->version, $this->versions, true)) {
+            throw new \InvalidArgumentException("The selected OpenAPI version [{$this->version}] must be included in the configured versions.");
+        }
+
+        return $this;
+    }
+
+    public function version(string $version): static
+    {
+        if (blank($version)) {
+            throw new \InvalidArgumentException('The selected OpenAPI version must be a non-empty Scramble alias.');
+        }
+
+        if ($this->versions !== [] && ! in_array($version, $this->versions, true)) {
+            throw new \InvalidArgumentException("The selected OpenAPI version [{$version}] must be included in the configured versions.");
+        }
+
+        $this->version = $version;
+
+        return $this;
+    }
+
     public function getSlug(): ?string
     {
         return $this->option('slug', 'slug');
@@ -263,9 +323,49 @@ class FilamentOpenApiDocsPlugin implements Plugin
         return (string) $this->option('scramble.generator', 'scramble.generator', 'default');
     }
 
+    /** @return array<int, string> */
+    public function getVersions(): array
+    {
+        if ($this->version !== null) {
+            return [$this->version];
+        }
+
+        return $this->versions !== [] ? $this->versions : $this->discoveredVersions();
+    }
+
+    public function hasVersions(): bool
+    {
+        return $this->getVersions() !== [];
+    }
+
+    public function getVersion(?string $key): ?string
+    {
+        return is_string($key) && in_array($key, $this->getVersions(), true)
+            ? $key
+            : null;
+    }
+
+    public function getDefaultVersion(): ?string
+    {
+        return $this->getVersions()[0] ?? null;
+    }
+
     private function shouldRegisterPage(): bool
     {
         return ! app()->environment('production') || $this->isEnabledInProduction();
+    }
+
+    /** @return array<int, string> */
+    private function discoveredVersions(): array
+    {
+        try {
+            return array_values(array_filter(
+                array_keys(Scramble::getConfigurationsInstance()->all()),
+                fn (string $version): bool => $version !== Scramble::DEFAULT_API,
+            ));
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     private function option(string $option, string $config, mixed $default = null): mixed

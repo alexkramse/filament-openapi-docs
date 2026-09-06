@@ -26,8 +26,19 @@ class OpenApiDocsPage extends Page
     #[Url(as: 'endpoint', history: true)]
     public ?string $selectedEndpointId = null;
 
+    #[Url(as: 'version', history: true)]
+    public ?string $selectedVersion = null;
+
     public function mount(): void
     {
+        $this->ensureSelectedVersion();
+        $this->ensureSelectedEndpoint();
+    }
+
+    public function updatedSelectedVersion(): void
+    {
+        $this->ensureSelectedVersion();
+        $this->selectedEndpointId = null;
         $this->ensureSelectedEndpoint();
     }
 
@@ -167,6 +178,7 @@ class OpenApiDocsPage extends Page
      */
     protected function getViewData(): array
     {
+        $this->ensureSelectedVersion();
         $this->ensureSelectedEndpoint();
 
         $selectedEndpoint = $this->endpoints()
@@ -190,7 +202,7 @@ class OpenApiDocsPage extends Page
      */
     private function openApiData(): array
     {
-        return app(OpenApiDataResolver::class)->data();
+        return app(OpenApiDataResolver::class)->data($this->selectedApiVersion());
     }
 
     /**
@@ -217,7 +229,9 @@ class OpenApiDocsPage extends Page
      */
     private static function staticOpenApiData(): array
     {
-        return app(OpenApiDataResolver::class)->data();
+        return app(OpenApiDataResolver::class)->data(
+            self::plugin()?->getDefaultVersion(),
+        );
     }
 
     private static function staticStringValue(mixed $value): ?string
@@ -239,6 +253,31 @@ class OpenApiDocsPage extends Page
         }
 
         $this->selectedEndpointId = $this->endpoints()->first()?->id;
+    }
+
+    private function ensureSelectedVersion(): void
+    {
+        if (! self::plugin()?->hasVersions()) {
+            return;
+        }
+
+        if (self::plugin()?->getVersion($this->selectedVersion) !== null) {
+            return;
+        }
+
+        $this->selectedVersion = self::plugin()?->getDefaultVersion();
+    }
+
+    private function selectedApiVersion(): ?string
+    {
+        $plugin = self::plugin();
+
+        if (! $plugin?->hasVersions()) {
+            return null;
+        }
+
+        return $plugin->getVersion($this->selectedVersion)
+            ?? $plugin->getDefaultVersion();
     }
 
     /**

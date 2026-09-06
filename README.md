@@ -20,6 +20,7 @@ Filament OpenAPI Docs adds a dashboard page to your Filament panel where authent
 - Generates request samples for multiple languages and clients.
 - Lets users test API endpoints directly from the dashboard.
 - Provides configurable developer mode for custom request headers and query parameters.
+- Supports multiple API's version selector or dedicated version-specific docs pages.
 - Supports panel-level fluent configuration and a publishable config file.
 - Ships UI translations for all 62 locales supported by Filament Panels.
 - Registers package CSS and JavaScript through Filament's asset manager.
@@ -131,8 +132,19 @@ FilamentOpenApiDocsPlugin::make()
     ->requestSamples()
     ->developerOptions()
     ->defaultServer('https://api.example.com')
-    ->scrambleGenerator('default');
+    ->versions(['v1', 'v2']);
 ```
+
+`versions()` accepts the aliases registered with `Scramble::registerApi()`. A page with multiple aliases shows a version selector. To show one version on a dedicated docs page, use `->version('v2')`. When neither option is configured, the plugin discovers all named Scramble APIs automatically. If only Scramble's `default` API exists, the plugin keeps the existing single-document behavior and uses `->scrambleGenerator('default')`.
+
+```php
+FilamentOpenApiDocsPlugin::make('api-v2')
+    ->slug('developer/api-docs-v2')
+    ->navigationLabel('OpenAPI v2')
+    ->version('v2');
+```
+
+Use a unique plugin ID when registering more than one docs page.
 
 ### Available Options
 
@@ -155,6 +167,8 @@ FilamentOpenApiDocsPlugin::make()
 | `developerOptions()`      | `request_samples.developer_options` | Enables developer mode for custom headers and query parameters. |
 | `defaultServer()`         | `request_samples.default_server` | Sets the default server for generated requests.   |
 | `scrambleGenerator()`     | `scramble.generator`             | Selects the Scramble generator name.              |
+| `versions()`              | —                                | Explicitly lists named Scramble APIs for a version selector. |
+| `version()`               | —                                | Restricts this docs page to one Scramble API.      |
 
 Supported navigation badge modes are `version`, `count`, and `null`.
 

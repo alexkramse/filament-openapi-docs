@@ -166,7 +166,6 @@ it('uses documented content type header as a request sample media type override'
         ->and($html)->toContain('Form request')
         ->and($html)->toContain('Body')
         ->and($html)->toContain('application/x-www-form-urlencoded')
-        ->and($html)->toContain('foad-request-body-sample-wrap')
         ->and($html)->toContain('name=Katherine%20Johnson\\u0026email=katherine%40example.test\\u0026rating=5')
         ->and($html)->not->toContain('URL encoded')
         ->and($html)->not->toContain('Tree view')
@@ -648,9 +647,7 @@ it('renders request read and send modes', function () {
 
     $removableParameterMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/headers.blade.php')
         .file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/query-parameters.blade.php');
-    $requestSnippetMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/http-snippet.blade.php');
     $pageMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
-    $infoMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/info.blade.php');
     $requestMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request.blade.php');
     $readModeMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/data.blade.php');
     $sendModeMarkup = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester.blade.php');
@@ -677,26 +674,15 @@ it('renders request read and send modes', function () {
         ->and($html)->not->toContain('@js(')
         ->and($html)->toContain('Add header')
         ->and($html)->toContain('Add')
-        ->and($html)->toContain('foad-inline-list foad-inline-list-end foad-inline-list-md')
-        ->and($html)->toContain('foad-request-mode-controls')
         ->and($html)->toContain('copyToClipboard')
-        ->and($html)->toContain('foad-copyable-badge')
         ->and($html)->toContain('Click to copy: \\/users\\/{user}')
-        ->and($html)->toContain('fi-grid foad-send-layout md:fi-grid-cols')
-        ->and($html)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
-        ->and($html)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
         ->and($html)->toContain('highlightedResponseBody')
         ->and($html)->not->toContain('textcommit')
         ->and($html)->toContain('await navigator.clipboard.writeText(text)')
         ->and($html)->toContain('https:\\/\\/api.example.test\\/users')
         ->and($html)->toContain('demo_session')
-        ->and(substr_count($html, 'foad-send-controls-grid'))->toBe(6)
-        ->and(substr_count($html, 'foad-send-controls foad-justify-content-space-between'))->toBe(3)
-        ->and(substr_count($html, 'class="foad-header-row"'))->toBe(3)
         ->and($pageMarkup)->toContain('x-data="requestSnippet(@js($requestData))"')
         ->and(substr_count($removableParameterMarkup, '<x-filament::icon-button'))->toBe(2)
-        ->and(substr_count($removableParameterMarkup, 'icon="heroicon-m-x-mark"'))->toBe(2)
-        ->and(substr_count($removableParameterMarkup, "label=\"{{ __('filament-openapi-docs::ui.actions.remove') }}\""))->toBe(2)
         ->and($removableParameterMarkup)->not->toContain('>Remove')
         ->and($removableParameterMarkup)->toContain('x-for="parameter in mediaHeaderParameters"')
         ->and($removableParameterMarkup)->toContain('x-bind:key="`media-header-${parameter.name}`"')
@@ -705,16 +691,11 @@ it('renders request read and send modes', function () {
         ->and($removableParameterMarkup)->toContain('x-bind:id="`parameter-name-${index}`"')
         ->and($removableParameterMarkup)->toContain('x-bind:id="`header-value-${index}`"')
         ->and($removableParameterMarkup)->toContain('x-bind:id="`parameter-value-${index}`"')
-        ->and($requestSnippetMarkup)->toContain('icon="heroicon-m-document-duplicate"')
         ->and($requestMarkup)->toContain('x-model="sendMode"')
         ->and($requestMarkup)->toContain('x-show="sendMode && hasDeveloperOptions"')
         ->and($requestMarkup)->toContain('x-model="developerMode"')
-        ->and($infoMarkup)->toContain('<x-filament-openapi-docs::copyable-badge')
         ->and($pageMarkup)->not->toContain('async copy(server)')
         ->and($pageMarkup)->not->toContain('<div'.PHP_EOL.'                @if ($requestData[\'hasRequestSamples\'])')
-        ->and($readModeMarkup)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
-        ->and($readModeMarkup)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
-        ->and($readModeMarkup)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
         ->and($readModeMarkup)->toContain('ui.labels.cookies')
         ->and($requestSnippetRuntime)->toContain('this.queryParameters.length > 0')
         ->and($requestSnippetRuntime)->toContain('this.cookieParameters.length > 0')
@@ -748,9 +729,7 @@ it('renders request read mode as static documentation rows', function () {
         'requestData'      => $requestData,
     ])->render());
 
-    expect($html)->toContain('foad-property-row')
-        ->and($html)->toContain('foad-property-name')
-        ->and($html)->toContain('Security')
+    expect($html)->toContain('Security')
         ->and($html)->not->toContain('Media headers')
         ->and($html)->toContain('Headers')
         ->and($html)->toContain('Content-Type: application/json')

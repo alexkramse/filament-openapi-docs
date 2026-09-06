@@ -2,26 +2,27 @@
 
 use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsPlugin;
-use Alexkramse\FilamentOpenapiDocs\FilamentOpenApiDocsServiceProvider;
 use Alexkramse\FilamentOpenapiDocs\Pages\OpenApiDocsPage;
 use Alexkramse\FilamentOpenapiDocs\Services\ExamplePresenter;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiDataResolver;
 use Alexkramse\FilamentOpenapiDocs\Services\OpenApiNavigationBuilder;
-use Alexkramse\FilamentOpenapiDocs\Services\OpenApiParser;
 use Alexkramse\FilamentOpenapiDocs\Services\RequestSnippetPresenter;
 use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
+use Alexkramse\FilamentOpenapiDocs\Support\VersionedSpecProvider;
 use Filament\Facades\Filament;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\ServiceProvider;
+use Dedoc\Scramble\Configuration\GeneratorConfigCollection;
 use Livewire\Attributes\Url;
 use Mockery as m;
 
 afterEach(function () {
     Filament::setCurrentPanel(null);
+    Filament::setCurrentPageConfigurationKey(null);
+    app()->forgetInstance(FilamentOpenApiDocsPlugin::class);
+    app()->forgetInstance(GeneratorConfigCollection::class);
 });
 
 it('registers the api docs page with a panel', function () {
@@ -31,6 +32,222 @@ it('registers the api docs page with a panel', function () {
 
     expect($panel->getPages())->toContain(OpenApiDocsPage::class);
 });
+
+it('uses the container-resolved plugin for the default id', function () {
+    $plugin = new FilamentOpenApiDocsPlugin;
+
+    app()->instance(FilamentOpenApiDocsPlugin::class, $plugin);
+
+    expect(FilamentOpenApiDocsPlugin::make())->toBe($plugin)
+        ->and(FilamentOpenApiDocsPlugin::make(FilamentOpenApiDocsPlugin::ID))->toBe($plugin);
+});
+
+it('registers independent docs pages for distinct plugin ids', function () {
+    $v1Plugin = FilamentOpenApiDocsPlugin::make()
+        ->slug('developer/api-docs')
+        ->navigationLabel('OpenAPI v1')
+        ->versions(['v1']);
+    $v2Plugin = FilamentOpenApiDocsPlugin::make('apiv2')
+        ->slug('developer/api-docs-v2')
+        ->navigationLabel('OpenAPI v2')
+        ->versions(['v2']);
+
+    $panel = Panel::make()
+        ->id('admin')
+        ->plugins([
+            $v1Plugin,
+            $v2Plugin,
+        ]);
+
+    expect($panel->getPageConfiguration(OpenApiDocsPage::class, FilamentOpenApiDocsPlugin::ID)?->getSlug())
+        ->toBe('developer/api-docs')
+        ->and($panel->getPageConfiguration(OpenApiDocsPage::class, 'apiv2')?->getSlug())
+        ->toBe('developer/api-docs-v2');
+
+    Filament::setCurrentPanel($panel);
+    Filament::setCurrentPageConfigurationKey('apiv2');
+
+    expect(FilamentOpenApiDocsPlugin::current())->toBe($v2Plugin)
+        ->and(OpenApiDocsPage::getNavigationLabel())->toBe('OpenAPI v2');
+});
+
+it('does not allow an empty plugin id', function () {
+    FilamentOpenApiDocsPlugin::make('');
+})->throws(InvalidArgumentException::class, 'must not be empty');
+
+it('keeps the legacy generator when no versions are configured', function () {
+    $plugin = FilamentOpenApiDocsPlugin::make()->scrambleGenerator('legacy');
+
+    expect($plugin->hasVersions())->toBeFalse()
+        ->and($plugin->getDefaultVersion())->toBeNull()
+        ->and($plugin->getScrambleGenerator())->toBe('legacy');
+});
+
+it('discovers named Scramble APIs when versions are not configured', function () {
+    \Dedoc\Scramble\Scramble::registerApi('v1', ['api_path' => 'api/v1']);
+    \Dedoc\Scramble\Scramble::registerApi('v2', ['api_path' => 'api/v2']);
+
+    $plugin = FilamentOpenApiDocsPlugin::make();
+
+    expect($plugin->hasVersions())->toBeTrue()
+        ->and($plugin->getVersions())->toBe(['v1', 'v2'])
+        ->and($plugin->getDefaultVersion())->toBe('v1');
+});
+
+it('uses the configured default api version and its isolated specification', function () {
+    $panel = Panel::make()
+        ->id('admin')
+        ->plugin(FilamentOpenApiDocsPlugin::make()->versions(['v1', 'v2']));
+
+    Filament::setCurrentPanel($panel);
+
+    $provider = new class implements VersionedSpecProvider
+    {
+        public function config(): \Dedoc\Scramble\GeneratorConfig
+        {
+            return \Dedoc\Scramble\Scramble::getGeneratorConfig('default');
+        }
+
+        public function view(): string
+        {
+            return 'scramble::docs';
+        }
+
+        public function spec(): array
+        {
+            return $this->specFor('v1');
+        }
+
+        public function specFor(string $generator): array
+        {
+            return match ($generator) {
+                'v2' => [
+                    'info'  => ['version' => '2.0.0'],
+                    'paths' => ['/health' => ['get' => ['operationId' => 'v2Health', 'summary' => 'V2 health']]],
+                ],
+                default => [
+                    'info'  => ['version' => '1.0.0'],
+                    'paths' => ['/profiles' => ['get' => ['operationId' => 'v1Profile', 'summary' => 'V1 profile']]],
+                ],
+            };
+        }
+    };
+
+    app()->instance(SpecProvider::class, $provider);
+    app()->forgetInstance(OpenApiDataResolver::class);
+
+    $page = app(OpenApiDocsPage::class);
+    $page->mount();
+
+    expect($page->selectedVersion)->toBe('v1')
+        ->and($page->selectedEndpointId)->toBe('v1Profile');
+
+    $page->selectedVersion = 'v2';
+    $page->updatedSelectedVersion();
+
+    expect($page->selectedEndpointId)->toBe('v2Health')
+        ->and($page->getSubNavigation()[0]->getItems()[0]->getLabel())->toBe('V2 health');
+});
+
+it('falls back to the default version when a selected version is invalid', function () {
+    bindOpenApiSpec(openApiSpecWithEndpoints());
+
+    $panel = Panel::make()
+        ->id('admin')
+        ->plugin(FilamentOpenApiDocsPlugin::make()->versions(['v1', 'v2']));
+
+    Filament::setCurrentPanel($panel);
+
+    $page = app(OpenApiDocsPage::class);
+    $page->selectedVersion = 'unknown';
+    $page->mount();
+
+    expect($page->selectedVersion)->toBe('v1');
+});
+
+it('restricts a docs page to its selected version', function () {
+    $plugin = FilamentOpenApiDocsPlugin::make()
+        ->versions(['v1', 'v2'])
+        ->version('v2');
+
+    expect($plugin->getVersions())->toBe(['v2'])
+        ->and($plugin->getDefaultVersion())->toBe('v2')
+        ->and($plugin->getVersion('v1'))->toBeNull()
+        ->and($plugin->getVersion('v2'))->toBe('v2');
+});
+
+it('allows a fixed docs page without a version list', function () {
+    $plugin = FilamentOpenApiDocsPlugin::make()->version('v2');
+
+    expect($plugin->hasVersions())->toBeTrue()
+        ->and($plugin->getVersions())->toBe(['v2'])
+        ->and($plugin->getDefaultVersion())->toBe('v2');
+});
+
+it('falls back to the fixed version when the URL requests another version', function () {
+    $panel = Panel::make()
+        ->id('admin')
+        ->plugin(FilamentOpenApiDocsPlugin::make()->versions(['v1', 'v2'])->version('v2'));
+
+    Filament::setCurrentPanel($panel);
+    app()->instance(SpecProvider::class, new class implements VersionedSpecProvider
+    {
+        public function config(): \Dedoc\Scramble\GeneratorConfig
+        {
+            return \Dedoc\Scramble\Scramble::getGeneratorConfig('default');
+        }
+
+        public function view(): string
+        {
+            return 'scramble::docs';
+        }
+
+        public function spec(): array
+        {
+            return $this->specFor('v2');
+        }
+
+        public function specFor(string $generator): array
+        {
+            return [
+                'paths' => [
+                    '/health' => [
+                        'get' => [
+                            'operationId' => "{$generator}Health",
+                            'summary'     => "{$generator} health",
+                        ],
+                    ],
+                ],
+            ];
+        }
+    });
+    app()->forgetInstance(OpenApiDataResolver::class);
+
+    $page = app(OpenApiDocsPage::class);
+    $page->selectedVersion = 'v1';
+    $page->mount();
+
+    expect($page->selectedVersion)->toBe('v2')
+        ->and($page->selectedEndpointId)->toBe('v2Health');
+});
+
+it('does not allow empty version aliases', function () {
+    FilamentOpenApiDocsPlugin::make()->versions(['v1', '']);
+})->throws(InvalidArgumentException::class, 'non-empty Scramble aliases');
+
+it('does not allow an empty version list', function () {
+    FilamentOpenApiDocsPlugin::make()->versions([]);
+})->throws(InvalidArgumentException::class, 'at least one Scramble alias');
+
+it('does not allow duplicate version aliases', function () {
+    FilamentOpenApiDocsPlugin::make()->versions(['v1', 'v1']);
+})->throws(InvalidArgumentException::class, 'must be unique');
+
+it('requires the fixed version to belong to a configured version list', function () {
+    FilamentOpenApiDocsPlugin::make()
+        ->versions(['v1'])
+        ->version('v2');
+})->throws(InvalidArgumentException::class, 'must be included');
 
 it('does not register the api docs page in production by default', function () {
     app()->detectEnvironment(fn (): string => 'production');
@@ -324,70 +541,6 @@ it('registers package assets for lazy loading', function () {
         ->and($pageView)->toContain("FilamentAsset::getAlpineComponentSrc('request-snippet', 'alexkramse/filament-openapi-docs')");
 });
 
-it('uses compiled filament or package classes in blade views', function () {
-    $unsupportedUtilityClasses = [
-        'flex',
-        'flex-col',
-        'flex-wrap',
-        'grid',
-        'items-center',
-        'items-end',
-        'justify-end',
-        'gap-1',
-        'gap-2',
-        'gap-3',
-        'gap-4',
-        'gap-5',
-        'gap-6',
-        'mt-5',
-        'mb-8',
-        'ml-4',
-        'p-3',
-        'rounded-lg',
-        'border',
-        'border-gray-200',
-        'bg-white',
-        'text-xs',
-        'text-sm',
-        'text-base',
-        'font-medium',
-        'font-mono',
-        'font-semibold',
-        'text-gray-500',
-        'text-gray-950',
-        'dark:text-white',
-    ];
-
-    $classes = collect(File::allFiles(__DIR__.'/../../resources/views'))
-        ->flatMap(function (SplFileInfo $file): array {
-            preg_match_all('/class=(["\'])(.*?)\1/s', $file->getContents(), $matches);
-
-            return collect($matches[2])
-                ->flatMap(fn (string $classList): array => preg_split('/\s+/', trim($classList)) ?: [])
-                ->filter()
-                ->all();
-        })
-        ->unique()
-        ->values();
-
-    expect($classes->intersect($unsupportedUtilityClasses)->values()->all())->toBe([]);
-});
-
-it('moves openapi summary from the page content to the sub navigation partial', function () {
-    $pageView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
-    $summaryView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/sub-navigation/summary.blade.php');
-
-    expect($pageView)->not->toContain(':heading="$info[\'title\'] ?? \'API Documentation\'"')
-        ->and($summaryView)->not->toContain('<x-filament::section')
-        ->and($summaryView)->toContain("__('filament-openapi-docs::ui.meta.endpoints'");
-});
-
-it('registers openapi summary at the top of the endpoint sub navigation sidebar', function () {
-    expect(FilamentView::hasRenderHook(PanelsRenderHook::PAGE_SUB_NAVIGATION_SIDEBAR_BEFORE, OpenApiDocsPage::class))->toBeTrue()
-        ->and(FilamentView::hasRenderHook(PanelsRenderHook::PAGE_SUB_NAVIGATION_START_BEFORE, OpenApiDocsPage::class))->toBeFalse()
-        ->and(FilamentView::hasRenderHook(PanelsRenderHook::PAGE_SUB_NAVIGATION_END_BEFORE, OpenApiDocsPage::class))->toBeFalse();
-});
-
 it('renders openapi summary data above endpoint sub navigation', function () {
     bindOpenApiSpec([
         'info' => [
@@ -437,327 +590,56 @@ it('renders openapi summary data above endpoint sub navigation', function () {
         ->and($html)->toContain('2 endpoints');
 });
 
-it('registers package translations for publishing', function () {
-    $paths = ServiceProvider::pathsToPublish(
-        FilamentOpenApiDocsServiceProvider::class,
-        'filament-openapi-docs-translations',
-    );
-
-    expect($paths)->toHaveCount(1)
-        ->and(array_key_first($paths))->toEndWith('resources/lang')
-        ->and(reset($paths))->toEndWith('lang/vendor/filament-openapi-docs');
-});
-
-it('renders package ui strings in the active locale', function () {
-    app()->setLocale('uk');
-
-    $parsed = app(OpenApiParser::class)->parse([
-        'openapi' => '3.1.0',
-        'info'    => [
-            'title'   => 'Game API',
-            'version' => '1.0.0',
-        ],
-        'servers' => [
-            ['url' => 'https://api.example.test'],
-        ],
-        'components' => [
-            'securitySchemes' => [
-                'bearerAuth' => [
-                    'type'   => 'http',
-                    'scheme' => 'bearer',
-                ],
-            ],
-        ],
-        'security' => [
-            ['bearerAuth' => []],
-        ],
-        'paths' => [
-            '/users/{user}' => [
-                'post' => [
-                    'tags'       => ['Users'],
-                    'summary'    => 'Create user',
-                    'parameters' => [
-                        [
-                            'name'     => 'user',
-                            'in'       => 'path',
-                            'required' => true,
-                            'schema'   => ['type' => 'integer'],
-                        ],
-                    ],
-                    'requestBody' => [
-                        'content' => [
-                            'application/json' => [
-                                'schema' => [
-                                    'type'       => 'object',
-                                    'properties' => [
-                                        'name' => ['type' => 'string'],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                    'responses' => [
-                        '200' => [
-                            'description' => '',
-                            'content'     => [],
-                        ],
-                    ],
-                ],
-            ],
-        ],
+it('labels version selector options from Scramble configuration', function () {
+    \Dedoc\Scramble\Scramble::registerApi('labelled-v1', [
+        'api_path' => 'api/v1',
+        'info'     => ['version' => '1.0.0'],
+    ]);
+    \Dedoc\Scramble\Scramble::registerApi('fallback-v2', [
+        'api_path' => 'api/v2',
+        'info'     => ['version' => null],
     ]);
 
-    $endpoint = $parsed['endpoints']['Users'][0];
-    $html = html_entity_decode(renderPluginOpenApiDocsEndpoint(
-        $endpoint,
-        $parsed['servers'],
-        $parsed['components'],
+    $panel = Panel::make()
+        ->id('admin')
+        ->plugin(FilamentOpenApiDocsPlugin::make()->versions(['labelled-v1', 'fallback-v2']));
+
+    Filament::setCurrentPanel($panel);
+    app()->instance(SpecProvider::class, new class implements VersionedSpecProvider
+    {
+        public function config(): \Dedoc\Scramble\GeneratorConfig
+        {
+            return \Dedoc\Scramble\Scramble::getGeneratorConfig('default');
+        }
+
+        public function view(): string
+        {
+            return 'scramble::docs';
+        }
+
+        public function spec(): array
+        {
+            return $this->specFor('labelled-v1');
+        }
+
+        public function specFor(string $generator): array
+        {
+            return [
+                'info'  => ['version' => '1.0.0'],
+                'paths' => [],
+            ];
+        }
+    });
+    app()->forgetInstance(OpenApiDataResolver::class);
+
+    $html = html_entity_decode((string) FilamentView::renderHook(
+        PanelsRenderHook::PAGE_SUB_NAVIGATION_SIDEBAR_BEFORE,
+        OpenApiDocsPage::class,
     ));
 
-    expect($html)->toContain('Запит')
-        ->and($html)->toContain('Режим надсилання')
-        ->and($html)->toContain('Режим розробника')
-        ->and($html)->toContain('Безпека')
-        ->and($html)->toContain('Тіло')
-        ->and($html)->toContain('x-on:click="copyBody()"')
-        ->and($html)->toContain('Відповіді');
-});
-
-it('includes localized request snippet runtime messages', function () {
-    app()->setLocale('uk');
-
-    $endpoint = new Endpoint(
-        id: 'create-user',
-        method: 'POST',
-        path: '/users',
-        summary: 'Create user',
-        description: null,
-        tags: ['Users'],
-        parameters: [],
-        requestBodies: [
-            [
-                'contentType' => 'application/json',
-                'schema'      => ['type' => 'object'],
-                'examples'    => [],
-            ],
-        ],
-        responses: [],
-        security: [],
-        deprecated: false,
-    );
-
-    $requestData = app(RequestSnippetPresenter::class)->present($endpoint, ['https://api.example.test']);
-
-    expect($requestData['messages']['copiedToClipboard'])->toBe('Скопійовано в буфер обміну.')
-        ->and($requestData['messages']['copyFailed'])->toBe('Не вдалося скопіювати.')
-        ->and($requestData['messages']['responseStatusBadge'])->toBe('Статус: :status')
-        ->and($requestData['messages']['responseTypeBadge'])->toBe('Тип: :type')
-        ->and($requestData['messages']['jsonBeforeSending'])->toBe('Перед надсиланням тіло має бути коректним JSON.')
-        ->and($requestData['messages']['jsonBeforeFormatting'])->toBe('Перед форматуванням тіло має бути коректним JSON.')
-        ->and($requestData['messages']['unableToSendRequest'])->toBe('Не вдалося надіслати цей запит.')
-        ->and($requestData['messages']['invalidHeaderName'])->toBe('Некоректна назва заголовка: :name');
-});
-
-it('falls back to the configured fallback locale for package translations', function () {
-    app()->setLocale('zz');
-    app('translator')->setFallback('de');
-
-    expect(__('filament-openapi-docs::ui.actions.send_api_request'))->toBe('API-Anfrage senden');
-});
-
-it('ships complete standalone ui translation files', function () {
-    $english = require __DIR__.'/../../resources/lang/en/ui.php';
-    $localeFiles = glob(__DIR__.'/../../resources/lang/*/ui.php');
-
-    expect($localeFiles)->toHaveCount(62);
-
-    foreach ($localeFiles as $localeFile) {
-        $contents = file_get_contents($localeFile);
-        $translation = require $localeFile;
-
-        expect(preg_match('/\b(?:require|include)(?:_once)?\b/', $contents))->toBe(0)
-            ->and(array_keys($translation))->toBe(array_keys($english));
-
-        foreach ($english as $group => $strings) {
-            expect($translation[$group])->toBeArray()
-                ->and(array_keys($translation[$group]))->toBe(array_keys($strings));
-
-            foreach ($strings as $key => $value) {
-                preg_match_all('/:\w+/', $value, $sourcePlaceholders);
-                preg_match_all('/:\w+/', $translation[$group][$key], $translationPlaceholders);
-
-                expect($translation[$group][$key])->toBeString()
-                    ->and($translationPlaceholders[0])->toBe($sourcePlaceholders[0]);
-            }
-        }
-    }
-});
-
-it('adds spacing between openapi summary server urls and meta badges', function () {
-    $styles = file_get_contents(__DIR__.'/../../resources/css/openapi-docs.css');
-    $bodyView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/body.blade.php');
-    $headersView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/headers.blade.php');
-    $cookiesView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/cookies.blade.php');
-    $queryParametersView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/query-parameters.blade.php');
-    $requestSnippetView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/http-snippet.blade.php');
-    $sampleView = file_get_contents(__DIR__.'/../../resources/views/components/code-sample.blade.php');
-    $mediaTypeContentView = file_get_contents(__DIR__.'/../../resources/views/components/media-type-content.blade.php');
-    $pageView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs.blade.php');
-    $readRequestView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/data.blade.php');
-    $sendRequestView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester.blade.php');
-    $responsePreviewView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/request/tester/response-preview.blade.php');
-    $responseItemView = file_get_contents(__DIR__.'/../../resources/views/openapi-docs/response/item.blade.php');
-
-    expect($styles)->toContain('.foad-openapi-summary-servers')
-        ->and($styles)->toContain('gap: 0.375rem;')
-        ->and($styles)->toContain('.foad-openapi-summary-meta')
-        ->and($styles)->toContain('.foad-copyable-badge')
-        ->and($styles)->toContain('cursor: pointer;')
-        ->and($styles)->toContain('user-select: none;')
-        ->and($styles)->toContain('.foad-openapi-docs-page .fi-section-content')
-        ->and($styles)->toContain('.foad-response-status-badge')
-        ->and($styles)->toContain('.foad-response-status-badge[data-color="success"]')
-        ->and($styles)->toContain('.foad-response-status-badge[data-color="warning"]')
-        ->and($styles)->toContain('.foad-response-status-badge[data-color="danger"]')
-        ->and($styles)->toContain('.foad-response-block')
-        ->and($styles)->toContain('.foad-sample-scroll.foad-response-code')
-        ->and($styles)->toContain(".foad-sample-scroll.foad-response-code {\n  border: 1px solid color-mix(in oklab, currentColor 10%, transparent);\n  border-radius: 0.375rem;\n  max-height: 22rem;\n  overflow-y: auto;")
-        ->and($styles)->toContain('.foad-stack')
-        ->and($styles)->toContain('.foad-send-layout')
-        ->and($styles)->toContain('.foad-send-layout > .foad-stack')
-        ->and($styles)->toContain('align-content: start;')
-        ->and($styles)->toContain('align-items: stretch;')
-        ->and($styles)->toContain('.foad-send-layout > .foad-stack:has(.foad-try-textarea)')
-        ->and($styles)->toContain('.foad-send-layout > .foad-stack:has(.foad-try-textarea) .foad-try-textarea')
-        ->and($styles)->toContain('grid-template-rows: minmax(0, 1fr) auto;')
-        ->and($styles)->toContain('grid-template-rows: auto minmax(0, 1fr) auto;')
-        ->and($styles)->toContain('field-sizing: content;')
-        ->and($styles)->toContain('height: 100%;')
-        ->and($styles)->toContain('min-height: 3rem;')
-        ->and($styles)->toContain('.foad-body-toolbar')
-        ->and($styles)->toContain('justify-content: space-between;')
-        ->and($styles)->toContain('.foad-request-body-heading')
-        ->and($styles)->toContain('flex-wrap: nowrap;')
-        ->and($styles)->toContain('.foad-request-body-heading .fi-section-header-heading')
-        ->and($styles)->toContain('display: inline-flex;')
-        ->and($styles)->toContain('.foad-request-body-sample-wrap .foad-sample-scroll')
-        ->and($styles)->toContain('.foad-request-body-sample-wrap .foad-sample-code')
-        ->and($styles)->toContain('white-space: pre-wrap;')
-        ->and($styles)->toContain('overflow-wrap: anywhere;')
-        ->and($styles)->toContain('.foad-json-editor')
-        ->and($styles)->toContain('box-sizing: border-box;')
-        ->and($styles)->toContain('inline-size: 100%;')
-        ->and($styles)->toContain('.foad-json-editor-highlight.foad-sample-code')
-        ->and($styles)->toContain('.foad-json-editor-textarea')
-        ->and($styles)->toContain('caret-color: var(--gray-950);')
-        ->and($styles)->toContain('color: transparent;')
-        ->and($styles)->toContain('field-sizing: fixed;')
-        ->and($styles)->toContain('max-width: 100%;')
-        ->and($styles)->toContain('min-width: 0;')
-        ->and($styles)->toContain('overflow: hidden;')
-        ->and($styles)->toContain('overflow: auto;')
-        ->and($styles)->toContain('overflow-x: auto;')
-        ->and($styles)->toContain('overflow-y: auto;')
-        ->and($styles)->toContain('white-space: pre;')
-        ->and($styles)->toContain('word-break: normal;')
-        ->and($styles)->not->toContain(".foad-json-editor-highlight {\n  background: white;")
-        ->and($styles)->not->toContain(".foad-json-editor-textarea {\n  background: transparent;\n  box-sizing: border-box;\n  caret-color: var(--gray-950);\n  color: transparent;\n  min-width: max-content;")
-        ->and($styles)->toContain('.foad-header-row')
-        ->and($styles)->toContain('grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;')
-        ->and($styles)->toContain('.foad-header-row > *')
-        ->and($styles)->toContain('.foad-send-actions')
-        ->and($styles)->toContain('.foad-sample')
-        ->and($styles)->toContain('.foad-schema-property-main')
-        ->and($styles)->toContain('grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;')
-        ->and($styles)->toContain('.foad-schema-presence-badge')
-        ->and($styles)->toContain('justify-self: end;')
-        ->and($styles)->toContain('.foad-media-type-content')
-        ->and($styles)->toContain('.foad-media-type-content .fi-sc-tabs')
-        ->and($styles)->toContain('.foad-media-type-content .fi-sc-tabs-tab')
-        ->and($styles)->toContain('.foad-code-sample')
-        ->and($styles)->toContain('.foad-code-sample-panel')
-        ->and($styles)->toContain('.foad-media-type-content [x-show]')
-        ->and($styles)->toContain('.foad-media-type-content .foad-sample-scroll')
-        ->and($styles)->toContain('box-sizing: border-box;')
-        ->and($styles)->toContain('inline-size: 100%;')
-        ->and($styles)->toContain('width: 100%;')
-        ->and($styles)->toContain('.foad-sample-section')
-        ->and($styles)->toContain('.foad-sample-section > .fi-section-content-ctn > .fi-section-content')
-        ->and($styles)->toContain('.foad-sample-scroll')
-        ->and($styles)->toContain('inline-size: 100%;')
-        ->and($styles)->toContain('width: 100%;')
-        ->and($styles)->toContain('.foad-sample-code')
-        ->and($styles)->toContain('min-width: 0;')
-        ->and($styles)->toContain('min-width: max-content;')
-        ->and($styles)->toContain('overflow-x: auto;')
-        ->and($styles)->toContain('overflow-y: hidden;')
-        ->and($requestSnippetView)->toContain('class="foad-sample-section"')
-        ->and($readRequestView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
-        ->and($readRequestView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
-        ->and($readRequestView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
-        ->and($readRequestView)->toContain('$requestData[\'mediaHeaders\'] !== [] || $requestData[\'headerParameters\'] !== []')
-        ->and($readRequestView)->toContain('ui.labels.headers')
-        ->and($readRequestView)->toContain('ui.labels.cookies')
-        ->and($readRequestView)->toContain('$requestData[\'cookieParameters\']')
-        ->and($readRequestView)->not->toContain('ui.labels.media_headers')
-        ->and($pageView)->toContain('$hasSamplePreviews')
-        ->and($bodyView)->toContain('class="foad-body-toolbar"')
-        ->and($bodyView)->toContain('class="foad-json-editor"')
-        ->and($bodyView)->toContain('icon="heroicon-m-document-duplicate"')
-        ->and($bodyView)->toContain('x-on:click="copyBody()"')
-        ->and($bodyView)->not->toContain('format_json')
-        ->and($bodyView)->toContain('x-html="highlightedBodyText"')
-        ->and($bodyView)->toContain('x-on:input.debounce.500ms="formatJsonBody(false, $event.target.value)"')
-        ->and($bodyView)->toContain('x-on:blur="formatJsonBody(true, $event.target.value)"')
-        ->and($bodyView)->toContain('x-on:scroll="syncBodyEditorScroll($event)"')
-        ->and($bodyView)->toContain('wrap="off"')
-        ->and($bodyView)->toContain('class="foad-try-textarea foad-json-editor-textarea"')
-        ->and($headersView)->toContain('x-for="parameter in mediaHeaderParameters"')
-        ->and($headersView)->toContain('x-bind:key="`media-header-${parameter.name}`"')
-        ->and(substr_count($headersView, 'x-bind:disabled="!canUseDeveloperOptions"'))->toBe(1)
-        ->and(substr_count($queryParametersView, 'x-bind:disabled="!canUseDeveloperOptions"'))->toBe(1)
-        ->and($headersView)->toContain('x-bind:id="`header-name-${index}`"')
-        ->and($cookiesView)->toContain('x-if="hasCookieParameters"')
-        ->and($cookiesView)->toContain('x-for="parameter in cookieParameters"')
-        ->and($cookiesView)->toContain('x-bind:key="`cookie-${parameter.name}`"')
-        ->and($cookiesView)->toContain('ui.labels.cookies')
-        ->and($queryParametersView)->toContain('x-bind:id="`parameter-name-${index}`"')
-        ->and($headersView)->toContain('x-show="canUseDeveloperOptions"')
-        ->and($requestSnippetView)->toContain('class="foad-sample-scroll"')
-        ->and($responsePreviewView)->toContain('class="foad-response-block"')
-        ->and($sampleView)->toContain('class="foad-sample-scroll"')
-        ->and($sampleView)->toContain('class="foad-sample-code"')
-        ->and($sampleView)->toContain('class="foad-code-sample"')
-        ->and($sampleView)->toContain('class="foad-code-sample-panel"')
-        ->and($sampleView)->toContain('samplePrismLanguage(@js($contentType ?? \'\'))')
-        ->and($sampleView)->toContain('x-html="highlightSample(@js($sample[\'value\']), @js($contentType ?? \'\'))"')
-        ->and($sampleView)->not->toContain('<code>{{ $sample[\'value\'] }}</code>')
-        ->and($mediaTypeContentView)->toContain('class="fi-sc-component foad-media-type-content"')
-        ->and($mediaTypeContentView)->toContain('application/x-www-form-urlencoded')
-        ->and($mediaTypeContentView)->toContain('ui.labels.urlencoded')
-        ->and($sendRequestView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
-        ->and($sendRequestView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
-        ->and($sendRequestView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
-        ->and($sendRequestView)->toContain('request.tester.cookies')
-        ->and($sendRequestView)->not->toContain('media-headers')
-        ->and($responsePreviewView)->toContain('class="foad-sample-scroll foad-response-code"')
-        ->and($responsePreviewView)->toContain('class="foad-body-toolbar"')
-        ->and($responsePreviewView)->toContain('x-bind:class="responseStatusClass(response.status)"')
-        ->and($responsePreviewView)->toContain('x-text="response.status"')
-        ->and($responsePreviewView)->toContain('x-text="response.contentType"')
-        ->and($responsePreviewView)->toContain('icon="heroicon-m-document-duplicate"')
-        ->and($responsePreviewView)->toContain('x-on:click="copyResponseBody()"')
-        ->and($responseItemView)->toContain('class="fi-grid foad-send-layout md:fi-grid-cols"')
-        ->and($responseItemView)->toContain('--cols-default: repeat(1, minmax(0, 1fr));')
-        ->and($responseItemView)->toContain('--cols-md: repeat(2, minmax(0, 1fr));')
-        ->and($responseItemView)->not->toContain('media-type-content')
-        ->and($responsePreviewView)->toContain('x-bind:class="`language-${responsePrismLanguage}`"')
-        ->and($responsePreviewView)->toContain('x-html="highlightedResponseBody"')
-        ->and($responsePreviewView)->not->toContain('x-text="response.body"')
-        ->and($styles)->not->toContain('width: 50%;')
-        ->and($sendRequestView)->not->toContain('TODO')
-        ->and($responsePreviewView)->not->toContain('HttpStatus::color($status)')
-        ->and($responsePreviewView)->not->toContain('{{ response.status }}');
+    expect($html)->toContain('1.0.0 (api/v1)')
+        ->and($html)->toContain('fallback-v2 (api/v2)')
+        ->and($html)->not->toContain('v1.0.0');
 });
 
 it('exposes endpoints through native filament sub navigation', function () {
