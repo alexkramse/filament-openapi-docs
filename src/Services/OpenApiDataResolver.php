@@ -4,6 +4,7 @@ namespace Alexkramse\FilamentOpenapiDocs\Services;
 
 use Alexkramse\FilamentOpenapiDocs\DTO\Endpoint;
 use Alexkramse\FilamentOpenapiDocs\Support\SpecProvider;
+use Alexkramse\FilamentOpenapiDocs\Support\VersionedSpecProvider;
 
 class OpenApiDataResolver
 {
@@ -16,7 +17,7 @@ class OpenApiDataResolver
      *     components: array<string, mixed>,
      * }|null
      */
-    private ?array $data = null;
+    private array $data = [];
 
     public function __construct(
         private readonly OpenApiParser $parser,
@@ -32,10 +33,14 @@ class OpenApiDataResolver
      *     components: array<string, mixed>,
      * }
      */
-    public function data(): array
+    public function data(?string $generator = null): array
     {
-        return $this->data ??= $this->parser->parse(
-            $this->specProvider->spec(),
+        $cacheKey = $generator ?? 'default';
+
+        return $this->data[$cacheKey] ??= $this->parser->parse(
+            $generator !== null && $this->specProvider instanceof VersionedSpecProvider
+                ? $this->specProvider->specFor($generator)
+                : $this->specProvider->spec(),
         );
     }
 }

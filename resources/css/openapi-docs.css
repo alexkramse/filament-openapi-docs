@@ -52,8 +52,11 @@
 }
 
 .foad-openapi-summary {
+  box-sizing: border-box;
   display: grid;
   gap: 0.5rem;
+  inline-size: 100%;
+  padding: 0.1rem;
 }
 
 .foad-openapi-summary-copy {
@@ -94,6 +97,39 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.foad-openapi-summary-header {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.foad-version-selector.fi-input-wrp {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.foad-version-selector.fi-input-wrp:focus-within {
+  box-shadow: inset 0 0 0 1px rgb(from var(--gray-950) r g b / 0.1) !important;
+}
+
+.foad-version-selector.fi-input-wrp:has(.fi-select-input:focus-visible) {
+  box-shadow: inset 0 0 0 2px var(--gray-400) !important;
+}
+
+.foad-openapi-summary-header .foad-openapi-summary-meta {
+  flex: none;
+  flex-wrap: nowrap;
+}
+
+.dark .foad-version-selector.fi-input-wrp:focus-within {
+  box-shadow: inset 0 0 0 1px rgb(from white r g b / 0.2) !important;
+}
+
+.dark .foad-version-selector.fi-input-wrp:has(.fi-select-input:focus-visible) {
+  box-shadow: inset 0 0 0 2px var(--gray-500) !important;
 }
 
 .dark .foad-openapi-docs-page .foad-endpoint-navigation-item {

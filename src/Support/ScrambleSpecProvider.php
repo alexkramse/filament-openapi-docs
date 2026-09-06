@@ -7,7 +7,7 @@ use Dedoc\Scramble\CacheableGenerator;
 use Dedoc\Scramble\GeneratorConfig;
 use Dedoc\Scramble\Scramble;
 
-class ScrambleSpecProvider implements SpecProvider
+class ScrambleSpecProvider implements VersionedSpecProvider
 {
     public function __construct(
         private readonly CacheableGenerator $generator,
@@ -28,6 +28,14 @@ class ScrambleSpecProvider implements SpecProvider
 
     public function spec(): array
     {
-        return ($this->generator)($this->config());
+        return $this->specFor(
+            FilamentOpenApiDocsPlugin::current()?->getScrambleGenerator()
+                ?? config('filament-openapi-docs.scramble.generator', Scramble::DEFAULT_API),
+        );
+    }
+
+    public function specFor(string $generator): array
+    {
+        return ($this->generator)(Scramble::getGeneratorConfig($generator));
     }
 }

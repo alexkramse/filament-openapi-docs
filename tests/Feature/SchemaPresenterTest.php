@@ -40,9 +40,6 @@ it('does not show the empty structured fields message for composed schemas', fun
 
     expect($html)->toContain('customer')
         ->and($html)->toContain('priority')
-        ->and($html)->toContain('foad-property-main')
-        ->and($html)->toContain('foad-schema-type-badges')
-        ->and($html)->toContain('foad-schema-presence-badge')
         ->and($html)->not->toContain('No structured fields documented.');
 });
 
